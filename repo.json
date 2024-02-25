@@ -1,0 +1,8 @@
+{
+  "name": "N4S3R's Extensions",
+  "description": "This is new persians one",
+  "manifestVersion": 1,
+  "pluginLists": [
+    "https://raw.githubusercontent.com/NoMeatNo/per3/builds/plugins.json"
+  ]
+}

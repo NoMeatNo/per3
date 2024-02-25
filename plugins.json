@@ -1,0 +1,65 @@
+[
+    {
+        "iconUrl": "https://raw.githubusercontent.com/NoMeatNo/per3/master/logos/favicon.png",
+        "apiVersion": 1,
+        "repositoryUrl": "https://github.com/NoMeatNo/per3",
+        "fileSize": 17620,
+        "status": 1,
+        "language": "fa",
+        "authors": [
+            "Naser"
+        ],
+        "tvTypes": [
+            "TvSeries",
+            "Movie",
+            "Live"
+        ],
+        "version": 1,
+        "internalName": "FarsiFlix1Provider",
+        "description": "Farsi Flix #1",
+        "url": "https://raw.githubusercontent.com/NoMeatNo/per3/builds/FarsiFlix1Provider.cs3",
+        "name": "FarsiFlix1Provider"
+    },
+    {
+        "iconUrl": "https://raw.githubusercontent.com/NoMeatNo/per3/master/logos/Fplex.png",
+        "apiVersion": 1,
+        "repositoryUrl": "https://github.com/NoMeatNo/per3",
+        "fileSize": 19500,
+        "status": 1,
+        "language": "fa",
+        "authors": [
+            "Naser"
+        ],
+        "tvTypes": [
+            "TvSeries",
+            "Movie",
+            "Live"
+        ],
+        "version": 1,
+        "internalName": "FarsiFlix2Provider",
+        "description": "Farsi Flix #2",
+        "url": "https://raw.githubusercontent.com/NoMeatNo/per3/builds/FarsiFlix2Provider.cs3",
+        "name": "FarsiFlix2Provider"
+    },
+    {
+        "iconUrl": "https://raw.githubusercontent.com/NoMeatNo/per3/master/logos/icon.png",
+        "apiVersion": 1,
+        "repositoryUrl": "https://github.com/NoMeatNo/per3",
+        "fileSize": 20000,
+        "status": 1,
+        "language": "fa",
+        "authors": [
+            "Naser"
+        ],
+        "tvTypes": [
+            "TvSeries",
+            "Movie",
+            "Live"
+        ],
+        "version": 1,
+        "internalName": "FarsiFlix3Provider",
+        "description": "Farsi Flix #3",
+        "url": "https://raw.githubusercontent.com/NoMeatNo/per3/builds/FarsiFlix3Provider.cs3",
+        "name": "FarsiFlix3Provider"
+    }
+]
