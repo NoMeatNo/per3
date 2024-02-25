@@ -5,9 +5,9 @@ version = 5
 cloudstream {
     // All of these properties are optional, you can safely remove them
 
-    description = "Indian Multi-language HD Provider"
+    description = "Iranian/Persian Provider #1"
     language = "ta"
-    authors = listOf("LikDev-256")
+    authors = listOf("N4S3R")
 
     /**
     * Status int as the following:
@@ -24,5 +24,5 @@ cloudstream {
     tvTypes = listOf(
         "Movie"
     )
-    iconUrl = "https://raw.githubusercontent.com/LikDev-256/likdev256-tamil-providers/master/EinthusanProvider/icon.png"
+    iconUrl = "https://raw.githubusercontent.com/NoMeatNo/Peravo2/master/logos/peravo2.png"
 }
