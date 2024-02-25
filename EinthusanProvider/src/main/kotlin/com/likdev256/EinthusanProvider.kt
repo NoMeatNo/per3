@@ -43,12 +43,9 @@ class EinthusanProvider : MainAPI() { // all providers must be an instance of Ma
     }
 
     private fun Element.toSearchResult(): SearchResponse? {
-        val title = this.selectFirst("div.block2 > a.title > h3")?.text()?.toString()?.trim() ?: return null
-        //Log.d("title", title)
-        val href = fixUrl(mainUrl + this.selectFirst("div.block2 > a.title")?.attr("href").toString())
-        //Log.d("href", href)
-        val posterUrl = fixUrlNull("https:${this.selectFirst("div.block1 > a > img")?.attr("src")}")
-        //Log.d("posterUrl", posterUrl.toString())
+        val title = this.selectFirst("div.movie-title h3 a")?.text()?.trim() ?: return null
+        val href = fixUrl(mainUrl + this.selectFirst("div.movie-title h3 a")?.attr("href").toString())
+        val posterUrl = fixUrlNull("https:${this.selectFirst("div.latest-movie-img-container img")?.attr("src")}")
         return newMovieSearchResponse(title, href, TvType.Movie) {
                 this.posterUrl = posterUrl
                 this.quality = SearchQuality.HD
