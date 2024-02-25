@@ -43,17 +43,12 @@ class EinthusanProvider : MainAPI() { // all providers must be an instance of Ma
     }
 
     private fun Element.toSearchResult(): SearchResponse? {
-        val titleElement = this.selectFirst("div.movie-title h3 a") ?: return nul
-        val title = titleElement.text()?.trim() ?: return null
-        // Extracting href
-        val href = titleElement.attr("href") ?: return null
-//        val href = this.selectFirst("a")?.attr("href").toString()
-        // Extracting posterUrl
+        val title = this.selectFirst("div.movie-title h3 a")?.text()?.trim() ?: return null
+        val href = this.selectFirst("div.movie-title h3 a")?.attr("href") ?: return null
         val posterUrl = this.selectFirst("div.latest-movie-img-container img")?.attr("src") ?: return null
-
         return newMovieSearchResponse(title, href, TvType.Movie) {
-            this.posterUrl = posterUrl
-         this.quality = SearchQuality.HD
+                this.posterUrl = posterUrl
+                this.quality = SearchQuality.HD
         }
     }
 
