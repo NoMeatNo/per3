@@ -31,21 +31,15 @@ class EinthusanProvider : MainAPI() { // all providers must be an instance of Ma
     )
 
     override suspend fun getMainPage(
-        page: Int,
+        page: Int, 
         request: MainPageRequest
     ): HomePageResponse {
-        val document = if (page == 1) {
-            app.get(request.data).document
-        } else {
-            app.get(request.data + "&page=$page").document
-        }
-
-        //Log.d("Document", document.toString())
-        val home = document.select("#UIMovieSummary > ul > li").mapNotNull {
+        val link = "$mainUrl/saff1"
+        val document = app.get(link).document
+        val home = document.select("div.col-md-2.col-sm-3.col-xs-6").mapNotNull {
             it.toSearchResult()
         }
-
-        return HomePageResponse(arrayListOf(HomePageList(request.name, home)), hasNext = true)
+        return newHomePageResponse(request.name, home)
     }
 
     private fun Element.toSearchResult(): SearchResponse? {
