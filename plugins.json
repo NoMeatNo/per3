@@ -1,0 +1,65 @@
+[
+    {
+        "iconUrl": "https://raw.githubusercontent.com/NoMeatNo/per3/master/logos/favicon.png",
+        "apiVersion": 1,
+        "repositoryUrl": "https://github.com/NoMeatNo/per3",
+        "fileSize": 17255,
+        "status": 1,
+        "language": "fa",
+        "authors": [
+            "Naser"
+        ],
+        "tvTypes": [
+            "TvSeries",
+            "Movie",
+            "Live"
+        ],
+        "version": 1,
+        "internalName": "FarsiFlixProvider",
+        "description": "Farsi Flix #1",
+        "url": "https://raw.githubusercontent.com/NoMeatNo/per3/builds/FarsiFlixProvider.cs3",
+        "name": "FarsiFlixProvider"
+    },
+    {
+        "iconUrl": "https://raw.githubusercontent.com/NoMeatNo/per3/master/logos/Fplex.png",
+        "apiVersion": 1,
+        "repositoryUrl": "https://github.com/NoMeatNo/per3",
+        "fileSize": 17630,
+        "status": 1,
+        "language": "fa",
+        "authors": [
+            "Naser"
+        ],
+        "tvTypes": [
+            "TvSeries",
+            "Movie",
+            "Live"
+        ],
+        "version": 1,
+        "internalName": "FarsiPlexProvider",
+        "description": "Farsi Plex",
+        "url": "https://raw.githubusercontent.com/NoMeatNo/per3/builds/FarsiPlexProvider.cs3",
+        "name": "FarsiPlexProvider"
+    },
+    {
+        "iconUrl": "https://raw.githubusercontent.com/NoMeatNo/per3/master/logos/icon.png",
+        "apiVersion": 1,
+        "repositoryUrl": "https://github.com/NoMeatNo/per3",
+        "fileSize": 19497,
+        "status": 1,
+        "language": "fa",
+        "authors": [
+            "Naser"
+        ],
+        "tvTypes": [
+            "TvSeries",
+            "Movie",
+            "Live"
+        ],
+        "version": 1,
+        "internalName": "FarsiProvider",
+        "description": "Iranian/Persian Flix #1",
+        "url": "https://raw.githubusercontent.com/NoMeatNo/per3/builds/FarsiProvider.cs3",
+        "name": "FarsiProvider"
+    }
+]
