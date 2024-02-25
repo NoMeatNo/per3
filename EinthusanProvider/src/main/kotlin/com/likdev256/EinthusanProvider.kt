@@ -50,11 +50,11 @@ class EinthusanProvider : MainAPI() { // all providers must be an instance of Ma
 //            ?.substringAfter("url(&quot;")
 //            ?.substringBefore("&quot;")
 
-        val styleAttribute = this.selectFirst("div.latest-movie-img-container")?.attr("style")
-        val posterUrl = styleAttribute?.substringAfter("url(")?.substringBefore(")")?.trim()
-
 //        val styleAttribute = this.selectFirst("div.latest-movie-img-container")?.attr("style")
-//      val posterUrl = styleAttribute?.substringAfter("url(&quot;")?.substringBefore("&quot;")
+//        val posterUrl = styleAttribute?.substringAfter("url(")?.substringBefore(")")?.trim()
+
+        val styleAttribute = this.selectFirst("div.latest-movie-img-container")?.attr("style")
+        val posterUrl = styleAttribute?.substringAfter("url(&quot;")?.substringBefore("&quot;")
 
 //        val styleAttribute = this.selectFirst("div.latest-movie-img-container")?.attr("style")
 //        val posterUrl = styleAttribute?.let {
