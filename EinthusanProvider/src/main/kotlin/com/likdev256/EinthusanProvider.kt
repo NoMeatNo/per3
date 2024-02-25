@@ -13,10 +13,10 @@ import com.lagradost.nicehttp.NiceResponse
 import okhttp3.FormBody
 
 class EinthusanProvider : MainAPI() { // all providers must be an instance of MainAPI
-    override var mainUrl = "https://einthusan.tv"
-    override var name = "Einthusan"
+    override var mainUrl = "https://www.radiovatani.com"
+    override var name = "Persian World"
     override val hasMainPage = true
-    override var lang = "ta"
+    override var lang = "fa"
     override val hasDownloadSupport = true
     override var sequentialMainPage = true
     override var sequentialMainPageDelay: Long = 100
@@ -25,14 +25,9 @@ class EinthusanProvider : MainAPI() { // all providers must be an instance of Ma
     )
 
     override val mainPage = mainPageOf(
-        "$mainUrl/movie/results/?find=Recent&lang=tamil" to "Tamil Movies",
-        "$mainUrl/movie/results/?find=Recent&lang=hindi" to "Hindi Movies",
-        "$mainUrl/movie/results/?find=Recent&lang=telugu" to "Telugu Movies",
-        "$mainUrl/movie/results/?find=Recent&lang=malayalam" to "Malayalam Movies",
-        "$mainUrl/movie/results/?find=Recent&lang=kannada" to "Kannada Movies",
-        "$mainUrl/movie/results/?find=Recent&lang=bengali" to "Bengali Movies",
-        "$mainUrl/movie/results/?find=Recent&lang=marathi" to "Marathi Movies",
-        "$mainUrl/movie/results/?find=Recent&lang=punjabi" to "Punjabi Movies"
+        "/fill1.html" to "Movies",
+        "/sell1.html" to "TV Shows",
+        "/live-tv.html" to "Live TVs",        
     )
 
     override suspend fun getMainPage(
