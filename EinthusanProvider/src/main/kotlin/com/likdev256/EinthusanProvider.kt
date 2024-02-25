@@ -53,14 +53,14 @@ class EinthusanProvider : MainAPI() { // all providers must be an instance of Ma
 //        val styleAttribute = this.selectFirst("div.latest-movie-img-container")?.attr("style")
 //        val posterUrl = styleAttribute?.substringAfter("url(")?.substringBefore(")")?.trim()
 
-        val styleAttribute = this.selectFirst("div.latest-movie-img-container")?.attr("style")
-        val posterUrl = styleAttribute?.substringAfter("url(&quot;")?.substringBefore("&quot;")
-
 //        val styleAttribute = this.selectFirst("div.latest-movie-img-container")?.attr("style")
-//        val posterUrl = styleAttribute?.let {
-//            val regex = Regex("url\\(([^)]+)\\)")
-//           regex.find(it)?.groups?.get(1)?.value
-//        }
+//        val posterUrl = styleAttribute?.substringAfter("url(&quot;")?.substringBefore("&quot;")
+
+        val styleAttribute = this.selectFirst("div.latest-movie-img-container")?.attr("style")
+        val posterUrl = styleAttribute?.let {
+            val regex = Regex("url\\(([^)]+)\\)")
+           regex.find(it)?.groups?.get(1)?.value
+        }
 
         return newMovieSearchResponse(title, href, TvType.Movie) {
                 this.posterUrl = posterUrl
