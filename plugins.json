@@ -1,0 +1,41 @@
+[
+    {
+        "iconUrl": "https://raw.githubusercontent.com/NoMeatNo/Peravo2/master/logos/peravo2.png",
+        "apiVersion": 1,
+        "repositoryUrl": "https://github.com/NoMeatNo/per3",
+        "fileSize": 12253,
+        "status": 1,
+        "language": "fa",
+        "authors": [
+            "N4S3R"
+        ],
+        "tvTypes": [
+            "Movie"
+        ],
+        "version": 5,
+        "internalName": "EinthusanProvider",
+        "description": "Iranian/Persian Provider #1",
+        "url": "https://raw.githubusercontent.com/NoMeatNo/per3/builds/EinthusanProvider.cs3",
+        "name": "EinthusanProvider"
+    },
+    {
+        "iconUrl": "https://www.google.com/s2/favicons?domain=ww2.ibomma.cx&sz=%size%",
+        "apiVersion": 1,
+        "repositoryUrl": "https://github.com/NoMeatNo/per3",
+        "fileSize": 16690,
+        "status": 1,
+        "language": "te",
+        "authors": [
+            "darkdemon, likdev256"
+        ],
+        "tvTypes": [
+            "TvSeries",
+            "Movie",
+            "Live"
+        ],
+        "version": 1,
+        "internalName": "IBommaProvider",
+        "url": "https://raw.githubusercontent.com/NoMeatNo/per3/builds/IBommaProvider.cs3",
+        "name": "IBommaProvider"
+    }
+]
