@@ -6,7 +6,7 @@ cloudstream {
     // All of these properties are optional, you can safely remove them
 
     description = "Iranian/Persian Provider #1"
-    language = "ta"
+    language = "fa"
     authors = listOf("N4S3R")
 
     /**
