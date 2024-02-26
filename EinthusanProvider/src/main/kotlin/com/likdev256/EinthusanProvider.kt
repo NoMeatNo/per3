@@ -87,11 +87,18 @@ class EinthusanProvider : MainAPI() { // all providers must be an instance of Ma
 
         // val mp4link = doc.select("video#play_html5_api").attr("src")
         // Extracting the script content
-        val scriptContent = doc.select("script").first().data()
-// Using JSoup-Extractor to extract the MP4 link
-        val mp4link = JsoupExtractor.extract(scriptContent).get("src").asString()
+        // val scriptContent = doc.select("script").first().data()
+ // Using JSoup-Extractor to extract the MP4 link
+        // val mp4link = JsoupExtractor.extract(scriptContent).get("src").asString()
  // val mp4link = doc.selectFirst("video#play")?.attr("src")
         // doc.select("video#play").attr("src")
+        // Extracting the script content
+        val scriptContent = doc.selectFirst("script:containsData('video/mp4')")?.data() ?: ""
+ // Using regex to extract the MP4 link
+        val mp4linkRegex = Regex("'src': '(.*?)'")
+        val matchResult = mp4linkRegex.find(scriptContent)
+ // Extracting the MP4 link from the match result
+        val mp4link = matchResult?.groupValues?.get(1)
         val m3u8link = doc.select("#UIVideoPlayer").attr("data-hls-link")
 
         return newMovieLoadResponse(title, href, TvType.Movie, "$mp4link,$m3u8link") {
