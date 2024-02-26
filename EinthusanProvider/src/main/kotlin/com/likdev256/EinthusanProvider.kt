@@ -99,16 +99,20 @@ class EinthusanProvider : MainAPI() { // all providers must be an instance of Ma
         // val matchResult = mp4linkRegex.find(scriptContent)
  // Extracting the MP4 link from the match result
         // val mp4link = matchResult?.groupValues?.get(1)
-        val scripts = doc.select("script")
-        var mp4link: String? = null
-        for (script in scripts) {
-            val data = script.data()
-            if (data.contains("'sources': [")) {
-                mp4link = Regex("'src': '(.*?)'").find(data)?.groupValues?.get(1)
-                break
-            }
-         }
+        // val scripts = doc.select("script")
+        // var mp4link: String? = null
+        // for (script in scripts) {
+        //    val data = script.data()
+        //    if (data.contains("'sources': [")) {
+        //        mp4link = Regex("'src': '(.*?)'").find(data)?.groupValues?.get(1)
+        //        break
+        //    }
+        // }
         // val mp4link = doc.selectFirst("script:containsData('sources: [')")?.data()?.let { Regex("'src': '(.*?)'").find(it)?.groupValues?.get(1) }
+        val scriptContent = doc.select("script:containsData(video/mp4)").html()
+        val mp4Regex = Regex("""'src': '(.*?)'""")
+        val mp4Match = mp4Regex.find(scriptContent)
+        val mp4link = mp4Match?.groupValues?.get(1)
         val m3u8link = doc.select("#UIVideoPlayer").attr("data-hls-link")
 
         return newMovieLoadResponse(title, href, TvType.Movie, "$mp4link,$m3u8link") {
