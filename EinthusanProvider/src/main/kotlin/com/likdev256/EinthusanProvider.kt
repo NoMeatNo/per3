@@ -67,7 +67,7 @@ class EinthusanProvider : MainAPI() { // all providers must be an instance of Ma
         val doc = app.get(url).document
         val title = doc.select("div.col-sm-9 p.m-t-10 strong").text().trim() ?: return null
         val href = fixUrl(mainUrl + doc.select("#UIMovieSummary > ul > li > div.block2 > a.title").attr("href").toString())
-        val poster = fixUrlNull("https:${doc.select("#UIMovieSummary > ul > li > div.block1 > a > img").attr("src")}")
+        val poster = doc.selectFirst("video#play")?.attr("poster")
         val tags = doc.select("a.btn-tags").map { it.text() }
         val year =
             doc.selectFirst("div.block2 > div.info > p")?.ownText()?.trim()?.toInt()
