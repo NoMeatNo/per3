@@ -107,16 +107,12 @@ class EinthusanProvider : MainAPI() { // all providers must be an instance of Ma
         val mp4link = data.substringBefore(",")
         val m3u8link = data.substringAfter(",")
 
-        val ipfind = Regex("\\b\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\b")
-        val Fixedmp4link = ipfind.replace(mp4link, "cdn1.einthusan.io")
-        val Fixedm3u8link = ipfind.replace(m3u8link, "cdn1.einthusan.io")
-
         safeApiCall {
             callback.invoke(
                 ExtractorLink(
                     "$name-MP4",
                     "$name-MP4",
-                    Fixedmp4link,
+                    mp4link,
                     "$mainUrl/",
                     Qualities.Unknown.value,
                     false
@@ -126,7 +122,7 @@ class EinthusanProvider : MainAPI() { // all providers must be an instance of Ma
                 ExtractorLink(
                     "$name-M3U8",
                     "$name-M3U8",
-                    Fixedm3u8link,
+                    m3u8link,
                     "$mainUrl/",
                     Qualities.Unknown.value,
                     true
