@@ -65,20 +65,14 @@ class EinthusanProvider : MainAPI() { // all providers must be an instance of Ma
 
     override suspend fun load(url: String): LoadResponse? {
         val doc = app.get(url).document
-        //Log.d("Doc", doc.toString())
-        val title = doc.select("#UIMovieSummary > ul > li > div.block2 > a.title > h3").text().toString().trim() ?: return null
-        //Log.d("title", title)
+        val title = doc.select("div.col-sm-9 p.m-t-10 strong").text().trim() ?: return null
         val href = fixUrl(mainUrl + doc.select("#UIMovieSummary > ul > li > div.block2 > a.title").attr("href").toString())
-        //Log.d("href", href)
-        val poster = fixUrlNull("https:${doc.select("#UIMovieSummary > ul > li > div.block1 > a > img").attr("src")}")
-        //Log.d("poster", poster.toString())
+        val poster = doc.select("div.col-md-3.m-t-10 img.img-responsive").attr("src")
         val tags = doc.select("ul.average-rating > li").map { it.select("label").text() }
         val year =
             doc.selectFirst("div.block2 > div.info > p")?.ownText()?.trim()?.toInt()
-        //Log.d("year", year.toString())
         val description = doc.selectFirst("p.synopsis")?.text()?.trim()
         val rating = doc.select("ul.average-rating > li > p[data-value]").toString().toRatingInt()
-        //Log.d("rating", rating.toString())
         val actors =
             doc.select("div.professionals > div").map {
                 ActorData(
@@ -89,7 +83,8 @@ class EinthusanProvider : MainAPI() { // all providers must be an instance of Ma
                     roleString = it.select("div.prof > label").text().toString(),
                 )
             }
-        val mp4link = doc.select("#UIVideoPlayer").attr("data-mp4-link")
+//        val mp4link = doc.select("#UIVideoPlayer").attr("data-mp4-link")
+        val mp4link = doc.select("script:containsData(ipnx/media/movies)").html()?.substringAfter("'https:").substringBefore("'")
         val m3u8link = doc.select("#UIVideoPlayer").attr("data-hls-link")
 
         return newMovieLoadResponse(title, href, TvType.Movie, "$mp4link,$m3u8link") {
