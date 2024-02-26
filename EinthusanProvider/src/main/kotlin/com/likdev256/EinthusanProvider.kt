@@ -55,34 +55,13 @@ class EinthusanProvider : MainAPI() { // all providers must be an instance of Ma
 
     override suspend fun search(query: String): List<SearchResponse> {
         val fixedQuery = query.replace(" ", "+")
-        val resultTamil = app.get("$mainUrl/movie/results/?lang=tamil&query=$fixedQuery").document.select("#UIMovieSummary > ul > li").mapNotNull {
-            it.toSearchResult()
-        }
-        val resultHindi = app.get("$mainUrl/movie/results/?lang=hindi&query=$fixedQuery").document.select("#UIMovieSummary > ul > li").mapNotNull {
-            it.toSearchResult()
-        }
-        val resultMalayalam = app.get("$mainUrl/movie/results/?lang=malayalam&query=$fixedQuery").document.select("#UIMovieSummary > ul > li").mapNotNull {
-            it.toSearchResult()
-        }
-        val resultTelugu = app.get("$mainUrl/movie/results/?lang=telugu&query=$fixedQuery").document.select("#UIMovieSummary > ul > li").mapNotNull {
-            it.toSearchResult()
-        }
-        val resultKannada = app.get("$mainUrl/movie/results/?lang=kannada&query=$fixedQuery").document.select("#UIMovieSummary > ul > li").mapNotNull {
-            it.toSearchResult()
-        }
-        val resultBengali = app.get("$mainUrl/movie/results/?lang=bengali&query=$fixedQuery").document.select("#UIMovieSummary > ul > li").mapNotNull {
-            it.toSearchResult()
-        }
-        val resultMarathi = app.get("$mainUrl/movie/results/?lang=marathi&query=$fixedQuery").document.select("#UIMovieSummary > ul > li").mapNotNull {
-            it.toSearchResult()
-        }
-        val resultPunjabi = app.get("$mainUrl/movie/results/?lang=punjabi&query=$fixedQuery").document.select("#UIMovieSummary > ul > li").mapNotNull {
-            it.toSearchResult()
-        }
-        val merge = resultTamil + resultHindi + resultMalayalam + resultTelugu + resultKannada + resultBengali + resultMarathi + resultPunjabi
+        val resultTamil = app.get("$mainUrl/search?q=$fixedQuery")
+            .document.select("div.col-md-2.col-sm-3.col-xs-6")
+            .mapNotNull { it.toSearchResult() }
 
-        return merge.sortedBy { -FuzzySearch.partialRatio(it.name.replace("(\\()+(.*)+(\\))".toRegex(), "").lowercase(), query.lowercase()) }
+        return resultTamil.sortedBy { -FuzzySearch.partialRatio(it.name.replace("(\\()+(.*)+(\\))".toRegex(), "").lowercase(), query.lowercase()) }
     }
+
 
     override suspend fun load(url: String): LoadResponse? {
         val doc = app.get(url).document
