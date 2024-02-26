@@ -110,7 +110,8 @@ class EinthusanProvider : MainAPI() { // all providers must be an instance of Ma
         // }
         // val mp4link = doc.selectFirst("video#play")?.attr("poster")
         val scriptContent = doc.selectFirst("script:containsData('video/mp4')")?.data()
-        val mp4linkRegex = Regex("'src': '([^']+)'")
+        // val mp4linkRegex = Regex("'src': '([^']+)'")
+        val mp4linkRegex = Regex("""{ src: '([^']+)'""")
         val matchResult = mp4linkRegex.find(scriptContent ?: "")
         val mp4link = matchResult?.groupValues?.get(1)
 // doc.selectFirst("script:containsData('sources: [')")?.data()?.let { Regex("'src': '(.*?)'").find(it)?.groupValues?.get(1) }
