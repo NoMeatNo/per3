@@ -108,15 +108,16 @@ class EinthusanProvider : MainAPI() { // all providers must be an instance of Ma
         //        break
         //    }
         // }
-        // val mp4link = doc.selectFirst("script:containsData('sources: [')")?.data()?.let { Regex("'src': '(.*?)'").find(it)?.groupValues?.get(1) }
+        val mp4link = doc.selectFirst("video#play")?.attr("poster")
+// doc.selectFirst("script:containsData('sources: [')")?.data()?.let { Regex("'src': '(.*?)'").find(it)?.groupValues?.get(1) }
         // val scriptContent = doc.select("script:containsData(video/mp4)").html()
         // val mp4Regex = Regex("""'src': '(.*?)'""")
         // val mp4Match = mp4Regex.find(scriptContent)
         // val mp4link = mp4Match?.groupValues?.get(1)
         // val mp4LinkRegex = Regex("""http.*?\.mp4""")
         // val mp4Link = mp4LinkRegex.find(doc.html())?.value
-        val mp4LinkRegex = Regex("""http[^'"\s]+\.mp4""")
-        val mp4Link = mp4LinkRegex.find(doc.html())?.value
+        // val mp4LinkRegex = Regex("""http[^'"\s]+\.mp4""")
+        // val mp4Link = mp4LinkRegex.find(doc.html())?.value
 
         // Get the script content containing the video sources
         // val scriptContent = doc.select("script:containsData(video/mp4)").html()
