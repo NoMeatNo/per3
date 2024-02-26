@@ -86,7 +86,7 @@ class EinthusanProvider : MainAPI() { // all providers must be an instance of Ma
         
 
         // val mp4link = doc.select("video#play_html5_api").attr("src")
-        val mp4link = doc.selectFirst("video#play")?.attr("poster")
+        val mp4link = doc.selectFirst("video#play")?.attr("src")
         // doc.select("video#play").attr("src")
         val m3u8link = doc.select("#UIVideoPlayer").attr("data-hls-link")
 
