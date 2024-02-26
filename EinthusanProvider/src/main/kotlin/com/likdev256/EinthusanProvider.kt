@@ -67,7 +67,7 @@ class EinthusanProvider : MainAPI() { // all providers must be an instance of Ma
         val doc = app.get(url).document
         val title = doc.select("div.col-sm-9 p.m-t-10 strong").text().trim() ?: return null
         val href = fixUrl(mainUrl + doc.select("#UIMovieSummary > ul > li > div.block2 > a.title").attr("href").toString())
-        val poster = doc.select("div.col-md-3.m-t-10 img.img-responsive").attr("src")
+        val poster = fixUrlNull("https:${doc.select("#UIMovieSummary > ul > li > div.block1 > a > img").attr("src")}")
         val tags = doc.select("ul.average-rating > li").map { it.select("label").text() }
         val year =
             doc.selectFirst("div.block2 > div.info > p")?.ownText()?.trim()?.toInt()
@@ -83,8 +83,7 @@ class EinthusanProvider : MainAPI() { // all providers must be an instance of Ma
                     roleString = it.select("div.prof > label").text().toString(),
                 )
             }
-//        val mp4link = doc.select("#UIVideoPlayer").attr("data-mp4-link")
-        val mp4link = doc.select("script:containsData(ipnx/media/movies)").html()?.substringAfter("'https:").substringBefore("'")
+        val mp4link = doc.select("#UIVideoPlayer").attr("data-mp4-link")
         val m3u8link = doc.select("#UIVideoPlayer").attr("data-hls-link")
 
         return newMovieLoadResponse(title, href, TvType.Movie, "$mp4link,$m3u8link") {
