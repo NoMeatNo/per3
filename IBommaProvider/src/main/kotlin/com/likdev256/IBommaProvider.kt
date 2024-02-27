@@ -20,6 +20,8 @@ class IBommaProvider : MainAPI() { // all providers must be an instance of MainA
     override val hasMainPage = true
     override var lang = "fa"
     override val hasDownloadSupport = true
+    override var sequentialMainPage = true
+    override var sequentialMainPageDelay: Long = 100
     override val supportedTypes = setOf(
         TvType.Movie, TvType.TvSeries
     )
@@ -77,11 +79,11 @@ class IBommaProvider : MainAPI() { // all providers must be an instance of MainA
 
     override suspend fun search(query: String): List<SearchResponse>? {
         val fixedQuery = query.replace(" ", "+")
-        val resultTamil = app.get("$mainUrl/search?q=$fixedQuery")
+        val resultFarsi = app.get("$mainUrl/search?q=$fixedQuery")
             .document.select("div.col-md-2.col-sm-3.col-xs-6")
             .mapNotNull { it.toSearchResult() }
 
-        return resultTamil.sortedBy { -FuzzySearch.partialRatio(it.name.replace("(\\()+(.*)+(\\))".toRegex(), "").lowercase(), query.lowercase()) }
+        return resultFarsi.sortedBy { -FuzzySearch.partialRatio(it.name.replace("(\\()+(.*)+(\\))".toRegex(), "").lowercase(), query.lowercase()) }
     }
 //        val searchUrl = app.get(mainUrl).document.select(".mob-search form").attr("action")
 //        fun String.encodeUri() = URLEncoder.encode(this, "utf8")
