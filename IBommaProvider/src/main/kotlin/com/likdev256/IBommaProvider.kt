@@ -106,13 +106,13 @@ class IBommaProvider : MainAPI() { // all providers must be an instance of MainA
         val document = app.get(url).document
         val title = document.selectFirst("div.col-sm-9 p.m-t-10 strong")?.text()?.trim() ?: return null
         val poster = fixUrlNull(document.selectFirst("video#play")?.attr("poster"))
-        val year = document.select(".entry-tags-movies span").text().trim().toIntOrNull()
+ //       val year = document.select(".entry-tags-movies span").text().trim().toIntOrNull()
       //  val tvType =
       //      if (document.select("#eplist").isNullOrEmpty()) TvType.Movie else TvType.TvSeries
       //  val tvType = if (document.select(".col-md-12.col-sm-12:contains(Upcomming Movies)").isNotEmpty()) TvType.TvSeries else TvType.Movie
       //  val tvType = if (document.select(".col-md-12.col-sm-12:has(div.owl-carousel[class^=season_])").isNotEmpty()) TvType.TvSeries else TvType.Movie
         val tvType = if (document.select(".col-md-12.col-sm-12:has(div.owl-carousel)").isNotEmpty()) TvType.TvSeries else TvType.Movie
-        val description = document.select("a.btn-tags").map { it.text() }
+  //      val description = document.select("a.btn-tags").map { it.text() }
        //     document.selectFirst(".additional-info")?.text()?.trim()!!.replace("Synopsis: ", "")
       //  val trailer = fixUrlNull(document.select(".button-trailer a").attr("src"))
         //val rating = document.select("div.gmr-meta-rating > span:nth-child(3)").text().toRatingInt()
@@ -135,11 +135,11 @@ class IBommaProvider : MainAPI() { // all providers must be an instance of MainA
             }
             newTvSeriesLoadResponse(title, url, TvType.TvSeries, episodes) {
                 this.posterUrl = poster
-                this.year = year
-                this.plot = description
-                rating
-                addActors(actors)
-                addTrailer(trailer)
+  //              this.year = year
+ //               this.plot = description
+//                rating
+//                addActors(actors)
+//                addTrailer(trailer)
             }
 
         //    val episodeUrls = getUrls(url) ?: return null
@@ -164,12 +164,12 @@ class IBommaProvider : MainAPI() { // all providers must be an instance of MainA
         } else {
             return newMovieLoadResponse(title, url, TvType.Movie, url) {
                 this.posterUrl = poster
-                this.year = year
-                this.plot = description
+//                this.year = year
+ //               this.plot = description
                 //this.tags = tags
-                rating
-                addActors(actors)
-                addTrailer(trailer)
+//                rating
+//                addActors(actors)
+//                addTrailer(trailer)
             }
         }
     }
