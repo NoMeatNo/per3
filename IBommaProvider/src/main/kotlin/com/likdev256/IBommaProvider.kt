@@ -104,30 +104,35 @@ class IBommaProvider : MainAPI() { // all providers must be an instance of MainA
     override suspend fun load(url: String): LoadResponse? {
 
         val document = app.get(url).document
-        val title = document.selectFirst(".entry-title-movie")?.text()?.trim() ?: return null
-        val poster = fixUrlNull(document.selectFirst(".single-poster img")?.attr("src"))
+        val title = document.selectFirst("div.col-sm-9 p.m-t-10 strong")?.text()?.trim() ?: return null
+        val poster = fixUrlNull(document.selectFirst("video#play")?.attr("poster"))
         val year = document.select(".entry-tags-movies span").text().trim().toIntOrNull()
-        val tvType =
-            if (document.select("#eplist").isNullOrEmpty()) TvType.Movie else TvType.TvSeries
-        val description =
-            document.selectFirst(".additional-info")?.text()?.trim()!!.replace("Synopsis: ", "")
-        val trailer = fixUrlNull(document.select(".button-trailer a").attr("src"))
+      //  val tvType =
+      //      if (document.select("#eplist").isNullOrEmpty()) TvType.Movie else TvType.TvSeries
+      //  val tvType = if (document.select(".col-md-12.col-sm-12:contains(Upcomming Movies)").isNotEmpty()) TvType.TvSeries else TvType.Movie
+      //  val tvType = if (document.select(".col-md-12.col-sm-12:has(div.owl-carousel[class^=season_])").isNotEmpty()) TvType.TvSeries else TvType.Movie
+        val tvType = if (document.select(".col-md-12.col-sm-12:has(div.owl-carousel)").isNotEmpty()) TvType.TvSeries else TvType.Movie
+        val description = document.select("a.btn-tags").map { it.text() }
+       //     document.selectFirst(".additional-info")?.text()?.trim()!!.replace("Synopsis: ", "")
+      //  val trailer = fixUrlNull(document.select(".button-trailer a").attr("src"))
         //val rating = document.select("div.gmr-meta-rating > span:nth-child(3)").text().toRatingInt()
-        val actors =
-            document.select("div.clearfix.content-moviedata > div:nth-child(7) a").map { it.text() }
+      //  val actors =
+      //      document.select("div.clearfix.content-moviedata > div:nth-child(7) a").map { it.text() }
 
+        val seasonNumber = document.select(".owl-carousel[class^=season_]").attr("class")
+            .replace("owl-carousel season_", "")
+            .trim()
         return if (tvType == TvType.TvSeries) {
-            val episodeUrls = getUrls(url) ?: return null
-            val episodes = document.select("#eplist tr").mapNotNull { res ->
-                val name = res.select("b").text().trim()
-                //val season = name.substringAfter("S").substringBefore(' ').toInt()
-                val episode = res.select("button").text().filter { it.isDigit() }.toInt()
-                val href = episodeUrls[episode]
-                Episode(
-                    data = href, name = name, episode = episode
-                )
+            val episodes = document.select(".owl-carousel.season_$seasonNumber .item").mapNotNull { item ->
+                val name = item.select(".figure figcaption").text().trim()
+                val episode = item.select(".figure figcaption").text().filter { it.isDigit() }.toIntOrNull()
+                val href = fixUrlNull(item.select("a").attr("href"))
+                if (episode != null && href != null) {
+                    Episode(data = href, name = name, episode = episode)
+                } else {
+                    null
+                }
             }
-
             newTvSeriesLoadResponse(title, url, TvType.TvSeries, episodes) {
                 this.posterUrl = poster
                 this.year = year
@@ -136,6 +141,26 @@ class IBommaProvider : MainAPI() { // all providers must be an instance of MainA
                 addActors(actors)
                 addTrailer(trailer)
             }
+
+        //    val episodeUrls = getUrls(url) ?: return null
+        //    val episodes = document.select("#eplist tr").mapNotNull { res ->
+        //        val name = res.select("b").text().trim()
+                //val season = name.substringAfter("S").substringBefore(' ').toInt()
+        //        val episode = res.select("button").text().filter { it.isDigit() }.toInt()
+          //      val href = episodeUrls[episode]
+           //     Episode(
+            //        data = href, name = name, episode = episode
+           //     )
+          //  }
+
+//            newTvSeriesLoadResponse(title, url, TvType.TvSeries, episodes) {
+//                this.posterUrl = poster
+//                this.year = year
+//                this.plot = description
+//                rating
+//                addActors(actors)
+//                addTrailer(trailer)
+//            }
         } else {
             return newMovieLoadResponse(title, url, TvType.Movie, url) {
                 this.posterUrl = poster
