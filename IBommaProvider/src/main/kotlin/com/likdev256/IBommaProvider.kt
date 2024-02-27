@@ -71,21 +71,28 @@ class IBommaProvider : MainAPI() { // all providers must be an instance of MainA
     }
 
     override suspend fun search(query: String): List<SearchResponse>? {
-        val searchUrl = app.get(mainUrl).document.select(".mob-search form").attr("action")
-        fun String.encodeUri() = URLEncoder.encode(this, "utf8")
-        val document = app.get("$searchUrl?label=telugu&q=${query.encodeUri()}").document
-        val scriptData = document.select("script").find { it.data().contains("data=") }?.data()
-            ?.substringAfter("data= ")?.substringBefore("</script>") ?: return null
-        val response = parseJson<Response>(scriptData)
-        return response.hits?.hitslist?.map {
-            val title = it.source?.title?.substringBefore("Movie") ?: return null
-            val posterUrl = it.source?.imageLink ?: return null
-            val href = it.source?.location ?: return null
-            newMovieSearchResponse(title, href, TvType.Movie) {
-                this.posterUrl = posterUrl
-            }
-        }
+        val fixedQuery = query.replace(" ", "+")
+        val resultTamil = app.get("$mainUrl/search?q=$fixedQuery")
+            .document.select("div.col-md-2.col-sm-3.col-xs-6")
+            .mapNotNull { it.toSearchResult() }
+
+        return resultTamil.sortedBy { -FuzzySearch.partialRatio(it.name.replace("(\\()+(.*)+(\\))".toRegex(), "").lowercase(), query.lowercase()) }
     }
+//        val searchUrl = app.get(mainUrl).document.select(".mob-search form").attr("action")
+//        fun String.encodeUri() = URLEncoder.encode(this, "utf8")
+//        val document = app.get("$searchUrl?label=telugu&q=${query.encodeUri()}").document
+//        val scriptData = document.select("script").find { it.data().contains("data=") }?.data()
+//            ?.substringAfter("data= ")?.substringBefore("</script>") ?: return null
+//        val response = parseJson<Response>(scriptData)
+//        return response.hits?.hitslist?.map {
+//            val title = it.source?.title?.substringBefore("Movie") ?: return null
+//            val posterUrl = it.source?.imageLink ?: return null
+//            val href = it.source?.location ?: return null
+//            newMovieSearchResponse(title, href, TvType.Movie) {
+ //               this.posterUrl = posterUrl
+//            }
+//        }
+//    }
 
     override suspend fun load(url: String): LoadResponse? {
 
