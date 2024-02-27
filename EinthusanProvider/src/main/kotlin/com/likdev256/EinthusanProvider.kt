@@ -85,57 +85,10 @@ class EinthusanProvider : MainAPI() { // all providers must be an instance of Ma
             }
         
 
-        // val mp4link = doc.select("video#play_html5_api").attr("src")
-        // Extracting the script content
-        // val scriptContent = doc.select("script").first().data()
- // Using JSoup-Extractor to extract the MP4 link
-        // val mp4link = JsoupExtractor.extract(scriptContent).get("src").asString()
- // val mp4link = doc.selectFirst("video#play")?.attr("src")
-        // doc.select("video#play").attr("src")
-        // Extracting the script content
-        // val scriptContent = doc.selectFirst("script:containsData('video/mp4')")?.data() ?: ""
- // Using regex to extract the MP4 link
-        // val mp4linkRegex = Regex("'src': '(.*?)'")
-        // val matchResult = mp4linkRegex.find(scriptContent)
- // Extracting the MP4 link from the match result
-        // val mp4link = matchResult?.groupValues?.get(1)
-        // val scripts = doc.select("script")
-        // var mp4link: String? = null
-        // for (script in scripts) {
-        //    val data = script.data()
-        //    if (data.contains("'sources': [")) {
-        //        mp4link = Regex("'src': '(.*?)'").find(data)?.groupValues?.get(1)
-        //        break
-        //    }
-        // }
-        // val mp4link = doc.selectFirst("video#play")?.attr("poster")
-        val scriptContent = doc.selectFirst("script:containsData('video/mp4')")?.data()
-        // val mp4linkRegex = Regex("'src': '([^']+)'")
-        // val mp4linkRegex = Regex("""{ src: '([^']+)'""")
-        // val mp4linkRegex = Regex("""\{(?:\s*"src":\s*"([^"]+)",\s*|"sources":\s*\[\s*{[^}]+}\s*\]\s*)+}""")
-        // val mp4linkRegex = Regex("'src':\\s*'([^']+)'")
-        // val mp4linkRegex = Regex("http[^'\"\\s]+\\.mp4")
-        val mp4linkRegex = Regex("http.*mp4")
-        val matchResult = mp4linkRegex.find(scriptContent ?: "")
-        val mp4link = matchResult?.groupValues?.get(1)
-// doc.selectFirst("script:containsData('sources: [')")?.data()?.let { Regex("'src': '(.*?)'").find(it)?.groupValues?.get(1) }
-        // val scriptContent = doc.select("script:containsData(video/mp4)").html()
-        // val mp4Regex = Regex("""'src': '(.*?)'""")
-        // val mp4Match = mp4Regex.find(scriptContent)
-        // val mp4link = mp4Match?.groupValues?.get(1)
-        // val mp4LinkRegex = Regex("""http.*?\.mp4""")
-        // val mp4Link = mp4LinkRegex.find(doc.html())?.value
-        // val mp4LinkRegex = Regex("""http[^'"\s]+\.mp4""")
-        // val mp4Link = mp4LinkRegex.find(doc.html())?.value
-
-        // Get the script content containing the video sources
-        // val scriptContent = doc.select("script:containsData(video/mp4)").html()
-        // Define a regex pattern to match the src attribute within the sources array
-        // val mp4Regex = Regex("""{ src: '([^']+)'.*type: 'video/mp4' }""")
-        // Find the first match of the regex pattern in the script content
-        // val mp4Match = mp4Regex.find(scriptContent)
-        // Extract the MP4 link from the regex match
-        // val mp4link = mp4Match?.groupValues?.get(1)
+        val scriptContent = doc.selectFirst("script:containsData('video/mp4')")?.data() ?: ""
+        val mp4LinkRegex = Regex("""src: '(https?://[^']+\.mp4)'""")
+        val matchResult = mp4LinkRegex.find(scriptContent)
+        val mp4Link = matchResult?.groupValues?.get(1)
         val m3u8link = doc.select("#UIVideoPlayer").attr("data-hls-link")
 
         return newMovieLoadResponse(title, href, TvType.Movie, "$mp4link,$m3u8link") {
