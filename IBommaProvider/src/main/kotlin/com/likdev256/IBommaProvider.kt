@@ -119,13 +119,14 @@ class IBommaProvider : MainAPI() { // all providers must be an instance of MainA
       //  val actors =
       //      document.select("div.clearfix.content-moviedata > div:nth-child(7) a").map { it.text() }
 
-        val seasonNumber = document.select(".owl-carousel[class^=season_]").attr("class")
+        val seasonNumber = document.select(".col-md-12.col-sm-12:has(.owl-carousel) .owl-carousel").attr("class")
             .replace("owl-carousel season_", "")
             .trim()
         return if (tvType == TvType.TvSeries) {
             val episodes = document.select(".owl-carousel.season_$seasonNumber .item").mapNotNull { item ->
-                val name = item.select(".figure figcaption").text().trim()
-                val episode = item.select(".figure figcaption").text().filter { it.isDigit() }.toIntOrNull()
+                val figcaption = item.select(".figure figcaption").text().trim()
+                val name = figcaption
+                val episode = figcaption.filter { it.isDigit() }.toIntOrNull()
                 val href = fixUrlNull(item.select("a").attr("href"))
                 if (episode != null && href != null) {
                     Episode(data = href, name = name, episode = episode)
