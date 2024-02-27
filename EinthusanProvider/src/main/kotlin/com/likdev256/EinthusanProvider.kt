@@ -87,8 +87,8 @@ class EinthusanProvider : MainAPI() { // all providers must be an instance of Ma
 
         val scriptContent = doc.selectFirst("script:containsData('video/mp4')")?.data() ?: ""
         val mp4LinkRegex = Regex("""src: '(https?://[^']+\.mp4)'""")
-        val matchResult = mp4LinkRegex.find(scriptContent)
-        val mp4Link = matchResult?.groupValues?.get(1)
+        val matchResult = mp4LinkRegex.find(scriptContent ?: "")
+        val mp4link = matchResult?.groupValues?.get(1)
         val m3u8link = doc.select("#UIVideoPlayer").attr("data-hls-link")
 
         return newMovieLoadResponse(title, href, TvType.Movie, "$mp4link,$m3u8link") {
