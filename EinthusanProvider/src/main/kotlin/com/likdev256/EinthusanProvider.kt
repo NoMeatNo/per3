@@ -34,7 +34,13 @@ class EinthusanProvider : MainAPI() { // all providers must be an instance of Ma
         page: Int, 
         request: MainPageRequest
     ): HomePageResponse {
-        val link = "$mainUrl/saff1"
+        val link = when (request.name) {
+            "Movies" -> "$mainUrl/fill1.html"
+            "TV Shows" -> "$mainUrl/sell1.html"
+            "Live TVs" -> "$mainUrl/live-tv.html"
+            else -> throw IllegalArgumentException("Invalid section name: ${request.name}")
+        }
+        // val link = "$mainUrl/saff1"
         val document = app.get(link).document
         val home = document.select("div.col-md-2.col-sm-3.col-xs-6").mapNotNull {
             it.toSearchResult()
