@@ -25,9 +25,9 @@ class EinthusanProvider : MainAPI() { // all providers must be an instance of Ma
     )
 
     override val mainPage = mainPageOf(
-        "/fill1.html" to "Movies",
-        "/sell1.html" to "TV Shows",
-        "/live-tv.html" to "Live TVs",        
+        "$mainUrl/fill1.html" to "Movies",
+        "$mainUrl/sell1.html" to "TV Shows",
+        "$mainUrl/live-tv.html" to "Live TVs",        
     )
 
     override suspend fun getMainPage(
