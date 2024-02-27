@@ -10,13 +10,19 @@ import org.jsoup.nodes.Element
 import java.net.URLEncoder
 
 class IBommaProvider : MainAPI() { // all providers must be an instance of MainAPI
-    override var mainUrl = "https://ww2.ibomma.cx/telugu-movies"
-    override var name = "IBomma"
+    override var mainUrl = "https://www.radiovatani.com"
+    override var name = "Persian World 2"
     override val hasMainPage = true
-    override var lang = "te"
+    override var lang = "fa"
     override val hasDownloadSupport = true
     override val supportedTypes = setOf(
         TvType.Movie, TvType.TvSeries
+    )
+
+    override val mainPage = mainPageOf(
+        "$mainUrl/fill1.html" to "Movies",
+        "$mainUrl/sell1.html" to "TV Shows",
+        "$mainUrl/live-tv.html" to "Live TVs",        
     )
 
     //pages
@@ -26,26 +32,39 @@ class IBommaProvider : MainAPI() { // all providers must be an instance of MainA
     //"#content > article:gt(11)" //addon
 
     override suspend fun getMainPage(
-        page: Int, request: MainPageRequest
+        page: Int, 
+        request: MainPageRequest
     ): HomePageResponse {
-        val document = app.get(mainUrl).document
-        val pageSelectors = listOf(
-            Pair("Latest", "#content > div > article"),
-            Pair("Movies", "#content > article:nth-child(-n+13)"),
-        )
-        val pages = pageSelectors.apmap { (title, selector) ->
-            val list = document.select(selector).mapNotNull {
-                    it.toSearchResult()
-                }
-            HomePageList(title, list)
+        val link = when (request.name) {
+            "Movies" -> "$mainUrl/fill1.html"
+            "TV Shows" -> "$mainUrl/sell1.html"
+            "Live TVs" -> "$mainUrl/live-tv.html"
+            else -> throw IllegalArgumentException("Invalid section name: ${request.name}")
         }
-        return HomePageResponse(pages)
+       // val link = "$mainUrl/saff1"
+        val document = app.get(link).document
+        val home = document.select("div.col-md-2.col-sm-3.col-xs-6").mapNotNull {
+            it.toSearchResult()
+        }
+        return newHomePageResponse(request.name, home)
     }
+      //  val pageSelectors = listOf(
+      //      Pair("Latest", "#content > div > article"),
+      //      Pair("Movies", "#content > article:nth-child(-n+13)"),
+      //  )
+      //  val pages = pageSelectors.apmap { (title, selector) ->
+      //      val list = document.select(selector).mapNotNull {
+      //              it.toSearchResult()
+      //          }
+      //      HomePageList(title, list)
+      //  }
+      //  return HomePageResponse(pages)
+  //  }
 
     private fun Element.toSearchResult(): SearchResponse? {
-        val title = this.selectFirst("a")?.text()?.trim() ?: return null
-        val href = fixUrl(this.selectFirst("a")?.attr("href").toString())
-        val posterUrl = fixUrlNull(this.selectFirst("img")?.attr("src"))
+        val title = this.selectFirst("div.movie-title h3 a")?.text()?.trim() ?: return null
+        val href = fixUrl(this.selectFirst("div.movie-title h3 a")?.attr("href").toString())
+        val posterUrl = fixUrlNull(this.selectFirst("div.latest-movie-img-container")?.attr("data-src")?.trim())
         return newMovieSearchResponse(title, href, TvType.Movie) {
             this.posterUrl = posterUrl
         }
