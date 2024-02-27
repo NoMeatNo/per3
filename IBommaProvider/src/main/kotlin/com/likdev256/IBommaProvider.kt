@@ -132,11 +132,18 @@ class IBommaProvider : MainAPI() { // all providers must be an instance of MainA
            // val episodes = document.select(".owl-carousel.season_$seasonNumber .item").mapNotNull { item ->
             val episodes = seasonNumbers.flatMap { seasonNumber ->
                 document.select(".owl-carousel.season_$seasonNumber .item").mapNotNull { item ->
+                    val seasonName = "Season $seasonNumber"
                     val figcaption = item.select(".figure figcaption").text().trim()
-                    val name = figcaption
                     val episode = figcaption.filter { it.isDigit() }.toIntOrNull()
+                 //   val name = "${item.select(".figure figcaption").text().trim()} - $seasonName"
+                   // val name = figcaption
+                    val name = if (episode != null) {
+                        "${figcaption} - $seasonName"
+                    } else {
+                        figcaption
+                    }
                     val href = fixUrlNull(item.select("a").attr("href"))
-                    if (episode != null && href != null) {
+                    if (href != null) {
                         Episode(data = href, name = name, episode = episode)
                     } else {
                         null
