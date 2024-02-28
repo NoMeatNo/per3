@@ -75,7 +75,7 @@ class IBommaProvider : MainAPI() { // all providers must be an instance of MainA
         val tvType = if (document.select(".col-md-12.col-sm-12:has(div.owl-carousel)").isNotEmpty()) TvType.TvSeries else TvType.Movie
          return if (tvType == TvType.TvSeries) {
              val episodes = ArrayList<Episode>()
-             val seasons = doc.select("div.row:has(.owl-carousel) .owl-carousel")
+             val seasons = document.select("div.row:has(.owl-carousel) .owl-carousel")
              seasons.forEach { season ->
                  val seasonNumberText = season.previousElementSibling().select("span:contains(Season)").text().removePrefix("Season").trim()
                  val seasonNumber = seasonNumberText.toIntOrNull() ?: 1
