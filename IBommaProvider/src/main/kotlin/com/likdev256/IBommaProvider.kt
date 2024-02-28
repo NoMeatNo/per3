@@ -197,30 +197,19 @@ class IBommaProvider : MainAPI() { // all providers must be an instance of MainA
         subtitleCallback: (SubtitleFile) -> Unit,
         callback: (ExtractorLink) -> Unit
     ): Boolean {
-
-        val urls: List<String> = if (data.startsWith(mainUrl.substringBeforeLast("/"))) {
-            app.get(data).document.selectFirst("#main > script:nth-child(6)")?.data()
-                ?.substringAfter("const urls = [")?.substringBefore("]")?.trim()
-                ?.replace(",'',", "")?.split(",")?.map { it -> it.trim() } ?: return false
-        } else {
-            listOf(data)
-        }
-        urls.forEach { url ->
-            val domainUrl = url.substringAfter("'").substringBefore("/player")
-            val document = app.get(
-                url = url.replace("'", ""), referer = mainUrl.substringBeforeLast("/")
-            ).document
-            document.select("body script").mapNotNull {
-                val srcRegex = Regex("""(file:")(https?.*?\.mp4)""")
-                val source =
-                    srcRegex.find(it.select("script").toString())?.groupValues?.getOrNull(2)
-                        ?.toString()
+        data.split(",").forEach { url ->
+            val document = app.get(url.trim()).document
+            val scriptContent = document.selectFirst("script:containsData('video/mp4')")?.data() ?: ""
+            val mp4LinkRegex = Regex("""src: '(https?://[^']+\.mp4)'""")
+            val matchResults = mp4LinkRegex.findAll(scriptContent)
+        matchResults.forEach { matchResult ->
+                val mp4Link = matchResult.groupValues[1]
                 callback.invoke(
                     ExtractorLink(
                         this.name,
                         this.name,
-                        source.toString(),
-                        referer = domainUrl,
+                        mp4Link,
+                        referer = url.trim(),
                         quality = Qualities.Unknown.value,
                     )
                 )
@@ -228,7 +217,7 @@ class IBommaProvider : MainAPI() { // all providers must be an instance of MainA
         }
         return true
     }
-
+        
     private suspend fun getUrls(url: String): List<String>? {
 
         return app.get(url).document.selectFirst("#ib-4-f > script:nth-child(4)")?.data()
