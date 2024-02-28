@@ -73,36 +73,60 @@ class IBommaProvider : MainAPI() { // all providers must be an instance of MainA
         val title = document.selectFirst("div.col-sm-9 p.m-t-10 strong")?.text()?.trim() ?: return null
         val poster = fixUrlNull(document.selectFirst("video#play")?.attr("poster"))
         val tvType = if (document.select(".col-md-12.col-sm-12:has(div.owl-carousel)").isNotEmpty()) TvType.TvSeries else TvType.Movie
- 
-        val seasonNumbers = document.select(".col-md-12.col-sm-12:has(.owl-carousel) .owl-carousel").map { carousel ->
-            val seasonNumber = carousel.attr("class")
-                .replace("owl-carousel season_", "")
-                .trim()
-            seasonNumber
-        }
          return if (tvType == TvType.TvSeries) {
-            val episodes = seasonNumbers.flatMap { seasonNumber ->
-                document.select(".owl-carousel.season_$seasonNumber .item").mapNotNull { item ->
-                    val seasonName = "Season $seasonNumber"
-                    val figcaption = item.select(".figure figcaption").text().trim()
-                    val episode = figcaption.filter { it.isDigit() }.toIntOrNull()
-                    val name = if (episode != null) {
-                        "${figcaption} - $seasonName"
-                    } else {
-                        figcaption
-                    }
-                    val season = document.select(".movie-heading span").text().trim().removePrefix("Season ").toIntOrNull() ?: 1
-                    val href = fixUrlNull(item.select("a").attr("href"))
-                    if (href != null) {
-                        Episode(data = href, name = name, season = season, episode = episode)
-                    } else {
-                        null
-                    }
+             val episodes = ArrayList<Episode>()
+             val seasons = doc.select("div.row:has(.owl-carousel) .owl-carousel")
+             seasons.forEach { season ->
+                 val seasonNumber = season.previousElementSibling().select("span:contains(Season)").text().removePrefix("Season").trim().toIntOrNull() ?: 1
+                 season.select(".item").forEachIndexed { index, episodeElement ->
+                     val episodeLink = episodeElement.select("a")
+                     val episodeUrl = episodeLink.attr("href")
+                     val episodeTitle = episodeLink.select(".figure-caption").text()
+                     val episodeIndex = episodeTitle.filter { it.isDigit() }.toIntOrNull()
+
+                     episodes.add(
+                         Episode(
+                             episodeUrl,
+                             episodeTitle,
+                             seasonNumber,
+                             episodeIndex
+                         )
+                    )
                 }
             }
-            newTvSeriesLoadResponse(title, url, TvType.TvSeries, episodes) {
+             
+            val distinctEpisodes = episodes.distinct().sortedBy { it.episode }
+            newTvSeriesLoadResponse(title, url, TvType.TvSeries, distinctEpisodes) {
                 this.posterUrl = poster
+       //         this.plot = synopsis
+       //         this.tags = tags
+       //         this.actors = actors
+       //         this.rating = rating
             }
+
+             
+//             val episodes = seasonNumbers.flatMap { seasonNumber ->
+//                document.select(".owl-carousel.season_$seasonNumber .item").mapNotNull { item ->
+//                    val seasonName = "Season $seasonNumber"
+//                    val figcaption = item.select(".figure figcaption").text().trim()
+//                    val episode = figcaption.filter { it.isDigit() }.toIntOrNull()
+//                    val name = if (episode != null) {
+//                        "${figcaption} - $seasonName"
+//                    } else {
+//                        figcaption
+//                    }
+//                    val season = document.select(".movie-heading span").text().trim().removePrefix("Season ").toIntOrNull() ?: 1
+//                    val href = fixUrlNull(item.select("a").attr("href"))
+//                    if (href != null) {
+//                        Episode(data = href, name = name, season = season, episode = episode)
+//                    } else {
+//                        null
+//                    }
+//               }
+//            }
+//            newTvSeriesLoadResponse(title, url, TvType.TvSeries, episodes) {
+//                this.posterUrl = poster
+//            }
 
         } else {
             return newMovieLoadResponse(title, url, TvType.Movie, url) {
