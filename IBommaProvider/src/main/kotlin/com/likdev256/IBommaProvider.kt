@@ -109,31 +109,32 @@ class IBommaProvider : MainAPI() { // all providers must be an instance of MainA
     }
 
     override suspend fun loadLinks(
-        data: String,
-        isCasting: Boolean,
-        subtitleCallback: (SubtitleFile) -> Unit,
-        callback: (ExtractorLink) -> Unit
-    ): Boolean {
-        data.split(",").forEach { url ->
-            val document = app.get(url.trim()).document
-            val scriptContent = document.selectFirst("script:containsData('video/mp4')")?.data() ?: ""
-            val mp4LinkRegex = Regex("""src: '(https?://[^']+\.mp4)'""")
-            val matchResults = mp4LinkRegex.findAll(scriptContent)
-        matchResults.forEach { matchResult ->
-                val mp4Link = matchResult.groupValues[1]
-                callback.invoke(
-                    ExtractorLink(
-                        this.name,
-                        this.name,
-                        mp4Link,
-                        referer = url.trim(),
-                        quality = Qualities.Unknown.value,
-                    )
-                )
-            }
-        }
-        return true
+    data: String,
+    isCasting: Boolean,
+    subtitleCallback: (SubtitleFile) -> Unit,
+    callback: (ExtractorLink) -> Unit
+): Boolean {
+    val document = app.get(data).document
+    val scriptContent = document.selectFirst("script:containsData('video/mp4')")?.data() ?: ""
+
+    val mp4LinkRegex = Regex("""src: '(https?://[^']+\.mp4)'""")
+    val matchResults = mp4LinkRegex.findAll(scriptContent)
+
+    matchResults.forEach { matchResult ->
+        val mp4Link = matchResult.groupValues[1]
+        callback.invoke(
+            ExtractorLink(
+                this.name,
+                this.name,
+                mp4Link,
+                referer = data.trim(),
+                quality = Qualities.Unknown.value,
+            )
+        )
     }
+
+    return true
+}
         
     private suspend fun getUrls(url: String): List<String>? {
 
