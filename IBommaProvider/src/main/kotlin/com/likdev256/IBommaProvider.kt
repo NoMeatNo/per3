@@ -69,7 +69,6 @@ class IBommaProvider : MainAPI() { // all providers must be an instance of MainA
     }
 
     override suspend fun load(url: String): LoadResponse? {
-
         val document = app.get(url).document
         val title = document.selectFirst("div.col-sm-9 p.m-t-10 strong")?.text()?.trim() ?: return null
         val poster = fixUrlNull(document.selectFirst("video#play")?.attr("poster"))
@@ -82,9 +81,6 @@ class IBommaProvider : MainAPI() { // all providers must be an instance of MainA
             seasonBlocks.forEach { seasonBlock ->
                 val seasonNumberText = seasonBlock.select(".movie-heading span").text()
                 val seasonNumber = seasonNumberText.removePrefix("Season").trim().toIntOrNull() ?: 1
-
-                // Assuming the episodes directly follow the season block in the next "row" div.
-                // Adjust the selector if necessary to correctly target the episodes container.
                 val episodeItems = seasonBlock.nextElementSibling().select(".owl-carousel .item")
 
                 episodeItems.forEach { item ->
@@ -96,13 +92,7 @@ class IBommaProvider : MainAPI() { // all providers must be an instance of MainA
                     episodes.add(Episode(href, name, seasonNumber, episodeNumber))
                 }
             }
-            Episode(
-                href,
-                name,
-                season,
-                episode
-            )
-            
+        
             newTvSeriesLoadResponse(title, url, TvType.TvSeries, episodes) {
                 this.posterUrl = poster
             }
@@ -113,7 +103,7 @@ class IBommaProvider : MainAPI() { // all providers must be an instance of MainA
         }
     }
 
-
+    
     override suspend fun loadLinks(
         data: String,
         isCasting: Boolean,
