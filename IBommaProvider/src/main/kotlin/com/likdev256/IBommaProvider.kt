@@ -76,8 +76,8 @@ class IBommaProvider : MainAPI() { // all providers must be an instance of MainA
         val tvType = if (document.select(".col-md-12.col-sm-12:has(div.owl-carousel)").isNotEmpty()) TvType.TvSeries else TvType.Movie
 
         return if (tvType == TvType.TvSeries) {
-            val episodes = document.select(".owl-carousel .item").mapNotNull {
-                val figcaption = it.select(".figure figcaption").text().trim()
+            val episodes = document.select(".owl-carousel .item").mapNotNull { item ->
+                val figcaption = item.select(".figure figcaption").text().trim()
                 val episode = figcaption.filter { it.isDigit() }.toIntOrNull()
                 val seasonNumberElement = item.parents().select(".movie-heading span").firstOrNull()
                 val season = seasonNumberElement?.text()?.removePrefix("Season")?.trim()?.toIntOrNull()
@@ -85,7 +85,7 @@ class IBommaProvider : MainAPI() { // all providers must be an instance of MainA
       
                 val name = "$figcaption - $seasonInfo"
                 
-                val href = fixUrl(it.select("a").attr("href")?: return@mapNotNull null)
+                val href = fixUrl(item.select("a").attr("href")?: return@mapNotNull null)
                 Episode(
                     href,
                     name,
