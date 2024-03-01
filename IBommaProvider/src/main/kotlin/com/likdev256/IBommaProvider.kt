@@ -91,13 +91,9 @@ class IBommaProvider : MainAPI() { // all providers must be an instance of MainA
                     } else {
                         figcaption
                     }
-                    val season = document.select(".movie-heading span").text().trim().removePrefix("Season ").toIntOrNull() ?: 1
+                    val season = document.select(".movie-heading span").toInt() 
                     val href = fixUrlNull(item.select("a").attr("href"))
-                    if (href != null) {
-                        Episode(data = href, name = name, season = season, episode = episode)
-                    } else {
-                        null
-                    }
+                    Episode(data = href, name = name, season = season, episode = episode)
                 }
             }
             newTvSeriesLoadResponse(title, url, TvType.TvSeries, episodes) {
