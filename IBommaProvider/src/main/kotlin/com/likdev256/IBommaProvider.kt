@@ -69,27 +69,26 @@ class IBommaProvider : MainAPI() { // all providers must be an instance of MainA
     }
 
     override suspend fun load(url: String): LoadResponse? {
-        val document = app.get(url).document
+    //    val document = app.get(url).document
+        val document = Jsoup.connect(url).get()
         val title = document.selectFirst("div.col-sm-9 p.m-t-10 strong")?.text()?.trim() ?: return null
         val poster = fixUrlNull(document.selectFirst("video#play")?.attr("poster"))
         val tvType = if (document.select(".col-md-12.col-sm-12:has(div.owl-carousel)").isNotEmpty()) TvType.TvSeries else TvType.Movie
 
         return if (tvType == TvType.TvSeries) {
-            var currentSeason = 1 // Default to season 1 if not specified
-            val episodes = document.select(".owl-carousel .item").mapNotNull { item ->
-            // Attempt to find a season declaration nearby
-                item.previousElementSiblings().select(".movie-heading span").firstOrNull()?.text()?.removePrefix("Season")?.trim()?.toIntOrNull()?.let {
-                    currentSeason = it
+            val episodes = mutableListOf<Episode>()
+            val seasonBlocks = document.select("div.row:has(.movie-heading span)")
+            seasonBlocks.forEach { seasonBlock ->
+                val seasonNumber = seasonBlock.select(".movie-heading span").text().removePrefix("Season ").trim().toIntOrNull() ?: 0
+                val episodeItems = seasonBlock.nextElementSibling().select(".item")
+                episodeItems.forEach { item ->
+                    val figcaption = item.select(".figure-caption").text().trim()
+                    val episodeNumber = figcaption.filter { it.isDigit() }.toIntOrNull() ?: 0
+                    val name = figcaption
+                    val href = item.select("a").attr("href")
+                    episodes.add(Episode(href, name, seasonNumber, episodeNumber))
                 }
-            
-                val figcaption = item.select(".figure figcaption").text().trim()
-                val episodeNumber = figcaption.filter { it.isDigit() }.toIntOrNull()
-                val episodeName = figcaption
-                val episodeHref = fixUrl(item.select("a").attr("href") ?: return@mapNotNull null)
-            
-                Episode(episodeHref, episodeName, currentSeason, episodeNumber)
             }
-
             newTvSeriesLoadResponse(title, url, TvType.TvSeries, episodes) {
                 this.posterUrl = poster
             }
