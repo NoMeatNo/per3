@@ -75,21 +75,21 @@ class IBommaProvider : MainAPI() { // all providers must be an instance of MainA
         val tvType = if (document.select(".col-md-12.col-sm-12:has(div.owl-carousel)").isNotEmpty()) TvType.TvSeries else TvType.Movie
 
         return if (tvType == TvType.TvSeries) {
-            var season = 1 // Default to season 1 if not specified
-            val episodes = document.select(".owl-carousel .item").mapNotNull { item ->
-            // Attempt to find a season declaration nearby
+            val episodes = mutableListOf<Episode>()
+            var currentSeason = 1 // Default to season 1 if not specified+
+
+            document.select(".owl-carousel .item").forEach { item ->
+                // Attempt to find a season declaration nearby
                 item.previousElementSiblings().select(".movie-heading span").firstOrNull()?.text()?.removePrefix("Season")?.trim()?.toIntOrNull()?.let {
-                    season = it
+                    currentSeason = it
                 }
-            
                 val figcaption = item.select(".figure figcaption").text().trim()
                 val episode = figcaption.filter { it.isDigit() }.toIntOrNull()
                 val name = figcaption
                 val href = fixUrl(item.select("a").attr("href") ?: return@forEach null)
-            
-                Episode(href, name, season, episode)
-            }
 
+                episodes.add(Episode(href, name, currentSeason, episode))
+            }
             newTvSeriesLoadResponse(title, url, TvType.TvSeries, episodes) {
                 this.posterUrl = poster
             }
