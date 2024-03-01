@@ -81,14 +81,15 @@ class IBommaProvider : MainAPI() { // all providers must be an instance of MainA
                 val episode = figcaption.filter { it.isDigit() }.toIntOrNull()
                 val name = figcaption
                 val seasonNumberElement = item.closest(".row")?.select(".movie-heading span")
-                val seasonNumber = seasonNumberElement?.text()?.removePrefix("Season")?.trim()?.toIntOrNull() ?: 1
+                val season = seasonNumberElement?.text()?.removePrefix("Season")?.trim()?.toIntOrNull() ?: 1
             //    val seasonNumber = item.closest(".row").select(".movie-heading span").text().removePrefix("Season").trim().toIntOrNull() ?: 1
-                val href = fixUrlNull(item.select("a").attr("href"))
-                if (href != null) {
-                    Episode(data = href, name = name, season = seasonNumber, episode = episode)
-                } else {
-                    null
-                }
+                val href = fixUrl(it.select("a").attr("href")?: return null)
+                Episode(
+                    href,
+                    name,
+                    season,
+                    episode
+                )
             }
             newTvSeriesLoadResponse(title, url, TvType.TvSeries, episodes) {
                 this.posterUrl = poster
