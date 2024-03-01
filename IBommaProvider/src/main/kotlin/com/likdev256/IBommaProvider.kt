@@ -75,24 +75,21 @@ class IBommaProvider : MainAPI() { // all providers must be an instance of MainA
         val tvType = if (document.select(".col-md-12.col-sm-12:has(div.owl-carousel)").isNotEmpty()) TvType.TvSeries else TvType.Movie
 
         return if (tvType == TvType.TvSeries) {
-            val episodes = mutableListOf<Episode>()
-            val seasonBlocks = document.select("div.row:has(.movie-heading span)")
-
-            seasonBlocks.forEach { seasonBlock ->
-                val seasonNumberText = seasonBlock.select(".movie-heading span").text()
-                val seasonNumber = seasonNumberText.removePrefix("Season").trim().toIntOrNull() ?: 1
-                val episodeItems = seasonBlock.nextElementSibling().select(".owl-carousel .item")
-
-                episodeItems.forEach { item ->
-                    val figcaption = item.select(".figure-caption").text().trim()
-                    val episodeNumber = figcaption.filter { it.isDigit() }.toIntOrNull()
-                    val name = figcaption
-                    val href = fixUrl(item.select("a").attr("href") ?: return@forEach)
-
-                    episodes.add(Episode(href, name, seasonNumber, episodeNumber))
+            var season = 1 // Default to season 1 if not specified
+            val episodes = document.select(".owl-carousel .item").mapNotNull { item ->
+            // Attempt to find a season declaration nearby
+                item.previousElementSiblings().select(".movie-heading span").firstOrNull()?.text()?.removePrefix("Season")?.trim()?.toIntOrNull()?.let {
+                    season = it
                 }
+            
+                val figcaption = item.select(".figure figcaption").text().trim()
+                val episode = figcaption.filter { it.isDigit() }.toIntOrNull()
+                val name = figcaption
+                val href = fixUrl(item.select("a").attr("href") ?: return@mapNotNull null)
+            
+                Episode(href, name, season, episode)
             }
-        
+
             newTvSeriesLoadResponse(title, url, TvType.TvSeries, episodes) {
                 this.posterUrl = poster
             }
@@ -103,7 +100,6 @@ class IBommaProvider : MainAPI() { // all providers must be an instance of MainA
         }
     }
 
-    
     override suspend fun loadLinks(
         data: String,
         isCasting: Boolean,
