@@ -68,44 +68,35 @@ class IBommaProvider : MainAPI() { // all providers must be an instance of MainA
     }
 
     override suspend fun load(url: String): LoadResponse? {
-
         val document = app.get(url).document
         val title = document.selectFirst("div.col-sm-9 p.m-t-10 strong")?.text()?.trim() ?: return null
         val poster = fixUrlNull(document.selectFirst("video#play")?.attr("poster"))
         val tvType = if (document.select(".col-md-12.col-sm-12:has(div.owl-carousel)").isNotEmpty()) TvType.TvSeries else TvType.Movie
- 
-        val seasonNumbers = document.select(".col-md-12.col-sm-12:has(.owl-carousel) .owl-carousel").map { carousel ->
-            val seasonNumber = carousel.attr("class")
-                .replace("owl-carousel season_", "")
-                .trim()
-            seasonNumber
-        }
-         return if (tvType == TvType.TvSeries) {
-            val episodes = seasonNumbers.flatMap { seasonNumber ->
-                document.select(".owl-carousel.season_$seasonNumber .item").mapNotNull { item ->
-                    val seasonName = "Season $seasonNumber"
-                    val figcaption = item.select(".figure figcaption").text().trim()
-                    val episode = figcaption.filter { it.isDigit() }.toIntOrNull()
-                    val name = if (episode != null) {
-                        "${figcaption} - $seasonName"
-                    } else {
-                        figcaption
-                    }
-                    val season = document.select(".movie-heading span").text().trim().removePrefix("Season ").toIntOrNull() ?: 1
+
+        return if (tvType == TvType.TvSeries) {
+            val episodes = mutableListOf<Episode>()
+
+            // Extract season numbers and associated carousels
+            val seasonElements = document.select(".movie-heading span").mapNotNull { it.parent().parent().parent().nextElementSibling() }
+            seasonElements.forEachIndexed { index, element ->
+                val seasonNumber = index + 1 // Assuming sequential order. Adjust if necessary.
+                val seasonName = "Season $seasonNumber"
+                element.select(".item").forEach { item ->
+                    val episodeNumber = item.select(".figure-caption").text().trim().filter { it.isDigit() }.toIntOrNull()
+                    val episodeName = "${item.select(".figure-caption").text().trim()} - $seasonName"
                     val href = fixUrlNull(item.select("a").attr("href"))
-                    if (href != null) {
-                        Episode(data = href, name = name, season = season, episode = episode)
-                    } else {
-                        null
+
+                    if (href != null && episodeNumber != null) {
+                        episodes.add(Episode(data = href, name = episodeName, season = seasonNumber, episode = episodeNumber))
                     }
                 }
             }
+
             newTvSeriesLoadResponse(title, url, TvType.TvSeries, episodes) {
                 this.posterUrl = poster
             }
-
         } else {
-            return newMovieLoadResponse(title, url, TvType.Movie, url) {
+            newMovieLoadResponse(title, url, TvType.Movie, url) {
                 this.posterUrl = poster
             }
         }
