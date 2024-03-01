@@ -85,7 +85,7 @@ class IBommaProvider : MainAPI() { // all providers must be an instance of MainA
                 val figcaption = item.select(".figure figcaption").text().trim()
                 val episode = figcaption.filter { it.isDigit() }.toIntOrNull()
                 val name = figcaption
-                val href = fixUrl(item.select("a").attr("href") ?: return@mapNotNull null)
+                val href = fixUrl(item.select("a").attr("href") ?: return@forEach null)
             
                 Episode(href, name, season, episode)
             }
