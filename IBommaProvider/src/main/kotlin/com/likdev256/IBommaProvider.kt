@@ -81,7 +81,7 @@ class IBommaProvider : MainAPI() { // all providers must be an instance of MainA
                 val episode = figcaption.filter { it.isDigit() }.toIntOrNull()
                 val name = figcaption
                 val seasonNumberElement = it.parents().select(".movie-heading span").firstOrNull()
-                val season = seasonNumberElement?.text()?.removePrefix("Season")?.trim()?.toIntOrNull() ?: 1
+                val season = seasonNumberElement?.text()?.removePrefix("Season")?.trim()?.toIntOrNull()
             //    val seasonNumber = item.closest(".row").select(".movie-heading span").text().removePrefix("Season").trim().toIntOrNull() ?: 1
                 val href = fixUrl(it.select("a").attr("href")?: return null)
                 Episode(
