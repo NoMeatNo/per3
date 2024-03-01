@@ -91,7 +91,7 @@ class IBommaProvider : MainAPI() { // all providers must be an instance of MainA
                     } else {
                         figcaption
                     }
-                    val season = document.select(".movie-heading span").toInt() 
+                    val season = document.select(".movie-heading span").text().trim().removePrefix("Season ").toIntOrNull()
                     val href = fixUrlNull(item.select("a").attr("href"))
                     Episode(data = href, name = name, season = season, episode = episode)
                 }
