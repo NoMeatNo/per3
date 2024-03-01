@@ -9,6 +9,7 @@ import com.lagradost.cloudstream3.utils.*
 import com.lagradost.cloudstream3.utils.AppUtils.parseJson
 import com.lagradost.cloudstream3.mvvm.safeApiCall
 import me.xdrop.fuzzywuzzy.FuzzySearch
+import org.jsoup.Jsoup
 import org.jsoup.nodes.Element
 import java.net.URLEncoder
 import com.lagradost.nicehttp.NiceResponse
