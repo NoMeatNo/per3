@@ -69,37 +69,46 @@ class IBommaProvider : MainAPI() { // all providers must be an instance of MainA
     }
 
     override suspend fun load(url: String): LoadResponse? {
-
         val document = app.get(url).document
         val title = document.selectFirst("div.col-sm-9 p.m-t-10 strong")?.text()?.trim() ?: return null
         val poster = fixUrlNull(document.selectFirst("video#play")?.attr("poster"))
         val tvType = if (document.select(".col-md-12.col-sm-12:has(div.owl-carousel)").isNotEmpty()) TvType.TvSeries else TvType.Movie
 
         return if (tvType == TvType.TvSeries) {
-            val episodes = document.select(".owl-carousel .item").mapNotNull {
-                val figcaption = it.select(".figure figcaption").text().trim()
-                val episode = figcaption.filter { it.isDigit() }.toIntOrNull()
-                val name = figcaption
-                val seasonNumberElement = it.parents().select(".movie-heading span").firstOrNull()
-                val season = seasonNumberElement?.text()?.removePrefix("Season")?.trim()?.toIntOrNull()
-            //    val seasonNumber = item.closest(".row").select(".movie-heading span").text().removePrefix("Season").trim().toIntOrNull() ?: 1
-                val href = fixUrl(it.select("a").attr("href")?: return null)
-                Episode(
-                    href,
-                    name,
-                    season,
-                    episode
-                )
+        // Step 1: Identify each season's block
+            val seasonBlocks = document.select("div.row:has(.movie-heading)")
+
+        // List to hold all episodes
+            val episodes = mutableListOf<Episode>()
+
+        // Step 2: Extract episodes for each season
+            seasonBlocks.forEach { seasonBlock ->
+            // Extract the season number
+                val seasonNumber = seasonBlock.selectFirst(".movie-heading span")?.text()?.removePrefix("Season")?.trim()?.toIntOrNull()
+            // Find all episodes within this season's block
+                seasonBlock.select(".owl-carousel .item").mapNotNull { item ->
+                    val figcaption = item.select(".figure figcaption").text().trim()
+                    val episodeNumber = figcaption.filter { it.isDigit() }.toIntOrNull()
+                    val episodeName = figcaption
+                    val episodeHref = fixUrl(item.select("a").attr("href") ?: return@mapNotNull null)
+                
+                // Create and add episode to the list
+                    episodes.add(Episode(episodeHref, episodeName, seasonNumber, episodeNumber))
+                }
             }
+
+        // Create and return the TvSeries LoadResponse with the episodes
             newTvSeriesLoadResponse(title, url, TvType.TvSeries, episodes) {
                 this.posterUrl = poster
             }
         } else {
+        // Handle Movie type similarly as before
             newMovieLoadResponse(title, url, TvType.Movie, url) {
                 this.posterUrl = poster
             }
         }
     }
+
 
 
     override suspend fun loadLinks(
