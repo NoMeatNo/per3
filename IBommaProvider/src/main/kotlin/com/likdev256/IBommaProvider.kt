@@ -69,8 +69,8 @@ class IBommaProvider : MainAPI() { // all providers must be an instance of MainA
     }
 
     override suspend fun load(url: String): LoadResponse? {
-    //    val document = app.get(url).document
-        val document = Jsoup.connect(url).get()
+
+        val document = app.get(url).document
         val title = document.selectFirst("div.col-sm-9 p.m-t-10 strong")?.text()?.trim() ?: return null
         val poster = fixUrlNull(document.selectFirst("video#play")?.attr("poster"))
         val tvType = if (document.select(".col-md-12.col-sm-12:has(div.owl-carousel)").isNotEmpty()) TvType.TvSeries else TvType.Movie
@@ -78,17 +78,31 @@ class IBommaProvider : MainAPI() { // all providers must be an instance of MainA
         return if (tvType == TvType.TvSeries) {
             val episodes = mutableListOf<Episode>()
             val seasonBlocks = document.select("div.row:has(.movie-heading span)")
+
             seasonBlocks.forEach { seasonBlock ->
-                val seasonNumber = seasonBlock.select(".movie-heading span").text().removePrefix("Season ").trim().toIntOrNull() ?: 0
-                val episodeItems = seasonBlock.nextElementSibling().select(".item")
+                val seasonNumberText = seasonBlock.select(".movie-heading span").text()
+                val seasonNumber = seasonNumberText.removePrefix("Season").trim().toIntOrNull() ?: 1
+
+                // Assuming the episodes directly follow the season block in the next "row" div.
+                // Adjust the selector if necessary to correctly target the episodes container.
+                val episodeItems = seasonBlock.nextElementSibling().select(".owl-carousel .item")
+
                 episodeItems.forEach { item ->
                     val figcaption = item.select(".figure-caption").text().trim()
-                    val episodeNumber = figcaption.filter { it.isDigit() }.toIntOrNull() ?: 0
+                    val episodeNumber = figcaption.filter { it.isDigit() }.toIntOrNull()
                     val name = figcaption
-                    val href = item.select("a").attr("href")
+                    val href = fixUrl(item.select("a").attr("href") ?: return@forEach)
+
                     episodes.add(Episode(href, name, seasonNumber, episodeNumber))
                 }
             }
+            Episode(
+                href,
+                name,
+                season,
+                episode
+            )
+            
             newTvSeriesLoadResponse(title, url, TvType.TvSeries, episodes) {
                 this.posterUrl = poster
             }
@@ -98,6 +112,7 @@ class IBommaProvider : MainAPI() { // all providers must be an instance of MainA
             }
         }
     }
+
 
     override suspend fun loadLinks(
         data: String,
