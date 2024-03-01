@@ -79,10 +79,10 @@ class IBommaProvider : MainAPI() { // all providers must be an instance of MainA
             val episodes = document.select(".owl-carousel .item").mapNotNull {
                 val figcaption = it.select(".figure figcaption").text().trim()
                 val episode = figcaption.filter { it.isDigit() }.toIntOrNull()
-        //        val seasonNumberElement = it.parents().select(".movie-heading span").firstOrNull()
-                val seasonNumberElement = it.parent().select(".movie-heading span").firstOrNull()
+                val seasonNumberElement = it.parent()?.select(".movie-heading span")?.firstOrNull()
                 val season = seasonNumberElement?.text()?.removePrefix("Season")?.trim()?.toIntOrNull()
                 val seasonInfo = seasonNumberElement?.text()?.trim() ?: ""
+      
                 val name = "$figcaption - $seasonInfo"
             //    val seasonNumber = item.closest(".row").select(".movie-heading span").text().removePrefix("Season").trim().toIntOrNull() ?: 1
                 val href = fixUrl(it.select("a").attr("href")?: return null)
