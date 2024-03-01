@@ -9,7 +9,6 @@ import com.lagradost.cloudstream3.utils.*
 import com.lagradost.cloudstream3.utils.AppUtils.parseJson
 import com.lagradost.cloudstream3.mvvm.safeApiCall
 import me.xdrop.fuzzywuzzy.FuzzySearch
-import org.jsoup.Jsoup
 import org.jsoup.nodes.Element
 import java.net.URLEncoder
 import com.lagradost.nicehttp.NiceResponse
@@ -69,32 +68,44 @@ class IBommaProvider : MainAPI() { // all providers must be an instance of MainA
     }
 
     override suspend fun load(url: String): LoadResponse? {
+
         val document = app.get(url).document
         val title = document.selectFirst("div.col-sm-9 p.m-t-10 strong")?.text()?.trim() ?: return null
         val poster = fixUrlNull(document.selectFirst("video#play")?.attr("poster"))
         val tvType = if (document.select(".col-md-12.col-sm-12:has(div.owl-carousel)").isNotEmpty()) TvType.TvSeries else TvType.Movie
-
-        return if (tvType == TvType.TvSeries) {
-            val episodes = mutableListOf<Episode>()
-            var currentSeason = 1 // Default to season 1 if not specified+
-
-            document.select(".owl-carousel .item").forEach { item ->
-                // Attempt to find a season declaration nearby
-                item.previousElementSiblings().select(".movie-heading span").firstOrNull()?.text()?.removePrefix("Season")?.trim()?.toIntOrNull()?.let {
-                    currentSeason = it
+ 
+        val seasonNumbers = document.select(".col-md-12.col-sm-12:has(.owl-carousel) .owl-carousel").map { carousel ->
+            val seasonNumber = carousel.attr("class")
+                .replace("owl-carousel season_", "")
+                .trim()
+            seasonNumber
+        }
+         return if (tvType == TvType.TvSeries) {
+            val episodes = seasonNumbers.flatMap { seasonNumber ->
+                document.select(".owl-carousel.season_$seasonNumber .item").mapNotNull { item ->
+                    val seasonName = "Season $seasonNumber"
+                    val figcaption = item.select(".figure figcaption").text().trim()
+                    val episode = figcaption.filter { it.isDigit() }.toIntOrNull()
+                    val name = if (episode != null) {
+                        "${figcaption} - $seasonName"
+                    } else {
+                        figcaption
+                    }
+                    val season = document.select(".movie-heading span").text().trim().removePrefix("Season ").toIntOrNull() ?: 1
+                    val href = fixUrlNull(item.select("a").attr("href"))
+                    if (href != null) {
+                        Episode(data = href, name = name, season = season, episode = episode)
+                    } else {
+                        null
+                    }
                 }
-                val figcaption = item.select(".figure figcaption").text().trim()
-                val episode = figcaption.filter { it.isDigit() }.toIntOrNull()
-                val name = figcaption
-                val href = fixUrl(item.select("a").attr("href") ?: return@forEach null)
-
-                episodes.add(Episode(href, name, currentSeason, episode))
             }
             newTvSeriesLoadResponse(title, url, TvType.TvSeries, episodes) {
                 this.posterUrl = poster
             }
+
         } else {
-            newMovieLoadResponse(title, url, TvType.Movie, url) {
+            return newMovieLoadResponse(title, url, TvType.Movie, url) {
                 this.posterUrl = poster
             }
         }
