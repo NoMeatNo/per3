@@ -68,7 +68,7 @@ class IBommaProvider : MainAPI() { // all providers must be an instance of MainA
         return resultFarsi.sortedBy { -FuzzySearch.partialRatio(it.name.replace("(\\()+(.*)+(\\))".toRegex(), "").lowercase(), query.lowercase()) }
     }
 
-    override suspend fun load(url: String): LoadResponse? {
+override suspend fun load(url: String): LoadResponse? {
     val document = app.get(url).document
     val title = document.selectFirst("div.col-sm-9 p.m-t-10 strong")?.text()?.trim() ?: return null
     val poster = fixUrlNull(document.selectFirst("video#play")?.attr("poster"))
@@ -81,17 +81,18 @@ class IBommaProvider : MainAPI() { // all providers must be an instance of MainA
         seasons.forEach { season ->
             // Extract season number
             val seasonNumberElement = season.select(".movie-heading span").firstOrNull()
-            val seasonNumberText = seasonNumberElement?.text()?.replace(Regex("[^0-9]"), "")?.trim() ?: ""
-            val seasonNumber = seasonNumberText.toIntOrNull()
+            val seasonNumberText = seasonNumberElement?.text()?.removePrefix("Season")?.trim() ?: ""
+            val seasonNumber = seasonNumberText.toIntOrNull() ?: return@forEach
 
             // Extract episodes within the season
             season.select(".owl-carousel .item").forEach { item ->
-                    // Extract episode details
+                // Extract episode details
                 val figcaption = item.select(".figure-caption").text().trim()
-                    // Extract episode number
-                val episodeNumberText = figcaption.replace(Regex("[^0-9]"), "")      
-                val episodeNumber = episodeNumberText.toIntOrNull()
+                val episodeNumber = figcaption.filter { it.isDigit() }.toIntOrNull()
+
+                // Construct episode name
                 val name = "$figcaption - Season $seasonNumber"
+
                 // Extract episode URL
                 val href = item.select("a").attr("href")
 
@@ -102,8 +103,12 @@ class IBommaProvider : MainAPI() { // all providers must be an instance of MainA
             }
         }
 
-        newTvSeriesLoadResponse(title, url, TvType.TvSeries, episodes) {
-            this.posterUrl = poster
+        if (episodes.isNotEmpty()) {
+            newTvSeriesLoadResponse(title, url, TvType.TvSeries, episodes) {
+                this.posterUrl = poster
+            }
+        } else {
+            null // Handle the case where no episodes were found
         }
     } else {
         newMovieLoadResponse(title, url, TvType.Movie, url) {
@@ -111,6 +116,7 @@ class IBommaProvider : MainAPI() { // all providers must be an instance of MainA
         }
     }
 }
+
     override suspend fun loadLinks(
         data: String,
         isCasting: Boolean,
