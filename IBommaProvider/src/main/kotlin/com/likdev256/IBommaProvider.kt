@@ -81,19 +81,21 @@ class IBommaProvider : MainAPI() { // all providers must be an instance of MainA
             val season = seasonNumberElement?.text()?.removePrefix("Season")?.trim()?.toIntOrNull()
             val seasonInfo = seasonNumberElement?.text()?.trim() ?: ""
             season?.let {
-                season.select(".owl-carousel .item").mapNotNull { item ->
+                season.select(".owl-carousel .item").flatMap { item ->
                     val figcaption = item.select(".figure figcaption").text().trim()
                     val episode = figcaption.filter { it.isDigit() }.toIntOrNull()
                     val name = "$figcaption - $seasonInfo"
-                    val href = fixUrl(item.select("a").attr("href")) ?: return@mapNotNull null
-                    Episode(
-                        href,
-                        name,
-                        season,
-                        episode
+                    val href = fixUrl(item.select("a").attr("href")) ?: return@flatMap emptyList<Episode>()
+                    listOf(
+                        Episode(
+                            href,
+                            name,
+                            season,
+                            episode
+                        )
                     )
                 }
-            } ?: listOf()
+            } ?: emptyList()
         }
         newTvSeriesLoadResponse(title, url, TvType.TvSeries, episodes) {
             this.posterUrl = poster
