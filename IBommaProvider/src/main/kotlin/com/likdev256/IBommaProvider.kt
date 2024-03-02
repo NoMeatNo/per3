@@ -76,16 +76,20 @@ class IBommaProvider : MainAPI() { // all providers must be an instance of MainA
         val tvType = if (document.select(".col-md-12.col-sm-12:has(div.owl-carousel)").isNotEmpty()) TvType.TvSeries else TvType.Movie
 
        return if (tvType == TvType.TvSeries) {
-            val episodes = document.select(".owl-carousel .item").mapNotNull { item ->
-                val figcaption = item.select(".figure figcaption").text().trim()
-                val episode = figcaption.filter { it.isDigit() }.toIntOrNull()
-                val seasonNumberElement = item.parents().select(".movie-heading span").firstOrNull()
-                val season = seasonNumberElement?.text()?.removePrefix("Season")?.trim()?.toIntOrNull()
-                val seasonInfo = seasonNumberElement?.text()?.trim() ?: ""
-      
-                val name = "$figcaption - $seasonInfo"
-                
-                val href = fixUrl(item.select("a").attr("href")?: return@mapNotNull null)
+               val episodes = ArrayList<Episode>()
+
+    val seasons = document.select(".row .movie-opt")
+    seasons.forEach { seasonElement ->
+        val seasonNumberText = seasonElement.select("span").text().removePrefix("Season").trim()
+        val seasonNumber = seasonNumberText.toIntOrNull() ?: 1
+
+        val episodeElements = seasonElement.nextElementSibling().select(".owl-carousel .item")
+        episodeElements.forEach { episodeElement ->
+            val figcaption = episodeElement.select(".figure-caption").text().trim()
+            val episodeNumber = figcaption.filter { it.isDigit() }.toIntOrNull()
+
+            val href = fixUrl(episodeElement.select("a").attr("href") ?: return@forEach null)
+            val name = "$figcaption - Season $seasonNumber"
                 Episode(
                     href,
                     name,
