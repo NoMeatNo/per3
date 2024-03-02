@@ -76,25 +76,26 @@ class IBommaProvider : MainAPI() { // all providers must be an instance of MainA
 
     if (tvType == TvType.TvSeries) {
         val episodes = mutableListOf<Episode>()
+        val rows = document.select(".row")
+        var seasonNumber = 0
 
-        // Select all the season headings
-        val seasonHeadings = document.select("div.latest-movie.movie-opt")
-
-        seasonHeadings.forEachIndexed { index, element ->
-            val seasonNumberText = element.selectFirst("div.movie-heading span")?.text()?.removePrefix("Season")?.trim()
-            val seasonNumber = seasonNumberText?.toIntOrNull() ?: return@forEachIndexed
-
-            // Find the next sibling element that contains the owl-carousel class for the episodes
-            val episodesContainer = element.nextElementSibling()?.select("div.owl-carousel") ?: return@forEachIndexed
-
-            episodesContainer.select(".item").forEach { item ->
-                val episodeLink = item.select("a").attr("href")
-                val episodeNumberText = item.select(".figure-caption").text().trim()
-                val episodeNumber = episodeNumberText.filter { it.isDigit() }.toIntOrNull() ?: return@forEach
-
-                val episodeName = "Season $seasonNumber Episode $episodeNumber"
-
-                episodes.add(Episode(episodeLink, episodeName, seasonNumber, episodeNumber))
+        rows.forEachIndexed { index, row ->
+            if (row.select(".movie-heading").isNotEmpty()) {
+                // This row contains season information
+                val seasonText = row.select(".movie-heading span").text().trim()
+                seasonNumber = seasonText.removePrefix("Season").trim().toIntOrNull() ?: 0
+            } else if (row.select(".owl-carousel").isNotEmpty() && seasonNumber > 0) {
+                // This row contains episodes for the previously identified season
+                val items = row.select(".item")
+                items.forEach { item ->
+                    val episodeLink = item.select("a").attr("href")
+                    val episodeNumberText = item.select(".figure-caption").text().trim()
+                    val episodeNumber = episodeNumberText.removePrefix("E").toIntOrNull() ?: 0
+                    val episodeName = "Season $seasonNumber Episode $episodeNumber"
+                    if (episodeLink.isNotEmpty()) {
+                        episodes.add(Episode(episodeLink, episodeName, seasonNumber, episodeNumber))
+                    }
+                }
             }
         }
 
@@ -107,6 +108,7 @@ class IBommaProvider : MainAPI() { // all providers must be an instance of MainA
         }
     }
 }
+
     
     override suspend fun loadLinks(
         data: String,
