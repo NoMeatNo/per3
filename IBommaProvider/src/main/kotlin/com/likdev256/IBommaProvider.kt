@@ -44,11 +44,27 @@ class IBommaProvider : MainAPI() { // all providers must be an instance of MainA
             else -> throw IllegalArgumentException("Invalid section name: ${request.name}")
         }
         val document = app.get(link).document
-        val home = document.select("div.col-md-2.col-sm-3.col-xs-6").mapNotNull {
-            it.toSearchResult()
+        val home = if (request.name == "Live TVs") {
+            document.select("div.owl-item div.item").mapNotNull { it.toLiveTvSearchResult() }
+        } else {
+            document.select("div.col-md-2.col-sm-3.col-xs-6").mapNotNull {
+                it.toSearchResult()
+            }
         }
         return newHomePageResponse(request.name, home)
     }
+    
+    private fun Element.toLiveTvSearchResult(): SearchResponse? {
+    // Assuming this function is called on an element that represents a single Live TV item
+    val title = this.select("figcaption.figure-caption").text().trim()
+    val href = fixUrl(this.select("a").attr("href"))
+    val posterUrl = fixUrlNull(this.select("img").attr("src").trim())
+
+    // Assuming you have a way to distinguish Live TVs in your SearchResponse or TvType
+    return newMovieSearchResponse(title, href, TvType.LiveTV) {
+        this.posterUrl = posterUrl
+    }
+}
 
     private fun Element.toSearchResult(): SearchResponse? {
         val title = this.selectFirst("div.movie-title h3 a")?.text()?.trim() ?: return null
