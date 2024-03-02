@@ -68,53 +68,45 @@ class IBommaProvider : MainAPI() { // all providers must be an instance of MainA
         return resultFarsi.sortedBy { -FuzzySearch.partialRatio(it.name.replace("(\\()+(.*)+(\\))".toRegex(), "").lowercase(), query.lowercase()) }
     }
 
-override suspend fun load(url: String): LoadResponse? {
+    override suspend fun load(url: String): LoadResponse? {
     val document = app.get(url).document
     val title = document.selectFirst("div.col-sm-9 p.m-t-10 strong")?.text()?.trim() ?: return null
     val poster = fixUrlNull(document.selectFirst("video#play")?.attr("poster"))
     val tvType = if (document.select(".col-md-12.col-sm-12:has(div.owl-carousel)").isNotEmpty()) TvType.TvSeries else TvType.Movie
 
-    return if (tvType == TvType.TvSeries) {
-        val seasonsContainers = document.select(".latest-movie.movie-opt")
-
+    if (tvType == TvType.TvSeries) {
         val episodes = mutableListOf<Episode>()
 
-        seasonsContainers.forEach { seasonContainer ->
-            // Extract season number
-            val seasonNumberText = seasonContainer.select(".movie-heading span").text().removePrefix("Season").trim()
-            val seasonNumber = seasonNumberText.toIntOrNull()
+        // Select all the season headings
+        val seasonHeadings = document.select("div.latest-movie.movie-opt")
 
-            // Extract episodes within the season
-            val seasonEpisodes = seasonContainer.select(".owl-carousel .item")
+        seasonHeadings.forEachIndexed { index, element ->
+            val seasonNumberText = element.selectFirst("div.movie-heading span")?.text()?.removePrefix("Season")?.trim()
+            val seasonNumber = seasonNumberText?.toIntOrNull() ?: return@forEachIndexed
 
-            seasonEpisodes.forEach { item ->
-                // Extract episode details
-                val figcaption = item.select(".figure-caption").text().trim()
-                val episodeNumber = figcaption.filter { it.isDigit() }.toIntOrNull()
+            // Find the next sibling element that contains the owl-carousel class for the episodes
+            val episodesContainer = element.nextElementSibling()?.select("div.owl-carousel") ?: return@forEachIndexed
 
-                // Construct episode name
-                val name = "$figcaption - Season $seasonNumber"
+            episodesContainer.select(".item").forEach { item ->
+                val episodeLink = item.select("a").attr("href")
+                val episodeNumberText = item.select(".figure-caption").text().trim()
+                val episodeNumber = episodeNumberText.filter { it.isDigit() }.toIntOrNull() ?: return@forEach
 
-                // Extract episode URL
-                val href = item.select("a").attr("href")
+                val episodeName = "Season $seasonNumber Episode $episodeNumber"
 
-                // Create Episode object if episode number and URL are valid
-                if (episodeNumber != null && href.isNotEmpty()) {
-                    episodes.add(Episode(href, name, seasonNumber, episodeNumber))
-                }
+                episodes.add(Episode(episodeLink, episodeName, seasonNumber, episodeNumber))
             }
         }
 
-        newTvSeriesLoadResponse(title, url, TvType.TvSeries, episodes) {
+        return newTvSeriesLoadResponse(title, url, TvType.TvSeries, episodes) {
             this.posterUrl = poster
         }
     } else {
-        newMovieLoadResponse(title, url, TvType.Movie, url) {
+        return newMovieLoadResponse(title, url, TvType.Movie, url) {
             this.posterUrl = poster
         }
     }
 }
-
     
     override suspend fun loadLinks(
         data: String,
