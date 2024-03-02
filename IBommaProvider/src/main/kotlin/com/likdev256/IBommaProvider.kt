@@ -62,9 +62,14 @@ override suspend fun getMainPage(
     
     private fun Element.toLiveTvSearchResult(): SearchResponse? {
     // Assuming this function is called on an element that represents a single Live TV item
-    val title = this.select("figcaption.figure-caption").text().trim()
-    val href = fixUrl(this.select("a").attr("href"))
-    val posterUrl = fixUrlNull(this.select("img").attr("src").trim())
+  //  val title = this.select("figcaption.figure-caption").text().trim()
+    val title = this.selectFirst("figcaption.figure-caption")?.text()?.trim() ?: return null
+    val href = this.selectFirst("figure a")?.attr("href")?.let { fixUrl(it) } ?: return null
+//    val href = fixUrl(this.select("a").attr("href"))
+//    val posterUrl = fixUrlNull(this.select("img").attr("src").trim())
+    val posterUrl = this.selectFirst("img.owl-lazy")?.attr("data-src")?.let { fixUrlNull(it) }
+        ?: this.selectFirst("img.owl-lazy")?.attr("src")?.let { fixUrlNull(it) } // Fallback to src if data-src is not present.
+
 
     // Assuming you have a way to distinguish Live TVs in your SearchResponse or TvType
     return newMovieSearchResponse(title, href, TvType.Live) {
