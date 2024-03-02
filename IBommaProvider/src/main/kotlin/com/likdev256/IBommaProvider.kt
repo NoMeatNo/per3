@@ -103,7 +103,6 @@ val episodes = seasons.flatMap { season ->
         }
     }
 }
-                }
         newTvSeriesLoadResponse(title, url, TvType.TvSeries, episodes) {
             this.posterUrl = poster
         }
