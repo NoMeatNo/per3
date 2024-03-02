@@ -76,16 +76,16 @@ class IBommaProvider : MainAPI() { // all providers must be an instance of MainA
 
     return if (tvType == TvType.TvSeries) {
         val seasons = document.select(".latest-movie.movie-opt")
-        val episodes = seasons.flatMap { season ->
+        val episodes = seasons.flatMapTo(mutableListOf()) { season ->
             val seasonNumberElement = season.select(".movie-heading span").firstOrNull()
             val season = seasonNumberElement?.text()?.removePrefix("Season")?.trim()?.toIntOrNull()
             val seasonInfo = seasonNumberElement?.text()?.trim() ?: ""
             season?.let {
-                season.select(".owl-carousel .item").flatMap { item ->
+                season.select(".owl-carousel .item").flatMapTo(mutableListOf()) { item ->
                     val figcaption = item.select(".figure figcaption").text().trim()
                     val episode = figcaption.filter { it.isDigit() }.toIntOrNull()
                     val name = "$figcaption - $seasonInfo"
-                    val href = fixUrl(item.select("a").attr("href")) ?: return@flatMap emptyList<Episode>()
+                    val href = fixUrl(item.select("a").attr("href")) ?: return@flatMapTo emptyList()
                     listOf(
                         Episode(
                             href,
