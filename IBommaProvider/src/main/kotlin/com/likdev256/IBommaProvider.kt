@@ -76,22 +76,22 @@ class IBommaProvider : MainAPI() { // all providers must be an instance of MainA
 
     return if (tvType == TvType.TvSeries) {
         val seasons = document.select(".latest-movie.movie-opt")
-        val episodes = seasons.flatMapTo(mutableListOf()) { season ->
+        val episodes = seasons.flatMap { season ->
             val seasonNumberElement = season.select(".movie-heading span").firstOrNull()
-            val season = seasonNumberElement?.text()?.removePrefix("Season")?.trim()?.toIntOrNull()
+            val seasonNumber = seasonNumberElement?.text()?.removePrefix("Season")?.trim()?.toIntOrNull()
             val seasonInfo = seasonNumberElement?.text()?.trim() ?: ""
-            season?.let {
-                season.select(".owl-carousel .item").flatMapTo(mutableListOf()) { item ->
+            seasonNumber?.let { seasonNum ->
+                season.select(".owl-carousel .item").flatMap { item ->
                     val figcaption = item.select(".figure figcaption").text().trim()
-                    val episode = figcaption.filter { it.isDigit() }.toIntOrNull()
+                    val episodeNumber = figcaption.filter { it.isDigit() }.toIntOrNull()
                     val name = "$figcaption - $seasonInfo"
-                    val href = fixUrl(item.select("a").attr("href")) ?: return@flatMapTo emptyList()
+                    val href = fixUrl(item.select("a").attr("href")) ?: return@flatMap emptyList<Episode>()
                     listOf(
                         Episode(
                             href,
                             name,
-                            season,
-                            episode
+                            seasonNum,
+                            episodeNumber
                         )
                     )
                 }
@@ -106,7 +106,6 @@ class IBommaProvider : MainAPI() { // all providers must be an instance of MainA
         }
     }
 }
-
     override suspend fun loadLinks(
         data: String,
         isCasting: Boolean,
