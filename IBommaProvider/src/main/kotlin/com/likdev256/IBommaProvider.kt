@@ -69,43 +69,41 @@ class IBommaProvider : MainAPI() { // all providers must be an instance of MainA
     }
 
     override suspend fun load(url: String): LoadResponse? {
+    val document = app.get(url).document
+    val title = document.selectFirst("div.col-sm-9 p.m-t-10 strong")?.text()?.trim() ?: return null
+    val poster = fixUrlNull(document.selectFirst("video#play")?.attr("poster"))
+    val tvType = if (document.select(".col-md-12.col-sm-12:has(div.owl-carousel)").isNotEmpty()) TvType.TvSeries else TvType.Movie
 
-        val document = app.get(url).document
-        val title = document.selectFirst("div.col-sm-9 p.m-t-10 strong")?.text()?.trim() ?: return null
-        val poster = fixUrlNull(document.selectFirst("video#play")?.attr("poster"))
-        val tvType = if (document.select(".col-md-12.col-sm-12:has(div.owl-carousel)").isNotEmpty()) TvType.TvSeries else TvType.Movie
-
-       return if (tvType == TvType.TvSeries) {
-    val seasons = document.select(".latest-movie.movie-opt")
-    val episodes = seasons.flatMap { season ->
-        val seasonNumberElement = season.select(".movie-heading span").firstOrNull()
-        val season = seasonNumberElement?.text()?.removePrefix("Season")?.trim()?.toIntOrNull()
-        val seasonInfo = seasonNumberElement?.text()?.trim() ?: ""
-        season?.let {
-            season.select(".owl-carousel .item").mapNotNull { item ->
-                val figcaption = item.select(".figure figcaption").text().trim()
-                val episode = figcaption.filter { it.isDigit() }.toIntOrNull()
-                val name = "$figcaption - $seasonInfo"
-                val href = fixUrl(item.select("a").attr("href") ?: return@mapNotNull null)
-                Episode(
-                    href,
-                    name,
-                    season,
-                    episode
-                )
-            }
-        } ?: emptyList()
-    }
-    newTvSeriesLoadResponse(title, url, TvType.TvSeries, episodes) {
-        this.posterUrl = poster
-    }
-} else {
-    newMovieLoadResponse(title, url, TvType.Movie, url) {
-        this.posterUrl = poster
+    return if (tvType == TvType.TvSeries) {
+        val seasons = document.select(".latest-movie.movie-opt")
+        val episodes = seasons.flatMap { season ->
+            val seasonNumberElement = season.select(".movie-heading span").firstOrNull()
+            val season = seasonNumberElement?.text()?.removePrefix("Season")?.trim()?.toIntOrNull()
+            val seasonInfo = seasonNumberElement?.text()?.trim() ?: ""
+            season?.let {
+                season.select(".owl-carousel .item").mapNotNull { item ->
+                    val figcaption = item.select(".figure figcaption").text().trim()
+                    val episode = figcaption.filter { it.isDigit() }.toIntOrNull()
+                    val name = "$figcaption - $seasonInfo"
+                    val href = fixUrl(item.select("a").attr("href") ?: return@mapNotNull null)
+                    Episode(
+                        href,
+                        name,
+                        season,
+                        episode
+                    )
+                }
+            } ?: emptyList() // Return an empty list if season is null
+        }
+        newTvSeriesLoadResponse(title, url, TvType.TvSeries, episodes) {
+            this.posterUrl = poster
+        }
+    } else {
+        newMovieLoadResponse(title, url, TvType.Movie, url) {
+            this.posterUrl = poster
+        }
     }
 }
-    }
-
 
     override suspend fun loadLinks(
         data: String,
