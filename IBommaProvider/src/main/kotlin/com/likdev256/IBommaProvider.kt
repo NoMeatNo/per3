@@ -82,10 +82,11 @@ override suspend fun load(url: String): LoadResponse? {
             // Extract season number
             val seasonNumberElement = season.select(".movie-heading span").firstOrNull()
             val seasonNumberText = seasonNumberElement?.text()?.removePrefix("Season")?.trim() ?: ""
-            val seasonNumber = seasonNumberText.toIntOrNull() ?: return@forEach
+            val seasonNumber = seasonNumberText.toIntOrNull()
 
             // Extract episodes within the season
-            season.select(".owl-carousel .item").forEach { item ->
+            val seasonEpisodes = season.select(".owl-carousel.season_${seasonNumberElement?.ownText()} .item")
+            seasonEpisodes.forEach { item ->
                 // Extract episode details
                 val figcaption = item.select(".figure-caption").text().trim()
                 val episodeNumber = figcaption.filter { it.isDigit() }.toIntOrNull()
@@ -103,12 +104,8 @@ override suspend fun load(url: String): LoadResponse? {
             }
         }
 
-        if (episodes.isNotEmpty()) {
-            newTvSeriesLoadResponse(title, url, TvType.TvSeries, episodes) {
-                this.posterUrl = poster
-            }
-        } else {
-            null // Handle the case where no episodes were found
+        newTvSeriesLoadResponse(title, url, TvType.TvSeries, episodes) {
+            this.posterUrl = poster
         }
     } else {
         newMovieLoadResponse(title, url, TvType.Movie, url) {
