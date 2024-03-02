@@ -24,7 +24,7 @@ class IBommaProvider : MainAPI() { // all providers must be an instance of MainA
     override var sequentialMainPage = true
     override var sequentialMainPageDelay: Long = 100
     override val supportedTypes = setOf(
-        TvType.Movie, TvType.TvSeries
+        TvType.Movie, TvType.TvSeries, TvType.Live
     )
 
     override val mainPage = mainPageOf(
@@ -61,7 +61,7 @@ class IBommaProvider : MainAPI() { // all providers must be an instance of MainA
     val posterUrl = fixUrlNull(this.select("img").attr("src").trim())
 
     // Assuming you have a way to distinguish Live TVs in your SearchResponse or TvType
-    return newMovieSearchResponse(title, href, TvType.LiveTV) {
+    return newMovieSearchResponse(title, href, TvType.Live) {
         this.posterUrl = posterUrl
     }
 }
