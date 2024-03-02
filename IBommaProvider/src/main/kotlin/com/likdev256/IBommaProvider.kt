@@ -68,29 +68,32 @@ class IBommaProvider : MainAPI() { // all providers must be an instance of MainA
         return resultFarsi.sortedBy { -FuzzySearch.partialRatio(it.name.replace("(\\()+(.*)+(\\))".toRegex(), "").lowercase(), query.lowercase()) }
     }
 
-    override suspend fun load(url: String): LoadResponse? {
+override suspend fun load(url: String): LoadResponse? {
     val document = app.get(url).document
     val title = document.selectFirst("div.col-sm-9 p.m-t-10 strong")?.text()?.trim() ?: return null
     val poster = fixUrlNull(document.selectFirst("video#play")?.attr("poster"))
     val tvType = if (document.select(".col-md-12.col-sm-12:has(div.owl-carousel)").isNotEmpty()) TvType.TvSeries else TvType.Movie
 
     return if (tvType == TvType.TvSeries) {
-        val seasons = document.select(".owl-carousel[class*=season_]")
+        val seasonsContainers = document.select(".latest-movie.movie-opt")
 
         val episodes = mutableListOf<Episode>()
 
-        seasons.forEach { season ->
-            val seasonNumberElement = season.parent()?.selectFirst(".movie-heading span")
-            val seasonNumberText = seasonNumberElement?.text()?.removePrefix("Season")?.trim() ?: ""
+        seasonsContainers.forEach { seasonContainer ->
+            // Extract season number
+            val seasonNumberText = seasonContainer.select(".movie-heading span").text().removePrefix("Season").trim()
             val seasonNumber = seasonNumberText.toIntOrNull()
 
-            season.select(".item").forEach { item ->
+            // Extract episodes within the season
+            val seasonEpisodes = seasonContainer.select(".owl-carousel .item")
+
+            seasonEpisodes.forEach { item ->
                 // Extract episode details
                 val figcaption = item.select(".figure-caption").text().trim()
                 val episodeNumber = figcaption.filter { it.isDigit() }.toIntOrNull()
 
                 // Construct episode name
-                val name = "$figcaption - Season ${seasonNumber ?: ""}"
+                val name = "$figcaption - Season $seasonNumber"
 
                 // Extract episode URL
                 val href = item.select("a").attr("href")
