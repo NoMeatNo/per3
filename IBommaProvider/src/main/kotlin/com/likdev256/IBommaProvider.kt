@@ -81,18 +81,17 @@ class IBommaProvider : MainAPI() { // all providers must be an instance of MainA
         seasons.forEach { season ->
             // Extract season number
             val seasonNumberElement = season.select(".movie-heading span").firstOrNull()
-            val seasonNumberText = seasonNumberElement?.text()?.removePrefix("Season")?.trim() ?: ""
+            val seasonNumberText = seasonNumberElement?.text()?.replace(Regex("[^0-9]"), "")?.trim() ?: ""
             val seasonNumber = seasonNumberText.toIntOrNull()
 
             // Extract episodes within the season
             season.select(".owl-carousel .item").forEach { item ->
-                // Extract episode details
+                    // Extract episode details
                 val figcaption = item.select(".figure-caption").text().trim()
-                val episodeNumber = figcaption.filter { it.isDigit() }.toIntOrNull()
-
-                // Construct episode name
+                    // Extract episode number
+                val episodeNumberText = figcaption.replace(Regex("[^0-9]"), "")      
+                val episodeNumber = episodeNumberText.toIntOrNull()
                 val name = "$figcaption - Season $seasonNumber"
-
                 // Extract episode URL
                 val href = item.select("a").attr("href")
 
