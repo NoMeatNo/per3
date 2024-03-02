@@ -33,26 +33,32 @@ class IBommaProvider : MainAPI() { // all providers must be an instance of MainA
         "$mainUrl/live-tv.html" to "Live TVs",        
     )
 
-    override suspend fun getMainPage(
-        page: Int, 
-        request: MainPageRequest
-    ): HomePageResponse {
-        val link = when (request.name) {
-            "Movies" -> "$mainUrl/fill1.html"
-            "TV Shows" -> "$mainUrl/sell1.html"
-            "Live TVs" -> "$mainUrl/live-tv.html"
-            else -> throw IllegalArgumentException("Invalid section name: ${request.name}")
-        }
-        val document = app.get(link).document
-        val home = if (request.name == "Live TVs") {
-            document.select("div.owl-item div.item").mapNotNull { it.toLiveTvSearchResult() }
-        } else {
-            document.select("div.col-md-2.col-sm-3.col-xs-6").mapNotNull {
-                it.toSearchResult()
-            }
-        }
-        return newHomePageResponse(request.name, home)
+override suspend fun getMainPage(
+    page: Int, 
+    request: MainPageRequest
+): HomePageResponse {
+    val link = when (request.name) {
+        "Movies" -> "$mainUrl/fill1.html"
+        "TV Shows" -> "$mainUrl/sell1.html"
+        "Live TVs" -> "$mainUrl/live-tv.html"
+        else -> throw IllegalArgumentException("Invalid section name: ${request.name}")
     }
+
+    val document = app.get(link).document
+    val home = when (request.name) {
+        "Live TVs" -> {
+            // For Live TVs, select the 'div.item' elements within 'div.owl-item'
+            document.select("div.owl-item > div.item").mapNotNull { it.toLiveTvSearchResult() }
+        }
+        else -> {
+            // For Movies and TV Shows, select 'div.col-md-2.col-sm-3.col-xs-6' elements
+            document.select("div.col-md-2.col-sm-3.col-xs-6").mapNotNull { it.toSearchResult() }
+        }
+    }
+
+    return newHomePageResponse(request.name, home)
+}
+
     
     private fun Element.toLiveTvSearchResult(): SearchResponse? {
     // Assuming this function is called on an element that represents a single Live TV item
