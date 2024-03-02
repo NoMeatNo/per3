@@ -79,21 +79,25 @@ override suspend fun load(url: String): LoadResponse? {
         val episodes = mutableListOf<Episode>()
 
         seasons.forEach { seasonElement ->
+            // Extract season number
             val seasonNumberText = seasonElement.text().removePrefix("Season").trim()
             val seasonNumber = seasonNumberText.toIntOrNull()
 
-            val seasonContainer = seasonElement.closest(".latest-movie.movie-opt")
-            val seasonClass = seasonContainer.select(".owl-carousel").attr("class").split(" ").find { it.startsWith("season_") }
-            
-            val seasonEpisodes = seasonContainer.select(".owl-carousel.$seasonClass .item")
+            // Extract episodes within the season
+            val seasonEpisodes = seasonElement.parent().nextElementSibling().select(".owl-carousel .item")
 
             seasonEpisodes.forEach { item ->
+                // Extract episode details
                 val figcaption = item.select(".figure-caption").text().trim()
                 val episodeNumber = figcaption.filter { it.isDigit() }.toIntOrNull()
 
+                // Construct episode name
                 val name = "$figcaption - Season $seasonNumber"
+
+                // Extract episode URL
                 val href = item.select("a").attr("href")
 
+                // Create Episode object if episode number and URL are valid
                 if (episodeNumber != null && href.isNotEmpty()) {
                     episodes.add(Episode(href, name, seasonNumber, episodeNumber))
                 }
@@ -109,6 +113,7 @@ override suspend fun load(url: String): LoadResponse? {
         }
     }
 }
+
     
     override suspend fun loadLinks(
         data: String,
