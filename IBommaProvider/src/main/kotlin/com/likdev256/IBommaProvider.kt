@@ -68,7 +68,7 @@ class IBommaProvider : MainAPI() { // all providers must be an instance of MainA
         return resultFarsi.sortedBy { -FuzzySearch.partialRatio(it.name.replace("(\\()+(.*)+(\\))".toRegex(), "").lowercase(), query.lowercase()) }
     }
 
-    override suspend fun load(url: String): LoadResponse? {
+override suspend fun load(url: String): LoadResponse? {
     val document = app.get(url).document
     val title = document.selectFirst("div.col-sm-9 p.m-t-10 strong")?.text()?.trim() ?: return null
     val poster = fixUrlNull(document.selectFirst("video#play")?.attr("poster"))
@@ -80,7 +80,7 @@ class IBommaProvider : MainAPI() { // all providers must be an instance of MainA
         val episodes = mutableListOf<Episode>()
 
         seasons.forEach { season ->
-            val seasonNumberElement = season.parent().selectFirst(".movie-heading span")
+            val seasonNumberElement = season.parent()?.selectFirst(".movie-heading span")
             val seasonNumberText = seasonNumberElement?.text()?.removePrefix("Season")?.trim() ?: ""
             val seasonNumber = seasonNumberText.toIntOrNull()
 
@@ -90,7 +90,7 @@ class IBommaProvider : MainAPI() { // all providers must be an instance of MainA
                 val episodeNumber = figcaption.filter { it.isDigit() }.toIntOrNull()
 
                 // Construct episode name
-                val name = "$figcaption - Season $seasonNumber"
+                val name = "$figcaption - Season ${seasonNumber ?: ""}"
 
                 // Extract episode URL
                 val href = item.select("a").attr("href")
@@ -111,7 +111,6 @@ class IBommaProvider : MainAPI() { // all providers must be an instance of MainA
         }
     }
 }
-
 
     
     override suspend fun loadLinks(
