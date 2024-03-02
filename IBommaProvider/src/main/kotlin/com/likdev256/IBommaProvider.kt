@@ -78,22 +78,19 @@ class IBommaProvider : MainAPI() { // all providers must be an instance of MainA
         val seasons = document.select(".latest-movie.movie-opt")
         val episodes = seasons.flatMap { season ->
             val seasonNumberElement = season.select(".movie-heading span").firstOrNull()
-            val seasonNumber = seasonNumberElement?.text()?.removePrefix("Season")?.trim()?.toIntOrNull()
-            val seasonInfo = seasonNumberElement?.text()?.trim() ?: ""
+            val seasonNumberText = seasonNumberElement?.text()?.removePrefix("Season")?.trim() ?: ""
+            val seasonNumber = seasonNumberText.toIntOrNull()
             seasonNumber?.let { seasonNum ->
-                season.select(".owl-carousel .item").flatMap { item ->
+                season.select(".owl-carousel .item").mapNotNull { item ->
                     val figcaption = item.select(".figure figcaption").text().trim()
                     val episodeNumber = figcaption.filter { it.isDigit() }.toIntOrNull()
-                    val name = "$figcaption - $seasonInfo"
-                    val href = fixUrl(item.select("a").attr("href")) ?: return@flatMap emptyList<Episode>()
-                    listOf(
-                        Episode(
-                            href,
-                            name,
-                            seasonNum,
-                            episodeNumber
-                        )
-                    )
+                    val name = "$figcaption - Season $seasonNum"
+                    val href = fixUrl(item.select("a").attr("href"))
+                    if (episodeNumber != null && href != null) {
+                        Episode(href, name, seasonNum, episodeNumber)
+                    } else {
+                        null
+                    }
                 }
             } ?: emptyList()
         }
@@ -106,6 +103,7 @@ class IBommaProvider : MainAPI() { // all providers must be an instance of MainA
         }
     }
 }
+
     override suspend fun loadLinks(
         data: String,
         isCasting: Boolean,
