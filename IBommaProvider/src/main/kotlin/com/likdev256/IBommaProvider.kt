@@ -75,34 +75,35 @@ class IBommaProvider : MainAPI() { // all providers must be an instance of MainA
     val tvType = if (document.select(".col-md-12.col-sm-12:has(div.owl-carousel)").isNotEmpty()) TvType.TvSeries else TvType.Movie
 
     return if (tvType == TvType.TvSeries) {
-val seasons = document.select(".latest-movie.movie-opt")
+        val seasons = document.select(".latest-movie.movie-opt")
 
-val episodes = seasons.flatMap { season ->
-    // Extract season number
-    val seasonNumberElement = season.select(".movie-heading span").firstOrNull()
-    val seasonNumberText = seasonNumberElement?.text()?.removePrefix("Season")?.trim() ?: ""
-    val seasonNumber = seasonNumberText.toIntOrNull()
+        val episodes = seasons.flatMap { season ->
+            // Extract season number
+            val seasonNumberElement = season.select(".movie-heading span").firstOrNull()
+            val seasonNumberText = seasonNumberElement?.text()?.removePrefix("Season")?.trim() ?: ""
+            val seasonNumber = seasonNumberText.toIntOrNull()
 
-    // Extract episodes within the season
-    season.select(".owl-carousel .item").mapNotNull { item ->
-        // Extract episode details
-        val figcaption = item.select(".figure-caption").text().trim()
-        val episodeNumber = figcaption.filter { it.isDigit() }.toIntOrNull()
+            // Extract episodes within the season
+            season.select(".owl-carousel .item").mapNotNull { item ->
+                // Extract episode details
+                val figcaption = item.select(".figure-caption").text().trim()
+                val episodeNumber = figcaption.filter { it.isDigit() }.toIntOrNull()
 
-        // Construct episode name
-        val name = "$figcaption - Season $seasonNumber"
+                // Construct episode name
+                val name = "$figcaption - Season $seasonNumber"
 
-        // Extract episode URL
-        val href = item.select("a").attr("href")
+                // Extract episode URL
+                val href = item.select("a").attr("href")
 
-        // Create Episode object if episode number and URL are valid
-        if (episodeNumber != null && href.isNotEmpty()) {
-            Episode(href, name, seasonNumber, episodeNumber)
-        } else {
-            null
+                // Create Episode object if episode number and URL are valid
+                if (episodeNumber != null && href.isNotEmpty()) {
+                    Episode(href, name, seasonNumber, episodeNumber)
+                } else {
+                    null
+                }
+            }
         }
-    }
-}
+
         newTvSeriesLoadResponse(title, url, TvType.TvSeries, episodes) {
             this.posterUrl = poster
         }
@@ -112,7 +113,6 @@ val episodes = seasons.flatMap { season ->
         }
     }
 }
-
     override suspend fun loadLinks(
         data: String,
         isCasting: Boolean,
