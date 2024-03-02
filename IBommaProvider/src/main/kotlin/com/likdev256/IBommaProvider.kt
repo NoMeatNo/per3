@@ -76,15 +76,16 @@ class IBommaProvider : MainAPI() { // all providers must be an instance of MainA
 
     return if (tvType == TvType.TvSeries) {
         val seasons = document.select(".latest-movie.movie-opt")
+        val episodes = mutableListOf<Episode>()
 
-        val episodes = seasons.flatMap { season ->
+        seasons.forEach { season ->
             // Extract season number
             val seasonNumberElement = season.select(".movie-heading span").firstOrNull()
             val seasonNumberText = seasonNumberElement?.text()?.removePrefix("Season")?.trim() ?: ""
             val seasonNumber = seasonNumberText.toIntOrNull()
 
             // Extract episodes within the season
-            season.select(".owl-carousel .item").mapNotNull { item ->
+            season.select(".owl-carousel .item").forEach { item ->
                 // Extract episode details
                 val figcaption = item.select(".figure-caption").text().trim()
                 val episodeNumber = figcaption.filter { it.isDigit() }.toIntOrNull()
@@ -97,9 +98,7 @@ class IBommaProvider : MainAPI() { // all providers must be an instance of MainA
 
                 // Create Episode object if episode number and URL are valid
                 if (episodeNumber != null && href.isNotEmpty()) {
-                    Episode(href, name, seasonNumber, episodeNumber)
-                } else {
-                    null
+                    episodes.add(Episode(href, name, seasonNumber, episodeNumber))
                 }
             }
         }
