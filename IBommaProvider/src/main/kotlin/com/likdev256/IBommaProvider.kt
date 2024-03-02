@@ -76,16 +76,17 @@ class IBommaProvider : MainAPI() { // all providers must be an instance of MainA
         val tvType = if (document.select(".col-md-12.col-sm-12:has(div.owl-carousel)").isNotEmpty()) TvType.TvSeries else TvType.Movie
 
         return if (tvType == TvType.TvSeries) {
-            val episodes = document.select(".owl-carousel .item").mapNotNull { item ->
-                val figcaption = item.select(".figure figcaption").text().trim()
+    val seasons = document.select(".row .movie-opt")
+    val episodes = seasons.flatMap { season ->
+        val seasonNumberElement = season.select("span").firstOrNull()
+        val season = seasonNumberElement?.text()?.removePrefix("Season")?.trim()?.toIntOrNull()
+        val seasonInfo = seasonNumberElement?.text()?.trim() ?: ""
+        season?.let {
+            season.select(".owl-carousel .item").mapNotNull { item ->
+                val figcaption = item.select(".figure-caption").text().trim()
                 val episode = figcaption.filter { it.isDigit() }.toIntOrNull()
-                val seasonNumberElement = item.parents().select(".movie-heading span").firstOrNull()
-                val season = seasonNumberElement?.text()?.removePrefix("Season")?.trim()?.toIntOrNull()
-                val seasonInfo = seasonNumberElement?.text()?.trim() ?: ""
-      
                 val name = "$figcaption - $seasonInfo"
-                
-                val href = fixUrl(item.select("a").attr("href")?: return@mapNotNull null)
+                val href = fixUrl(item.select("a").attr("href") ?: return@mapNotNull null)
                 Episode(
                     href,
                     name,
@@ -93,14 +94,16 @@ class IBommaProvider : MainAPI() { // all providers must be an instance of MainA
                     episode
                 )
             }
-            newTvSeriesLoadResponse(title, url, TvType.TvSeries, episodes) {
-                this.posterUrl = poster
-            }
-        } else {
-            newMovieLoadResponse(title, url, TvType.Movie, url) {
-                this.posterUrl = poster
-            }
-        }
+        } ?: emptyList()
+    }
+    newTvSeriesLoadResponse(title, url, TvType.TvSeries, episodes) {
+        this.posterUrl = poster
+    }
+} else {
+    newMovieLoadResponse(title, url, TvType.Movie, url) {
+        this.posterUrl = poster
+    }
+}
     }
 
 
