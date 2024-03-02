@@ -81,14 +81,14 @@ override suspend fun load(url: String): LoadResponse? {
         seasons.forEach { season ->
             // Extract season number
             val seasonNumberText = season.select(".movie-heading span").text().removePrefix("Season").trim()
-            val seasonNumber = seasonNumberText.toIntOrNull()
+            val season = seasonNumberText.toIntOrNull()
 
             // Extract episodes within the season
             val seasonEpisodes = season.select(".owl-carousel .item")
             seasonEpisodes.forEach { item ->
                 // Extract episode details
                 val figcaption = item.select(".figure-caption").text().trim()
-                val episodeNumber = figcaption.filter { it.isDigit() }.toIntOrNull()
+                val episode = figcaption.filter { it.isDigit() }.toIntOrNull()
 
                 // Construct episode name
                 val name = "$figcaption - Season $seasonNumber"
@@ -98,7 +98,7 @@ override suspend fun load(url: String): LoadResponse? {
 
                 // Create Episode object if episode number and URL are valid
                 if (episodeNumber != null && href.isNotEmpty()) {
-                    episodes.add(Episode(href, name, seasonNumber, episodeNumber))
+                    episodes.add(Episode(href, name, season, episode))
                 }
             }
         }
