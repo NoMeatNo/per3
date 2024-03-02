@@ -75,30 +75,27 @@ override suspend fun load(url: String): LoadResponse? {
     val tvType = if (document.select(".col-md-12.col-sm-12:has(div.owl-carousel)").isNotEmpty()) TvType.TvSeries else TvType.Movie
 
     return if (tvType == TvType.TvSeries) {
-        val seasons = document.select(".latest-movie.movie-opt")
+        val seasons = document.select(".latest-movie.movie-opt .movie-heading span")
         val episodes = mutableListOf<Episode>()
 
-        seasons.forEach { seaso ->
-            // Extract season number
-            val seasonNumberText = season.select(".movie-heading span").text().removePrefix("Season").trim()
-            val season = seasonNumberText.toIntOrNull()
+        seasons.forEach { seasonElement ->
+            val seasonNumberText = seasonElement.text().removePrefix("Season").trim()
+            val seasonNumber = seasonNumberText.toIntOrNull()
 
-            // Extract episodes within the season
-            val seasonEpisodes = season.select(".owl-carousel .item")
+            val seasonContainer = seasonElement.closest(".latest-movie.movie-opt")
+            val seasonClass = seasonContainer.select(".owl-carousel").attr("class").split(" ").find { it.startsWith("season_") }
+            
+            val seasonEpisodes = seasonContainer.select(".owl-carousel.$seasonClass .item")
+
             seasonEpisodes.forEach { item ->
-                // Extract episode details
                 val figcaption = item.select(".figure-caption").text().trim()
-                val episode = figcaption.filter { it.isDigit() }.toIntOrNull()
+                val episodeNumber = figcaption.filter { it.isDigit() }.toIntOrNull()
 
-                // Construct episode name
                 val name = "$figcaption - Season $seasonNumber"
-
-                // Extract episode URL
                 val href = item.select("a").attr("href")
 
-                // Create Episode object if episode number and URL are valid
                 if (episodeNumber != null && href.isNotEmpty()) {
-                    episodes.add(Episode(href, name, season, episode))
+                    episodes.add(Episode(href, name, seasonNumber, episodeNumber))
                 }
             }
         }
@@ -112,7 +109,6 @@ override suspend fun load(url: String): LoadResponse? {
         }
     }
 }
-
     
     override suspend fun loadLinks(
         data: String,
