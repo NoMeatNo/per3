@@ -78,7 +78,7 @@ override suspend fun load(url: String): LoadResponse? {
         val seasons = document.select(".latest-movie.movie-opt")
         val episodes = mutableListOf<Episode>()
 
-        seasons.forEach { season ->
+        seasons.forEach { seaso ->
             // Extract season number
             val seasonNumberText = season.select(".movie-heading span").text().removePrefix("Season").trim()
             val season = seasonNumberText.toIntOrNull()
