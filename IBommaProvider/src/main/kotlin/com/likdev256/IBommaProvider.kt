@@ -129,30 +129,17 @@ override suspend fun load(url: String): LoadResponse? {
                 this.posterUrl = poster
             }
         }
-        isLiveTv -> {
+isLiveTv -> {
     val title = document.selectFirst(".media-heading")?.text()?.trim() ?: return null
-    val imageUrl = fixUrlNull(document.selectFirst("img.media-object")?.attr("src"))
+    val posterUrl = fixUrlNull(document.selectFirst("img.media-object")?.attr("src"))
     val plot = document.select("p.live").text()
-
-    // Assuming the links are inside the btn-group, modify this part accordingly
-    val links = document.select(".btn-group a").mapNotNull {
-        // You may need to adjust this based on your actual HTML structure
-        val linkText = it.text().trim()
-        val linkUrl = fixUrlNull(it.attr("href"))
-        if (linkText.isNotEmpty() && linkUrl.isNotEmpty()) {
-            linkText to linkUrl
-        } else {
-            null
-        }
-    }.toMap()
 
     return LiveStreamLoadResponse(
         title,
         url,
         this.name,
-        imageUrl,
-        plot,
-        links
+        posterUrl,
+        plot
     )
 }
 
