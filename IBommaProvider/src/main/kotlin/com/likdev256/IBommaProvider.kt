@@ -135,11 +135,10 @@ isLiveTv -> {
     val plot = document.select("p.live").text()
 
     return LiveStreamLoadResponse(
-        title,
+        title = title,
         url,
-        this.name,
-        posterUrl,
-        plot
+        posterUrl = posterUrl,
+        plot = plot
     )
 }
 
