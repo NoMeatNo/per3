@@ -134,11 +134,16 @@ isLiveTv -> {
     val posterUrl = fixUrlNull(document.selectFirst("img.media-object")?.attr("src")) ?: ""
     val plot = document.select("p.live").text()
     val liveTvUrl = document.selectFirst(".btn-group a")?.attr("href") ?: return null
+    val scriptContent = document.selectFirst("script:containsData('videojs')")?.data() ?: ""
+    val m3u8LinkRegex = Regex("""src: '(https?://[^']+\.m3u8)'""")
+    val matchResult = m3u8LinkRegex.find(scriptContent)
+    val dataUrl = matchResult?.groupValues?.get(1)
 
     return LiveStreamLoadResponse(
         name = title,
         url = liveTvUrl,
         this.name,
+        dataUrl = dataUrl
         posterUrl = posterUrl,
         plot = plot
     )
