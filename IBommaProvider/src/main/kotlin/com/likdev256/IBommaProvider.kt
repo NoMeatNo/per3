@@ -64,7 +64,7 @@ private fun Element.toLiveTvSearchResult(): LiveSearchResponse? {
     val href = fixUrl(this.selectFirst("a")?.attr("href").toString())
     val posterUrl = fixUrlNull(this.selectFirst("img")?.attr("data-src")?.trim())
 
-    return LiveSearchResponse(title, href, TvType.Live) {
+    return LiveSearchResponse(title, href, TvType.Live).apply {
         this.posterUrl = posterUrl
     }
 }
