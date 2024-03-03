@@ -131,7 +131,7 @@ override suspend fun load(url: String): LoadResponse? {
         }
 isLiveTv -> {
     val title = document.selectFirst(".media-heading")?.text()?.trim() ?: return null
-    val posterUrl = fixUrlNull(document.selectFirst("img.media-object")?.attr("src"))
+    val posterUrl = fixUrlNull(document.selectFirst("img.media-object")?.attr("src")) ?: ""
     val plot = document.select("p.live").text()
 
     return LiveStreamLoadResponse(
