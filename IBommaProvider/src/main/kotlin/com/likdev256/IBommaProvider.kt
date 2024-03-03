@@ -48,7 +48,7 @@ override suspend fun getMainPage(
     val home = when (request.name) {
         "Live TVs" -> {
             // For Live TVs, select the 'div.item' elements within 'div.owl-item'
-            document.select("div.col-md-3.col-sm-4.col-xs-6").mapNotNull { it.toLiveTvSearchResult() }
+            document.select("figure.col-md-3.col-sm-4.col-xs-6").mapNotNull { it.toLiveTvSearchResult() }
         }
         else -> {
             // For Movies and TV Shows, select 'div.col-md-2.col-sm-3.col-xs-6' elements
