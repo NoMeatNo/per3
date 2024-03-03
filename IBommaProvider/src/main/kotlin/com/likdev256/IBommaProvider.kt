@@ -30,7 +30,7 @@ class IBommaProvider : MainAPI() { // all providers must be an instance of MainA
     override val mainPage = mainPageOf(
         "$mainUrl/fill1.html" to "Movies",
         "$mainUrl/sell1.html" to "TV Shows",
-        "$mainUrl/live-tv.html" to "Live TVs",        
+        "$mainUrl/live-tv/category/iran.html" to "Live TVs",        
     )
 
 override suspend fun getMainPage(
