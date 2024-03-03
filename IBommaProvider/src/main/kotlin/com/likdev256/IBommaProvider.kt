@@ -130,15 +130,32 @@ override suspend fun load(url: String): LoadResponse? {
             }
         }
         isLiveTv -> {
-                        return LiveStreamLoadResponse(
-                document.selectFirst("title")?.text()?.split("-")?.first()?.trim() ?: return null,
-                url,
-                this.name,
-                "$baseUrl$channel.m3u8",
-                fixUrlNull(document.selectFirst("img.aligncenter.jetpack-lazy-image")?.attr("src")),
-                plot = document.select("address").text()
-            )
+    val title = document.selectFirst(".media-heading")?.text()?.trim() ?: return null
+    val imageUrl = fixUrlNull(document.selectFirst("img.media-object")?.attr("src"))
+    val plot = document.select("p.live").text()
+
+    // Assuming the links are inside the btn-group, modify this part accordingly
+    val links = document.select(".btn-group a").mapNotNull {
+        // You may need to adjust this based on your actual HTML structure
+        val linkText = it.text().trim()
+        val linkUrl = fixUrlNull(it.attr("href"))
+        if (linkText.isNotEmpty() && linkUrl.isNotEmpty()) {
+            linkText to linkUrl
+        } else {
+            null
         }
+    }.toMap()
+
+    return LiveStreamLoadResponse(
+        title,
+        url,
+        this.name,
+        imageUrl,
+        plot,
+        links
+    )
+}
+
         else -> {
             return newMovieLoadResponse(title, url, TvType.Movie, url) {
                 this.posterUrl = poster
