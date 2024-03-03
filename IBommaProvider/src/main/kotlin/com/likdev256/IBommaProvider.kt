@@ -60,14 +60,15 @@ override suspend fun getMainPage(
 }
 
 private fun Element.toLiveTvSearchResult(): LiveSearchResponse? {
-    val title = this.selectFirst("figcaption.figure-caption")?.text()?.trim() ?: return null
-    val href = fixUrl(this.selectFirst("a")?.attr("href").toString())
-    val posterUrl = fixUrlNull(this.selectFirst("img")?.attr("data-src")?.trim())
-
-    return LiveSearchResponse(title, href, TvType.Live).apply {
-        this.posterUrl = posterUrl
-    }
+    return LiveSearchResponse(
+        this.selectFirst("figcaption.figure-caption")?.text() ?: return null,
+        fixUrlNull(this.selectFirst("a")?.attr("href")) ?: return null,
+        this@IBommaProvider.name, // This provides the type
+        TvType.Live,
+        fixUrlNull(this.select("img").attr("data-src")),
+    )
 }
+
 
     private fun Element.toSearchResult(): SearchResponse? {
         val title = this.selectFirst("div.movie-title h3 a")?.text()?.trim() ?: return null
