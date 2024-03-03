@@ -40,7 +40,7 @@ override suspend fun getMainPage(
     val link = when (request.name) {
         "Movies" -> "$mainUrl/fill1.html"
         "TV Shows" -> "$mainUrl/sell1.html"
-        "Live TVs" -> "$mainUrl/live-tv.html"
+        "Live TVs" -> "$mainUrl/live-tv/category/iran.html"
         else -> throw IllegalArgumentException("Invalid section name: ${request.name}")
     }
 
