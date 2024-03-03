@@ -48,7 +48,7 @@ override suspend fun getMainPage(
     val home = when (request.name) {
         "Live TVs" -> {
             // For Live TVs, select the 'div.item' elements within 'div.owl-item'
-            document.select("div.owl-item > div.item").mapNotNull { it.toLiveTvSearchResult() }
+            document.select("div.col-md-3.col-sm-4.col-xs-6").mapNotNull { it.toLiveTvSearchResult() }
         }
         else -> {
             // For Movies and TV Shows, select 'div.col-md-2.col-sm-3.col-xs-6' elements
@@ -60,18 +60,13 @@ override suspend fun getMainPage(
 }
 
     
-    private fun Element.toLiveTvSearchResult(): SearchResponse? {
-    // Assuming this function is called on an element that represents a single Live TV item
-  //  val title = this.select("figcaption.figure-caption").text().trim()
-    val title = this.selectFirst("figcaption.figure-caption")?.text()?.trim() ?: return null
-    val href = this.selectFirst("figure a")?.attr("href")?.let { fixUrl(it) } ?: return null
-//    val href = fixUrl(this.select("a").attr("href"))
-//    val posterUrl = fixUrlNull(this.select("img").attr("src").trim())
-    val posterUrl = this.selectFirst("img.owl-lazy")?.attr("data-src")?.let { fixUrlNull(it) }
-        ?: this.selectFirst("img.owl-lazy")?.attr("src")?.let { fixUrlNull(it) } // Fallback to src if data-src is not present.
+private fun Element.toLiveTvSearchResult(): SearchResponse? {
+    val titleElement = this.selectFirst("figcaption.figure-caption a") ?: return null
+    val title = titleElement.text().trim()
+    val href = fixUrl(titleElement.attr("href"))
 
+    val posterUrl = fixUrlNull(this.selectFirst("img.lazy")?.attr("src"))
 
-    // Assuming you have a way to distinguish Live TVs in your SearchResponse or TvType
     return newMovieSearchResponse(title, href, TvType.Live) {
         this.posterUrl = posterUrl
     }
