@@ -136,8 +136,9 @@ isLiveTv -> {
     val liveTvUrl = document.selectFirst(".btn-group a")?.attr("href") ?: return null
 
     return LiveStreamLoadResponse(
-        title = title,
+        name = title,
         url = liveTvUrl,
+        this.name,
         posterUrl = posterUrl,
         plot = plot
     )
