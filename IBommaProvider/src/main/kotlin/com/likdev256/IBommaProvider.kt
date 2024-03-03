@@ -90,20 +90,21 @@ private fun Element.toLiveTvSearchResult(): LiveSearchResponse? {
 
 override suspend fun load(url: String): LoadResponse? {
     val document = app.get(url).document
+     val data =
+        document.select("script").find { it.data().contains("var channelName =") }?.data()
     val title = document.selectFirst("div.col-sm-9 p.m-t-10 strong")?.text()?.trim() ?: return null
     val poster = fixUrlNull(document.selectFirst("video#play")?.attr("poster"))
-    val tvType = when {
-        document.select(".col-md-12.col-sm-12:has(div.owl-carousel)").isNotEmpty() -> TvType.TvSeries
-        document.select(".col-md-12.col-sm-12:has(div.live_tv_owl)").isNotEmpty() -> TvType.Live
-        else -> TvType.Movie
-    }
-
-    return when (tvType) {
-        TvType.TvSeries -> {
+    val baseUrl = data?.substringAfter("baseUrl = \"")?.substringBefore("\";")
+    val channel = data?.substringAfter("var channelName = \"")?.substringBefore("\";")
+    val isTvSeries = document.select(".col-md-12.col-sm-12:has(div.owl-carousel)").isNotEmpty()
+    val isLiveTv = document.select(".col-md-12.col-sm-12:has(div.live_tv_owl)").isNotEmpty()
+        return when {
+        isTvSeries -> {
+            val title = document.selectFirst("div.col-sm-9 p.m-t-10 strong")?.text()?.trim() ?: return null
+            val poster = fixUrlNull(document.selectFirst("video#play")?.attr("poster"))
             val episodes = mutableListOf<Episode>()
             val rows = document.select(".row")
             var seasonNumber = 0
-
             rows.forEachIndexed { index, row ->
                 if (row.select(".movie-heading").isNotEmpty()) {
                     // This row contains season information
@@ -124,16 +125,13 @@ override suspend fun load(url: String): LoadResponse? {
                 }
             }
 
-            newTvSeriesLoadResponse(title, url, TvType.TvSeries, episodes) {
+            return newTvSeriesLoadResponse(title, url, TvType.TvSeries, episodes) {
                 this.posterUrl = poster
             }
         }
-        TvType.Live -> {
-            val data = document.select("script").find { it.data().contains("var channelName =") }?.data()
-            val baseUrl = data?.substringAfter("baseUrl = \"")?.substringBefore("\";")
-            val channel = data?.substringAfter("var channelName = \"")?.substringBefore("\";")
-            LiveStreamLoadResponse(
-                title,
+        isLiveTv -> {
+                        return LiveStreamLoadResponse(
+                document.selectFirst("title")?.text()?.split("-")?.first()?.trim() ?: return null,
                 url,
                 this.name,
                 "$baseUrl$channel.m3u8",
@@ -141,8 +139,8 @@ override suspend fun load(url: String): LoadResponse? {
                 plot = document.select("address").text()
             )
         }
-        TvType.Movie -> {
-            newMovieLoadResponse(title, url, TvType.Movie, url) {
+        else -> {
+            return newMovieLoadResponse(title, url, TvType.Movie, url) {
                 this.posterUrl = poster
             }
         }
