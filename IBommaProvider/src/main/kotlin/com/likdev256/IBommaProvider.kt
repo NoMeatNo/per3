@@ -59,12 +59,12 @@ override suspend fun getMainPage(
     return newHomePageResponse(request.name, home)
 }
 
-private fun Element.toLiveTvSearchResult(): SearchResponse? {
+private fun Element.toLiveTvSearchResult(): LiveSearchResponse? {
     val title = this.selectFirst("figcaption.figure-caption")?.text()?.trim() ?: return null
     val href = fixUrl(this.selectFirst("a")?.attr("href").toString())
     val posterUrl = fixUrlNull(this.selectFirst("img")?.attr("data-src")?.trim())
 
-    return newMovieSearchResponse(title, href, TvType.Live) {
+    return LiveSearchResponse(title, href, TvType.Live) {
         this.posterUrl = posterUrl
     }
 }
