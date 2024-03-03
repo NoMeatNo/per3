@@ -142,12 +142,13 @@ isLiveTv -> {
     return LiveStreamLoadResponse(
         name = title,
         url = liveTvUrl,
-        this.name,
-        dataUrl = dataUrl
+        apiName = this.name, // Assuming this.name is the apiName for LiveStreamLoadResponse
+        dataUrl = dataUrl ?: "",
         posterUrl = posterUrl,
         plot = plot
     )
 }
+
 
         else -> {
             return newMovieLoadResponse(title, url, TvType.Movie, url) {
