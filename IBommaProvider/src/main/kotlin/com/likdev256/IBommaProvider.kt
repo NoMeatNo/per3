@@ -133,10 +133,11 @@ isLiveTv -> {
     val title = document.selectFirst(".media-heading")?.text()?.trim() ?: return null
     val posterUrl = fixUrlNull(document.selectFirst("img.media-object")?.attr("src")) ?: ""
     val plot = document.select("p.live").text()
+    val liveTvUrl = document.selectFirst(".btn-group a")?.attr("href") ?: return null
 
     return LiveStreamLoadResponse(
         title = title,
-        url,
+        url = liveTvUrl,
         posterUrl = posterUrl,
         plot = plot
     )
