@@ -16,8 +16,8 @@ import com.lagradost.nicehttp.NiceResponse
 import okhttp3.FormBody
 
 class IBommaProvider : MainAPI() { // all providers must be an instance of MainAPI
-    override var mainUrl = "https://www.radiovatani.com"
-    override var name = "Persian World 2"
+    override var mainUrl = "https://www.diycraftsguide.com"
+    override var name = "Persian World 3"
     override val hasMainPage = true
     override var lang = "fa"
     override val hasDownloadSupport = true
@@ -39,7 +39,7 @@ override suspend fun getMainPage(
 ): HomePageResponse {
     val link = when (request.name) {
         "Movies" -> "$mainUrl/fill1.html"
-        "TV Shows" -> "$mainUrl/sell1.html"
+        "TV Shows" -> "$mainUrl/ser.html"
         "Live TVs" -> "$mainUrl/live-tv/category/iran.html"
         else -> throw IllegalArgumentException("Invalid section name: ${request.name}")
     }
