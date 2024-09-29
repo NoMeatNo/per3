@@ -121,65 +121,66 @@ override suspend fun load(url: String): LoadResponse? {
 }
 
     
-    override suspend fun loadLinks(
-        data: String,
-        isCasting: Boolean,
-        subtitleCallback: (SubtitleFile) -> Unit,
-        callback: (ExtractorLink) -> Unit
-    ): Boolean {
-        val document = app.get(data).document
+override suspend fun loadLinks(
+    data: String,
+    isCasting: Boolean,
+    subtitleCallback: (SubtitleFile) -> Unit,
+    callback: (ExtractorLink) -> Unit
+): Boolean {
+    // Step 1: Get the initial document
+    val document = app.get(data).document
 
-        // Step 1: Extract the form action URL and id
-        val formAction = document.selectFirst("form#watch")?.attr("action") ?: return false
-        val formId = document.selectFirst("form#watch input[name=id]")?.attr("value") ?: return false
+    // Step 2: Extract the form action URL and id
+    val formAction = document.selectFirst("form#watch")?.attr("action") ?: return false
+    val formId = document.selectFirst("form#watch input[name=id]")?.attr("value") ?: return false
 
-        // Step 2: Submit the form and get the redirect page
-        val redirectPage = app.post(
-            formAction,
-            data = mapOf("id" to formId)
-        ).document
+    // Step 3: Submit the form and get the redirect page
+    val redirectPage = app.post(
+        formAction,
+        data = mapOf("id" to formId)
+    ).document
 
-        // Step 3: Extract the next form action and submit it
-        val nextFormAction = redirectPage.selectFirst("form#watch1")?.attr("action") ?: return false
-        val quality = redirectPage.selectFirst("a.btn-group[title]")?.attr("title") ?: "720"
-        val postId = redirectPage.selectFirst("form#watch1 input[name=postid]")?.attr("value") ?: return false
+    // Step 4: Extract the next form action and submit it
+    val nextFormAction = redirectPage.selectFirst("form#watch1")?.attr("action") ?: return false
+    val quality = redirectPage.selectFirst("a.btn-group[title]")?.attr("title") ?: "720"
+    val postId = redirectPage.selectFirst("form#watch1 input[name=postid]")?.attr("value") ?: return false
 
-        val finalPage = app.post(
-            nextFormAction,
-            data = mapOf(
-                "q" to quality,
-                "postid" to postId
+    // Submit the form to the new URL
+    val finalPage = app.post(
+        nextFormAction,
+        data = mapOf(
+            "q" to quality,
+            "postid" to postId
+        )
+    ).document
+
+    // Step 5: Extract the MP4 link from the final page
+    val mp4Link = finalPage.select("video.jw-video").attr("src").takeIf { it.isNotBlank() }
+        ?: finalPage.select("script").asSequence().mapNotNull { scriptElement ->
+            val scriptContent = scriptElement.html()
+            if (scriptContent.contains("sources: [")) {
+                val mp4Pattern = """file:\s*['"]([^'"]+)['"]""".toRegex()
+                mp4Pattern.find(scriptContent)?.groups?.get(1)?.value
+            } else {
+                null
+            }
+        }.firstOrNull()
+
+    if (mp4Link != null) {
+        callback.invoke(
+            ExtractorLink(
+                this.name,
+                this.name,
+                mp4Link,
+                referer = data
             )
-        ).document
-
-        // Step 4: Extract the MP4 link
-        val mp4Link = finalPage.select("video.jw-video").attr("src")
-
-        if (mp4Link.isNotBlank()) {
-            callback.invoke(
-                ExtractorLink(
-                    this.name,
-                    this.name,
-                    mp4Link,
-                    referer = data,
-                    quality = getQualityFromString(quality),
-                )
-            )
-            return true
-        }
-
-        return false
+        )
+        return true
     }
 
-    private fun getQualityFromString(quality: String): Int {
-        return when (quality) {
-            "1080" -> Qualities.P1080.value
-            "720" -> Qualities.P720.value
-            "480" -> Qualities.P480.value
-            "360" -> Qualities.P360.value
-            else -> Qualities.Unknown.value
-        }
-    }
+    return false
+}
+
         
     private suspend fun getUrls(url: String): List<String>? {
 
