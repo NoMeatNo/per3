@@ -52,7 +52,7 @@ override suspend fun getMainPage(
         }
         else -> {
             // For Movies and TV Shows, select 'div.col-md-2.col-sm-3.col-xs-6' elements
-            document.select("div.col-md-2.col-sm-3.col-xs-6").mapNotNull { it.toSearchResult() }
+            document.select("article.item").mapNotNull { it.toSearchResult() }
         }
     }
 
@@ -71,10 +71,11 @@ private fun Element.toLiveTvSearchResult(): LiveSearchResponse? {
 
 
     private fun Element.toSearchResult(): SearchResponse? {
-        val title = this.selectFirst("div.movie-title h3 a")?.text()?.trim() ?: return null
-        val href = fixUrl(this.selectFirst("div.movie-title h3 a")?.attr("href").toString())
-        val posterUrl = fixUrlNull(this.selectFirst("div.latest-movie-img-container")?.attr("data-src")?.trim())
-        return newMovieSearchResponse(title, href, TvType.Movie) {
+        val title = this.selectFirst("div.data h3 a")?.text()?.trim() ?: return null
+        val href = fixUrl(this.selectFirst("div.data h3 a")?.attr("href").toString())
+        val posterUrl = fixUrlNull(this.selectFirst("div.poster img")?.attr("data-src"))
+        val type = if (this.hasClass("tvshows")) TvType.TvSeries else TvType.Movie
+        return newMovieSearchResponse(title, href, type) {
             this.posterUrl = posterUrl
         }
     }
@@ -90,70 +91,31 @@ private fun Element.toLiveTvSearchResult(): LiveSearchResponse? {
 
 override suspend fun load(url: String): LoadResponse? {
     val document = app.get(url).document
-     val data =
-        document.select("script").find { it.data().contains("var channelName =") }?.data()
-    val title = document.selectFirst("div.col-sm-9 p.m-t-10 strong")?.text()?.trim() ?: return null
-    val poster = fixUrlNull(document.selectFirst("video#play")?.attr("poster"))
-    val baseUrl = data?.substringAfter("baseUrl = \"")?.substringBefore("\";")
-    val channel = data?.substringAfter("var channelName = \"")?.substringBefore("\";")
-    val isTvSeries = document.select(".col-md-12.col-sm-12:has(div.owl-carousel)").isNotEmpty()
-    val isLiveTv = document.select(".col-md-12.col-sm-12:has(div.live_tv_owl)").isNotEmpty()
-        return when {
-        isTvSeries -> {
-            val title = document.selectFirst("div.col-sm-9 p.m-t-10 strong")?.text()?.trim() ?: return null
-            val poster = fixUrlNull(document.selectFirst("video#play")?.attr("poster"))
-            val episodes = mutableListOf<Episode>()
-            val rows = document.select(".row")
-            var seasonNumber = 0
-            rows.forEachIndexed { index, row ->
-                if (row.select(".movie-heading").isNotEmpty()) {
-                    // This row contains season information
-                    val seasonText = row.select(".movie-heading span").text().trim()
-                    seasonNumber = seasonText.removePrefix("Season").trim().toIntOrNull() ?: 0
-                } else if (row.select(".owl-carousel").isNotEmpty() && seasonNumber > 0) {
-                    // This row contains episodes for the previously identified season
-                    val items = row.select(".item")
-                    items.forEach { item ->
-                        val episodeLink = item.select("a").attr("href")
-                        val episodeNumberText = item.select(".figure-caption").text().trim()
-                        val episodeNumber = episodeNumberText.removePrefix("E").toIntOrNull() ?: 0
-                        val episodeName = "Season $seasonNumber Episode $episodeNumber"
-                        if (episodeLink.isNotEmpty()) {
-                            episodes.add(Episode(episodeLink, episodeName, seasonNumber, episodeNumber))
-                        }
-                    }
-                }
-            }
+    val title = document.selectFirst("div.data h1")?.text()?.trim() ?: return null
+    val poster = fixUrlNull(document.selectFirst("div.poster img")?.attr("src"))
+    val plot = document.selectFirst("div.contenido p")?.text()?.trim()
 
-            return newTvSeriesLoadResponse(title, url, TvType.TvSeries, episodes) {
-                this.posterUrl = poster
+    val isTvSeries = url.contains("/tvshows/")
+    
+    return if (isTvSeries) {
+        val episodes = mutableListOf<Episode>()
+        document.select("#seasons .se-c").forEach { season ->
+            val seasonNumber = season.selectFirst(".se-t")?.text()?.toIntOrNull() ?: return@forEach
+            season.select("ul.episodios li").forEach { episode ->
+                val epNumber = episode.selectFirst(".numerando")?.text()?.substringAfter("-")?.trim()?.toIntOrNull() ?: return@forEach
+                val epTitle = episode.selectFirst(".episodiotitle a")?.text() ?: return@forEach
+                val epLink = fixUrl(episode.selectFirst(".episodiotitle a")?.attr("href") ?: return@forEach)
+                episodes.add(Episode(epLink, epTitle, seasonNumber, epNumber))
             }
         }
-isLiveTv -> {
-    val title = document.selectFirst(".media-heading")?.text()?.trim() ?: return null
-    val posterUrl = fixUrlNull(document.selectFirst("img.media-object")?.attr("src")) ?: ""
-    val plot = document.select("p.live").text()
-    val liveTvUrl = document.selectFirst(".btn-group a")?.attr("href") ?: return null
-    val scriptContent = document.selectFirst("script:containsData('videojs')")?.data() ?: ""
-    val m3u8LinkRegex = Regex("""src: '(https?://[^']+\.m3u8)'""")
-    val matchResult = m3u8LinkRegex.find(scriptContent)
-    val dataUrl = matchResult?.groupValues?.get(1)
-
-    return LiveStreamLoadResponse(
-        name = title,
-        url = liveTvUrl,
-        apiName = this.name, // Assuming this.name is the apiName for LiveStreamLoadResponse
-        dataUrl = dataUrl ?: "",
-        posterUrl = posterUrl,
-        plot = plot
-    )
-}
-
-
-        else -> {
-            return newMovieLoadResponse(title, url, TvType.Movie, url) {
-                this.posterUrl = poster
-            }
+        newTvSeriesLoadResponse(title, url, TvType.TvSeries, episodes) {
+            this.posterUrl = poster
+            this.plot = plot
+        }
+    } else {
+        newMovieLoadResponse(title, url, TvType.Movie, url) {
+            this.posterUrl = poster
+            this.plot = plot
         }
     }
 }
