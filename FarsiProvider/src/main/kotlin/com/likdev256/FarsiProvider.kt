@@ -122,21 +122,17 @@ override suspend fun load(url: String): LoadResponse? {
 }
 
     
-override suspend fun loadLinks(
-    data: String,
-    isCasting: Boolean,
-    subtitleCallback: (SubtitleFile) -> Unit,
-    callback: (ExtractorLink) -> Unit
-): Boolean {
-    data.split(",").forEach { url ->
-        val trimmedUrl = url.trim()
+    override suspend fun loadLinks(
+        data: String,
+        isCasting: Boolean,
+        subtitleCallback: (SubtitleFile) -> Unit,
+        callback: (ExtractorLink) -> Unit
+    ): Boolean {
+        val document = app.get(data).document
 
-        // Step 1: Get the initial document
-        val document = app.get(trimmedUrl).document
-        
         // Step 1: Extract the form action URL and id
         val formAction = document.selectFirst("form#watch")?.attr("action") ?: return false
-        val formId = document.selectFirst("form#watch input[name=id]")?.attr("value") ?: ""
+        val formId = document.selectFirst("form#watch input[name=id]")?.attr("value") ?: return false
 
         // Step 2: Submit the form and get the redirect page
         val redirectPage = app.post(
@@ -145,55 +141,36 @@ override suspend fun loadLinks(
         ).document
 
         // Step 3: Extract the next form action and submit it
-        val nextFormAction = redirectPage.selectFirst("form#watch")?.attr("action") ?: return false
-        val postId = redirectPage.selectFirst("form#watch input[name=postid]")?.attr("value") ?: return false
+        val nextFormAction = redirectPage.selectFirst("form#watch1")?.attr("action") ?: return false
+        val quality = redirectPage.selectFirst("a.btn-group[title]")?.attr("title") ?: "720"
+        val postId = redirectPage.selectFirst("form#watch1 input[name=postid]")?.attr("value") ?: return false
 
-        // Submit the next form and get the final page
         val finalPage = app.post(
             nextFormAction,
-            data = mapOf("postid" to postId)
+            data = mapOf(
+                "q" to quality,
+                "postid" to postId
+            )
         ).document
 
         // Step 4: Extract the MP4 link
-        val mp4Link = extractMp4Link(finalPage)
+        val mp4Link = finalPage.select("video.jw-video").attr("src")
+
         if (mp4Link.isNotBlank()) {
             callback.invoke(
                 ExtractorLink(
                     this.name,
                     this.name,
                     mp4Link,
-                    referer = trimmedUrl,
-                    quality = Qualities.P720,
+                    referer = data,
+                    quality = getQualityFromString(quality),
                 )
             )
+            return true
         }
-    }
-    return true
-}
 
-// Function to extract MP4 link from a Document
-private fun extractMp4Link(page: Document): String {
-    // Check if there is a video element first
-    val mp4Link = page.select("video.jw-video").attr("src")
-    if (mp4Link.isNotBlank()) {
-        return mp4Link
+        return false
     }
-
-    // If the MP4 link was not found in the video element, look for the script
-    page.select("script").forEach { scriptElement: Element ->
-        val scriptContent = scriptElement.html()
-        if (scriptContent.contains("sources: [")) {
-            // Extract the MP4 link from the script
-            val mp4Pattern = """file:\s*['"]([^'"]+)['"]""".toRegex()
-            val matchResult = mp4Pattern.find(scriptContent)
-            if (matchResult != null) {
-                return matchResult.groups[1]?.value ?: ""
-            }
-        }
-    }
-
-    return ""
-}
 
         
     private suspend fun getUrls(url: String): List<String>? {
