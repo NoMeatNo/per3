@@ -128,7 +128,7 @@ override suspend fun loadLinks(
     subtitleCallback: (SubtitleFile) -> Unit,
     callback: (ExtractorLink) -> Unit
 ): Boolean {
-    try {
+    return try {
         // Step 1: Get the initial document
         val document = app.get(data).document
 
@@ -176,14 +176,16 @@ override suspend fun loadLinks(
                         quality = Qualities.P720.value
                     )
                 )
-                return true
+                true
+            } else {
+                false
             }
+        } else {
+            false
         }
-
-        return false
     } catch (e: Exception) {
-        logError(e)
-        return false
+        // Instead of logging, we'll just return false to indicate failure
+        false
     }
 }
 
