@@ -128,58 +128,63 @@ override suspend fun loadLinks(
     subtitleCallback: (SubtitleFile) -> Unit,
     callback: (ExtractorLink) -> Unit
 ): Boolean {
-    // Step 1: Get the initial document
-    val document = app.get(data).document
+    try {
+        // Step 1: Get the initial document
+        val document = app.get(data).document
 
-    // Extract the form action URL and id
-    val formAction = document.selectFirst("form#watch")?.attr("action") ?: return false
-    val formId = document.selectFirst("form#watch input[name=id]")?.attr("value") ?: return false
+        // Extract the form action URL and id
+        val formAction = document.selectFirst("form#watch")?.attr("action") ?: return false
+        val formId = document.selectFirst("form#watch input[name=id]")?.attr("value") ?: return false
 
-    // Step 2: Submit the form and get the redirect page
-    val redirectPage = app.post(
-        formAction,
-        data = mapOf("id" to formId)
-    ).document
-
-    // Step 3: Extract the next form action and submit it
-    val nextFormAction = redirectPage.selectFirst("form#watch")?.attr("action") ?: return false
-    val postId = redirectPage.selectFirst("form#watch input[name=postid]")?.attr("value") ?: return false
-
-    // Submit the next form and get the final page
-    val finalPage = app.post(
-        nextFormAction,
-        data = mapOf("postid" to postId)
-    ).document
-
-    // Step 4 & 5: Check for a form that redirects to another URL
-    val redirectFormAction = finalPage.selectFirst("form#watch1")?.attr("action")
-    if (redirectFormAction != null) {
-        val quality = "720" // Always use 720p quality
-        val postIdForNextRedirect = finalPage.selectFirst("form#watch1 input[name=postid]")?.attr("value") ?: return false
-
-        // Submit the form to the new URL
-        val finalRedirectPage = app.post(
-            redirectFormAction,
-            data = mapOf("q" to quality, "postid" to postIdForNextRedirect)
+        // Step 2: Submit the form and get the redirect page
+        val redirectPage = app.post(
+            formAction,
+            data = mapOf("id" to formId)
         ).document
 
-        // Extract the MP4 link from the final redirect page
-        val finalMp4Link = extractMp4Link(finalRedirectPage)
-        if (finalMp4Link.isNotBlank()) {
-            callback.invoke(
-                ExtractorLink(
-                    this.name,
-                    this.name,
-                    finalMp4Link,
-                    referer = data,
-                    quality = Qualities.P720,
-                )
-            )
-            return true
-        }
-    }
+        // Step 3: Extract the next form action and submit it
+        val nextFormAction = redirectPage.selectFirst("form#watch")?.attr("action") ?: return false
+        val postId = redirectPage.selectFirst("form#watch input[name=postid]")?.attr("value") ?: return false
 
-    return false
+        // Submit the next form and get the final page
+        val finalPage = app.post(
+            nextFormAction,
+            data = mapOf("postid" to postId)
+        ).document
+
+        // Step 4 & 5: Check for a form that redirects to another URL
+        val redirectFormAction = finalPage.selectFirst("form#watch1")?.attr("action")
+        if (redirectFormAction != null) {
+            val quality = "720" // Always use 720p quality
+            val postIdForNextRedirect = finalPage.selectFirst("form#watch1 input[name=postid]")?.attr("value") ?: return false
+
+            // Submit the form to the new URL
+            val finalRedirectPage = app.post(
+                redirectFormAction,
+                data = mapOf("q" to quality, "postid" to postIdForNextRedirect)
+            ).document
+
+            // Extract the MP4 link from the final redirect page
+            val finalMp4Link = extractMp4Link(finalRedirectPage)
+            if (finalMp4Link.isNotBlank()) {
+                callback.invoke(
+                    ExtractorLink(
+                        this.name,
+                        this.name,
+                        finalMp4Link,
+                        referer = data,
+                        quality = Qualities.P720.value
+                    )
+                )
+                return true
+            }
+        }
+
+        return false
+    } catch (e: Exception) {
+        logError(e)
+        return false
+    }
 }
 
 // Function to extract MP4 link
@@ -198,14 +203,13 @@ private fun extractMp4Link(page: Document): String {
             val mp4Pattern = """file:\s*['"]([^'"]+)['"]""".toRegex()
             val matchResult = mp4Pattern.find(scriptContent)
             if (matchResult != null) {
-                return matchResult.groups[1]?.value ?: ""
+                return matchResult.groupValues[1]
             }
         }
     }
 
     return ""
 }
-
         
     private suspend fun getUrls(url: String): List<String>? {
 
