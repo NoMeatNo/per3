@@ -14,6 +14,7 @@ import org.jsoup.nodes.Element
 import java.net.URLEncoder
 import com.lagradost.nicehttp.NiceResponse
 import okhttp3.FormBody
+import org.jsoup.nodes.Document
 
 class FarsiProvider : MainAPI() { // all providers must be an instance of MainAPI
     override var mainUrl = "https://farsiland.com"
