@@ -51,8 +51,8 @@ override suspend fun getMainPage(
             document.select("figure.col-md-3.col-sm-4.col-xs-6").mapNotNull { it.toLiveTvSearchResult() }
         }
         else -> {
-            // For Movies and TV Shows, select 'article.item.tvshows' elements
-            document.select("article.item.tvshows").mapNotNull { it.toSearchResult() }
+            // For Movies and TV Shows, select 'div.col-md-2.col-sm-3.col-xs-6' elements
+            document.select("div.col-md-2.col-sm-3.col-xs-6").mapNotNull { it.toSearchResult() }
         }
     }
 
@@ -69,11 +69,12 @@ private fun Element.toLiveTvSearchResult(): LiveSearchResponse? {
     )
 }
 
+
     private fun Element.toSearchResult(): SearchResponse? {
-        val title = this.selectFirst("div.data h3 a")?.text()?.trim() ?: return null
-        val href = fixUrl(this.selectFirst("div.data h3 a")?.attr("href").toString())
-        val posterUrl = fixUrlNull(this.selectFirst("div.poster img")?.attr("data-src")?.trim())
-        return newTvSeriesSearchResponse(title, href, TvType.TvSeries) {
+        val title = this.selectFirst("div.movie-title h3 a")?.text()?.trim() ?: return null
+        val href = fixUrl(this.selectFirst("div.movie-title h3 a")?.attr("href").toString())
+        val posterUrl = fixUrlNull(this.selectFirst("div.latest-movie-img-container")?.attr("data-src")?.trim())
+        return newMovieSearchResponse(title, href, TvType.Movie) {
             this.posterUrl = posterUrl
         }
     }
@@ -89,32 +90,45 @@ private fun Element.toLiveTvSearchResult(): LiveSearchResponse? {
 
 override suspend fun load(url: String): LoadResponse? {
     val document = app.get(url).document
-    val title = document.selectFirst("div.data h3 a")?.text()?.trim() ?: return null
-    val poster = fixUrlNull(document.selectFirst("div.poster img")?.attr("data-src"))
+     val data =
+        document.select("script").find { it.data().contains("var channelName =") }?.data()
+    val title = document.selectFirst("div.col-sm-9 p.m-t-10 strong")?.text()?.trim() ?: return null
+    val poster = fixUrlNull(document.selectFirst("video#play")?.attr("poster"))
+    val baseUrl = data?.substringAfter("baseUrl = \"")?.substringBefore("\";")
+    val channel = data?.substringAfter("var channelName = \"")?.substringBefore("\";")
+    val isTvSeries = document.select(".col-md-12.col-sm-12:has(div.owl-carousel)").isNotEmpty()
+    val isLiveTv = document.select(".col-md-12.col-sm-12:has(div.live_tv_owl)").isNotEmpty()
+        return when {
+        isTvSeries -> {
+            val title = document.selectFirst("div.col-sm-9 p.m-t-10 strong")?.text()?.trim() ?: return null
+            val poster = fixUrlNull(document.selectFirst("video#play")?.attr("poster"))
+            val episodes = mutableListOf<Episode>()
+            val rows = document.select(".row")
+            var seasonNumber = 0
+            rows.forEachIndexed { index, row ->
+                if (row.select(".movie-heading").isNotEmpty()) {
+                    // This row contains season information
+                    val seasonText = row.select(".movie-heading span").text().trim()
+                    seasonNumber = seasonText.removePrefix("Season").trim().toIntOrNull() ?: 0
+                } else if (row.select(".owl-carousel").isNotEmpty() && seasonNumber > 0) {
+                    // This row contains episodes for the previously identified season
+                    val items = row.select(".item")
+                    items.forEach { item ->
+                        val episodeLink = item.select("a").attr("href")
+                        val episodeNumberText = item.select(".figure-caption").text().trim()
+                        val episodeNumber = episodeNumberText.removePrefix("E").toIntOrNull() ?: 0
+                        val episodeName = "Season $seasonNumber Episode $episodeNumber"
+                        if (episodeLink.isNotEmpty()) {
+                            episodes.add(Episode(episodeLink, episodeName, seasonNumber, episodeNumber))
+                        }
+                    }
+                }
+            }
 
-    val episodes = mutableListOf<Episode>()
-    val seasons = document.select("#serie_contenido #seasons .se-c")
-    seasons.forEach { season ->
-        val seasonNumberText = season.selectFirst(".se-q .se-t")?.text()?.trim() ?: return null
-        val seasonNumber = seasonNumberText.toIntOrNull() ?: 0
-
-        val episodeItems = season.select(".se-a ul.episodios li")
-        episodeItems.forEach { episodeItem ->
-            val episodeNumberText = episodeItem.selectFirst(".numerando")?.text()?.trim() ?: return null
-            val episodeNumber = episodeNumberText.substringAfter("-").trim().toIntOrNull() ?: 0
-            val episodeLink = fixUrl(episodeItem.selectFirst(".episodiotitle a")?.attr("href").toString())
-            val episodeName = "Season $seasonNumber Episode $episodeNumber"
-
-            if (episodeLink.isNotEmpty()) {
-                episodes.add(Episode(episodeLink, episodeName, seasonNumber, episodeNumber))
+            return newTvSeriesLoadResponse(title, url, TvType.TvSeries, episodes) {
+                this.posterUrl = poster
             }
         }
-    }
-
-    return newTvSeriesLoadResponse(title, url, TvType.TvSeries, episodes) {
-        this.posterUrl = poster
-    }
-}
 isLiveTv -> {
     val title = document.selectFirst(".media-heading")?.text()?.trim() ?: return null
     val posterUrl = fixUrlNull(document.selectFirst("img.media-object")?.attr("src")) ?: ""
