@@ -121,19 +121,23 @@ override suspend fun load(url: String): LoadResponse? {
     }
 }
 
-    
+
 override suspend fun loadLinks(
     data: String,
     isCasting: Boolean,
     subtitleCallback: (SubtitleFile) -> Unit,
     callback: (ExtractorLink) -> Unit
 ): Boolean {
-    // Step 1: Fetch the initial document
+    // Step 1: Get the initial document
     val document = app.get(data).document
+//    println("Step 1: Fetched initial document from $data")
 
     // Step 1: Extract the form action URL and id
     val formAction = document.selectFirst("form#watch")?.attr("action") ?: return false
     val formId = document.selectFirst("form#watch input[name=id]")?.attr("value") ?: return false
+
+//    println("Step 1: Form action URL: $formAction")
+  //  println("Step 1: Form ID: $formId")
 
     // Step 2: Submit the form and get the redirect page
     val redirectPage = app.post(
@@ -141,9 +145,14 @@ override suspend fun loadLinks(
         data = mapOf("id" to formId)
     ).document
 
+  //  println("Step 2: Submitted form, received redirect page at: ${redirectPage.baseUri()}")
+
     // Step 3: Extract the next form action and submit it
-    val nextFormAction = redirectPage.selectFirst("form#watch1")?.attr("action") ?: return false
-    val postId = redirectPage.selectFirst("form#watch1 input[name=postid]")?.attr("value") ?: return false
+    val nextFormAction = redirectPage.selectFirst("form#watch")?.attr("action") ?: return false
+    val postId = redirectPage.selectFirst("form#watch input[name=postid]")?.attr("value") ?: return false
+
+  //  println("Step 3: Next form action URL: $nextFormAction")
+    // println("Step 3: Post ID: $postId")
 
     // Submit the next form and get the final page
     val finalPage = app.post(
@@ -151,16 +160,27 @@ override suspend fun loadLinks(
         data = mapOf("postid" to postId)
     ).document
 
+//    println("Step 3: Submitted next form, received final page at: ${finalPage.baseUri()}")
+
+    // Step 4 & 5: Check for a form that redirects to another URL
     val redirectFormAction = finalPage.selectFirst("form#watch1")?.attr("action")
     if (redirectFormAction != null) {
-        val quality = finalPage.selectFirst("form#watch1 input[name=q]")?.attr("value") ?: "720"
+        val quality = "720" // Always use 720p quality
         val postIdForNextRedirect = finalPage.selectFirst("form#watch1 input[name=postid]")?.attr("value") ?: return false
-    
+
+  //      println("Step 5: Redirecting to: $redirectFormAction")
+    //    println("Step 5: Quality: $quality")
+      //  println("Step 5: Post ID for next redirect: $postIdForNextRedirect")
+
+        // Submit the form to the new URL
         val finalRedirectPage = app.post(
             redirectFormAction,
             data = mapOf("q" to quality, "postid" to postIdForNextRedirect)
         ).document
 
+     //   println("Step 5: Submitted redirect form, received final redirect page at: ${finalRedirectPage.baseUri()}")
+
+        // Extract the MP4 link from the final redirect page
         val finalMp4Link = extractMp4Link(finalRedirectPage)
         if (finalMp4Link.isNotBlank()) {
             callback.invoke(
@@ -169,22 +189,22 @@ override suspend fun loadLinks(
                     this.name,
                     finalMp4Link,
                     referer = data,
-                    quality = Qualities.P720,  // Always use 720p quality
+                    quality = Qualities.P720,
                 )
             )
             return true
         }
     }
-        
+
+//    println("Step 4 & 5: MP4 link extraction failed.")
     return false
 }
 
 // Simplified MP4 link extraction using only regex
 private fun extractMp4Link(page: Document): String {
-    page.select("script").forEach { scriptElement: Element ->
+    page.select("script").forEach { scriptElement ->
         val scriptContent = scriptElement.html()
         if (scriptContent.contains("sources: [")) {
-            // Extract the MP4 link from the script using regex
             val mp4Pattern = """file:\s*['"]([^'"]+)['"]""".toRegex()
             val matchResult = mp4Pattern.find(scriptContent)
             if (matchResult != null) {
@@ -194,7 +214,6 @@ private fun extractMp4Link(page: Document): String {
     }
     return ""
 }
-
 
         
     private suspend fun getUrls(url: String): List<String>? {
