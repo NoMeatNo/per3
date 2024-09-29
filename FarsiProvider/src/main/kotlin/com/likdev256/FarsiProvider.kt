@@ -171,7 +171,15 @@ override suspend fun load(url: String): LoadResponse? {
 
         return false
     }
-
+    private fun getQualityFromString(quality: String): Int {
+        return when (quality) {
+            "1080" -> Qualities.P1080.value
+            "720" -> Qualities.P720.value
+            "480" -> Qualities.P480.value
+            "360" -> Qualities.P360.value
+            else -> Qualities.Unknown.value
+        }
+    }
         
     private suspend fun getUrls(url: String): List<String>? {
 
