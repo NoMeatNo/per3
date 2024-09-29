@@ -143,7 +143,7 @@ override suspend fun loadLinks(
 
     // Step 3: Extract the next form action and submit it
     val nextFormAction = redirectPage.selectFirst("form#watch1")?.attr("action") ?: return false
-    val postId = redirectPage.selectFirst("form#watch1 input[name=postid]")?.attr("value") ?: return false
+    val postId = redirectPage.selectFirst("form#watch input[name=postid]")?.attr("value") ?: return false
 
     // Submit the next form and get the final page
     val finalPage = app.post(
@@ -151,39 +151,49 @@ override suspend fun loadLinks(
         data = mapOf("postid" to postId)
     ).document
 
-    // Step 4: Extract the MP4 link using regex
-    val mp4Link = extractMp4Link(finalPage)
-    if (mp4Link.isNotBlank()) {
-        callback.invoke(
-            ExtractorLink(
-                this.name,
-                this.name,
-                mp4Link,
-                referer = data,
-                quality = Qualities.P720, // Always use 720p quality
+    val redirectFormAction = finalPage.selectFirst("form#watch1")?.attr("action")
+    if (redirectFormAction != null) {
+        val quality = finalPage.selectFirst("form#watch1 input[name=q]")?.attr("value") ?: "720"
+        val postIdForNextRedirect = finalPage.selectFirst("form#watch1 input[name=postid]")?.attr("value") ?: return false
+    
+        val finalRedirectPage = app.post(
+            redirectFormAction,
+            data = mapOf("q" to quality, "postid" to postIdForNextRedirect)
+        ).document
+
+        val finalMp4Link = extractMp4Link(finalRedirectPage)
+        if (finalMp4Link.isNotBlank()) {
+            callback.invoke(
+                ExtractorLink(
+                    this.name,
+                    this.name,
+                    finalMp4Link,
+                    referer = data,
+                    quality = Qualities.P720,
+                )
             )
-        )
-        return true
-    }
-
-    return false
-}
-
-// Simplified MP4 link extraction using only regex
-private fun extractMp4Link(page: Document): String {
-    page.select("script").forEach { scriptElement: Element ->
-        val scriptContent = scriptElement.html()
-        if (scriptContent.contains("sources: [")) {
-            // Extract the MP4 link from the script using regex
-            val mp4Pattern = """file:\s*['"]([^'"]+)['"]""".toRegex()
-            val matchResult = mp4Pattern.find(scriptContent)
-            if (matchResult != null) {
-                return matchResult.groups[1]?.value ?: ""
-            }
+            return true
         }
     }
-    return ""
+        
+    return false
 }
+        
+    // Simplified MP4 link extraction using only regex
+    private fun extractMp4Link(page: Document): String {
+        page.select("script").forEach { scriptElement: Element ->
+            val scriptContent = scriptElement.html()
+            if (scriptContent.contains("sources: [")) {
+                // Extract the MP4 link from the script using regex
+                val mp4Pattern = """file:\s*['"]([^'"]+)['"]""".toRegex()
+                val matchResult = mp4Pattern.find(scriptContent)
+                if (matchResult != null) {
+                    return matchResult.groups[1]?.value ?: ""
+                }
+            }
+        }
+        return ""
+    }
 
         
     private suspend fun getUrls(url: String): List<String>? {
