@@ -91,14 +91,13 @@ private fun Element.toSearchResult(): SearchResponse? {
 
 override suspend fun load(url: String): LoadResponse? {
     val document = app.get(url).document
-    val title = document.selectFirst("div.data h1")?.text()?.trim() ?: return null
-    val poster = fixUrlNull(document.selectFirst("div.poster img")?.attr("src"))
-    val plot = document.selectFirst("div.contenido p")?.text()?.trim()
-
     val isTvSeries = url.contains("/tvshows/")
     val isMovie = url.contains("/movies/")
 
     return if (isTvSeries) {
+        val title = document.selectFirst("div.data h1")?.text()?.trim() ?: return null
+        val poster = fixUrlNull(document.selectFirst("div.poster img")?.attr("src"))
+        val plot = document.selectFirst("div.contenido p")?.text()?.trim()
         val episodes = mutableListOf<Episode>()
         document.select("#seasons .se-c").forEach { season ->
             val seasonNumber = season.selectFirst(".se-t")?.text()?.toIntOrNull() ?: return@forEach
