@@ -96,6 +96,7 @@ override suspend fun load(url: String): LoadResponse? {
     val plot = document.selectFirst("div.contenido p")?.text()?.trim()
 
     val isTvSeries = url.contains("/tvshows/")
+    val isMovie = url.contains("/movies/")    
     
     return if (isTvSeries) {
         val episodes = mutableListOf<Episode>()
@@ -112,7 +113,8 @@ override suspend fun load(url: String): LoadResponse? {
             this.posterUrl = poster
             this.plot = plot
         }
-    } else {
+    } else 
+    return if (isMovie) {
         newMovieLoadResponse(title, url, TvType.Movie, url) {
             this.posterUrl = poster
             this.plot = plot
