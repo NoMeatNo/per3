@@ -39,7 +39,7 @@ override suspend fun getMainPage(
     request: MainPageRequest
 ): HomePageResponse {
     val link = when (request.name) {
-        "Movies" -> "$mainUrl/fill1.html"
+        "Movies" -> "$mainUrl/new-iranian-movies-1/"
         "TV Shows" -> "$mainUrl/series-21/"
         "Live TVs" -> "$mainUrl/live-tv/category/iran.html"
         else -> throw IllegalArgumentException("Invalid section name: ${request.name}")
@@ -70,7 +70,7 @@ private fun Element.toLiveTvSearchResult(): LiveSearchResponse? {
     )
 }
 
-    private fun Element.toSearchResult(): SearchResponse? {
+private fun Element.toSearchResult(): SearchResponse? {
     val title = this.selectFirst("div.data h3 a")?.text()?.trim() ?: return null
     val href = fixUrl(this.selectFirst("div.data h3 a")?.attr("href").toString())
     val posterUrl = fixUrlNull(this.selectFirst("div.poster img")?.attr("data-src") 
@@ -79,12 +79,12 @@ private fun Element.toLiveTvSearchResult(): LiveSearchResponse? {
     return newMovieSearchResponse(title, href, type) {
         this.posterUrl = posterUrl
     }
-    }
+}
 
     override suspend fun search(query: String): List<SearchResponse>? {
         val fixedQuery = query.replace(" ", "+")
-        val resultFarsi = app.get("$mainUrl/search?q=$fixedQuery")
-            .document.select("div.col-md-2.col-sm-3.col-xs-6")
+        val resultFarsi = app.get("$mainUrl/search/$fixedQuery")
+            .document.select("div.result-item")
             .mapNotNull { it.toSearchResult() }
 
         return resultFarsi.sortedBy { -FuzzySearch.partialRatio(it.name.replace("(\\()+(.*)+(\\))".toRegex(), "").lowercase(), query.lowercase()) }
