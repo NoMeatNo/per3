@@ -64,21 +64,21 @@ private fun Element.toLiveTvSearchResult(): LiveSearchResponse? {
     return LiveSearchResponse(
         this.selectFirst("figcaption.figure-caption")?.text() ?: return null,
         fixUrlNull(this.selectFirst("a")?.attr("href")) ?: return null,
-        this@FarsiProvider.name, // This provides the type
+        this@FarsiProvider.name,
         TvType.Live,
-        fixUrlNull(this.select("img").attr("data-src")),
+        fixUrlNull(this.select("img").attr("data-src") ?: this.select("img").attr("src")),
     )
 }
 
-
     private fun Element.toSearchResult(): SearchResponse? {
-        val title = this.selectFirst("div.data h3 a")?.text()?.trim() ?: return null
-        val href = fixUrl(this.selectFirst("div.data h3 a")?.attr("href").toString())
-        val posterUrl = fixUrlNull(this.selectFirst("div.poster img")?.attr("data-src"))
-        val type = if (this.hasClass("tvshows")) TvType.TvSeries else TvType.Movie
-        return newMovieSearchResponse(title, href, type) {
-            this.posterUrl = posterUrl
-        }
+    val title = this.selectFirst("div.data h3 a")?.text()?.trim() ?: return null
+    val href = fixUrl(this.selectFirst("div.data h3 a")?.attr("href").toString())
+    val posterUrl = fixUrlNull(this.selectFirst("div.poster img")?.attr("data-src") 
+        ?: this.selectFirst("div.poster img")?.attr("src"))
+    val type = if (this.hasClass("tvshows")) TvType.TvSeries else TvType.Movie
+    return newMovieSearchResponse(title, href, type) {
+        this.posterUrl = posterUrl
+    }
     }
 
     override suspend fun search(query: String): List<SearchResponse>? {
