@@ -29,7 +29,7 @@ class FarsiProvider : MainAPI() { // all providers must be an instance of MainAP
     )
 
     override val mainPage = mainPageOf(
-        "$mainUrl/fill1.html" to "Movies",
+        "$mainUrl/new-iranian-movies-1/" to "Movies",
         "$mainUrl/series-21/" to "TV Shows",
         "$mainUrl/live-tv/category/iran.html" to "Live TVs",        
     )
