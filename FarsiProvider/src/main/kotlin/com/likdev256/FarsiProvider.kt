@@ -88,6 +88,7 @@ private fun Element.toSearchResult(): SearchResponse? {
 
         return resultFarsi.sortedBy { -FuzzySearch.partialRatio(it.name.replace("(\\()+(.*)+(\\))".toRegex(), "").lowercase(), query.lowercase()) }
     }
+
 override suspend fun load(url: String): LoadResponse? {
     val document = app.get(url).document
     val title = document.selectFirst("div.data h1")?.text()?.trim() ?: return null
@@ -114,25 +115,23 @@ override suspend fun load(url: String): LoadResponse? {
         }
     } else if (isMovie) {
         // Adjust the selectors for movies
-        val movieTitle = document.selectFirst("div.data h2")?.text()?.trim() ?: return null
-        val moviePoster = fixUrlNull(document.selectFirst("meta[property=og:image]")?.attr("content"))
-        val moviePlot = document.selectFirst("div#info div.wp-content p")?.text()?.trim()
+        val title = document.selectFirst("div.data h2")?.text()?.trim() ?: return null
+        val poster = fixUrlNull(document.selectFirst("meta[property=og:image]")?.attr("content"))
+        val plot = document.selectFirst("div#info div.wp-content p")?.text()?.trim()
 
-        val movieUrl = fixUrl(document.selectFirst("a.play-btn")?.attr("href") ?: return null)
-        newMovieLoadResponse(movieTitle, url, TvType.Movie, movieUrl) {
-            this.posterUrl = moviePoster
-            this.plot = moviePlot
+        newMovieLoadResponse(title, url, TvType.Movie, url) {
+            this.posterUrl = poster
+            this.plot = plot
         }
     } else {
         // If neither "/tvshows/" nor "/movies/" is found, assume it's a movie by default
-        val movieTitle = document.selectFirst("div.data h2")?.text()?.trim() ?: return null
-        val moviePoster = fixUrlNull(document.selectFirst("meta[property=og:image]")?.attr("content"))
-        val moviePlot = document.selectFirst("div#info div.wp-content p")?.text()?.trim()
+        val title = document.selectFirst("div.data h2")?.text()?.trim() ?: return null
+        val poster = fixUrlNull(document.selectFirst("meta[property=og:image]")?.attr("content"))
+        val plot = document.selectFirst("div#info div.wp-content p")?.text()?.trim()
 
-        val movieUrl = fixUrl(document.selectFirst("a.play-btn")?.attr("href") ?: return null)
-        newMovieLoadResponse(movieTitle, url, TvType.Movie, movieUrl) {
-            this.posterUrl = moviePoster
-            this.plot = moviePlot
+        newMovieLoadResponse(title, url, TvType.Movie, url) {
+            this.posterUrl = poster
+            this.plot = plot
         }
     }
 }
