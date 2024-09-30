@@ -32,6 +32,7 @@ class FarsiProvider : MainAPI() { // all providers must be an instance of MainAP
         "$mainUrl/new-iranian-movies-1/" to "Movies",
         "$mainUrl/series-21/" to "Last Series",
         "$mainUrl/tv-series-old/" to "Old Series",
+        "$mainUrl/old-movies/" to "Old Movies",
         "$mainUrl/episodes-10/" to "Last Episodes",
         "$mainUrl/live-tv/category/iran.html" to "Live TVs",        
     )
@@ -44,7 +45,8 @@ override suspend fun getMainPage(
         "Movies" -> "$mainUrl/new-iranian-movies-1/"
         "Last Series" -> "$mainUrl/series-21/"
         "Old Series" -> "$mainUrl/tv-series-old/"
-        "Last Episodes" -> "$mainUrl/episodes-10/"  
+        "Old Movies" -> "$mainUrl/old-movies/"
+        "Last Episodes" -> "$mainUrl/episodes-10/"
         "Live TVs" -> "$mainUrl/live-tv/category/iran.html"
         else -> throw IllegalArgumentException("Invalid section name: ${request.name}")
     }
@@ -97,6 +99,7 @@ override suspend fun load(url: String): LoadResponse? {
     val document = app.get(url).document
     val isTvSeries = url.contains("/tvshows/")
     val isMovie = url.contains("/movies/")
+    val isEpisode = url.contains("/episodes/")
 
     return if (isTvSeries) {
         val title = document.selectFirst("div.data h1")?.text()?.trim() ?: return null
@@ -120,6 +123,16 @@ override suspend fun load(url: String): LoadResponse? {
         // Adjust the selectors for movies
         val title = document.selectFirst("div.data h2")?.text()?.trim() ?: return null
         val poster = fixUrlNull(document.selectFirst("meta[property=og:image]")?.attr("content"))
+        val plot = document.selectFirst("div#info div.wp-content p")?.text()?.trim()
+
+        newMovieLoadResponse(title, url, TvType.Movie, url) {
+            this.posterUrl = poster
+            this.plot = plot
+        }
+    } else if (isEpisode) {
+        // Adjust the selectors for movies
+        val title = document.selectFirst("div#info h2")?.text()?.trim() ?: return null
+        val poster = fixUrlNull(document.selectFirst("div#dt_galery img")?.attr("data-src"))
         val plot = document.selectFirst("div#info div.wp-content p")?.text()?.trim()
 
         newMovieLoadResponse(title, url, TvType.Movie, url) {
