@@ -113,8 +113,7 @@ override suspend fun load(url: String): LoadResponse? {
             this.posterUrl = poster
             this.plot = plot
         }
-    } else 
-    return if (isMovie) {
+    } else if (isMovie) {
         newMovieLoadResponse(title, url, TvType.Movie, url) {
             this.posterUrl = poster
             this.plot = plot
