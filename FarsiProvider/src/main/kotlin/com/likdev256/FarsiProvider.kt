@@ -73,7 +73,7 @@ private fun Element.toLiveTvSearchResult(): LiveSearchResponse? {
 private fun Element.toSearchResult(): SearchResponse? {
     val title = this.selectFirst("div.data h3 a")?.text()?.trim() ?: return null
     val href = fixUrl(this.selectFirst("div.data h3 a")?.attr("href").toString())
-    val posterUrl = fixUrlNull(this.selectFirst("div.poster img")?.attr("data-src")?.trim())
+    val posterUrl = fixUrlNull(this.selectFirst("div.poster img")?.attr("src")?.trim())
     val type = if (this.hasClass("tvshows")) TvType.TvSeries else TvType.Movie
     return newMovieSearchResponse(title, href, type) {
         this.posterUrl = posterUrl
