@@ -118,6 +118,12 @@ override suspend fun load(url: String): LoadResponse? {
             this.posterUrl = poster
             this.plot = plot
         }
+    } else {
+        // If neither "/tvshows/" nor "/movies/" is found, assume it's a movie by default
+        newMovieLoadResponse(title, url, TvType.Movie, url) {
+            this.posterUrl = poster
+            this.plot = plot
+        }
     }
 }
 
