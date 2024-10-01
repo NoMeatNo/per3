@@ -86,11 +86,21 @@ private fun Element.toSearchResult(): SearchResponse? {
     }
 }
 
+private fun Element.toParseSearchResult(): SearchResponse? {
+    val titleElement = this.selectFirst("div.details div.title a")
+    val title = titleElement?.text()?.trim() ?: return null
+    val href = fixUrl(titleElement.attr("href"))
+    val posterUrl = fixUrlNull(this.selectFirst("div.image img")?.attr("src"))
+    val type = if (this.hasClass("tvshows")) TvType.TvSeries else TvType.Movie
+    return newMovieSearchResponse(title, href, type) {
+        this.posterUrl = posterUrl
+    }
+}
     override suspend fun search(query: String): List<SearchResponse>? {
         val fixedQuery = query.replace(" ", "+")
         val resultFarsi = app.get("$mainUrl/search/$fixedQuery")
             .document.select("div.result-item")
-            .mapNotNull { it.toSearchResult() }
+            .mapNotNull { it.toParseSearchResult() }
 
         return resultFarsi.sortedBy { -FuzzySearch.partialRatio(it.name.replace("(\\()+(.*)+(\\))".toRegex(), "").lowercase(), query.lowercase()) }
     }
