@@ -28,8 +28,8 @@ class IBommaProvider : MainAPI() { // all providers must be an instance of MainA
     )
 
     override val mainPage = mainPageOf(
-        "$mainUrl/fill1.html" to "Movies",
-        "$mainUrl/sell1.html" to "TV Shows",
+        "$mainUrl/film1.html" to "Movies",
+        "$mainUrl/ser.html" to "TV Shows",
         "$mainUrl/live-tv/category/iran.html" to "Live TVs",        
     )
 
@@ -38,7 +38,7 @@ override suspend fun getMainPage(
     request: MainPageRequest
 ): HomePageResponse {
     val link = when (request.name) {
-        "Movies" -> "$mainUrl/fill1.html"
+        "Movies" -> "$mainUrl/film1.html"
         "TV Shows" -> "$mainUrl/ser.html"
         "Live TVs" -> "$mainUrl/live-tv/category/iran.html"
         else -> throw IllegalArgumentException("Invalid section name: ${request.name}")
