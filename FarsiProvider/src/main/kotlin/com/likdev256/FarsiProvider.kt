@@ -162,49 +162,65 @@ override suspend fun loadLinks(
     return try {
         // Step 1: Get the initial document
         val document = app.get(data).document
-
         // Extract the form action URL and id
         val formAction = document.selectFirst("form#watch")?.attr("action") ?: return false
         val formId = document.selectFirst("form#watch input[name=id]")?.attr("value") ?: return false
-
         // Step 2: Submit the form and get the redirect page
         val redirectPage = app.post(
             formAction,
             data = mapOf("id" to formId)
         ).document
-
         // Step 3: Extract the next form action and submit it
         val nextFormAction = redirectPage.selectFirst("form#watch")?.attr("action") ?: return false
         val postId = redirectPage.selectFirst("form#watch input[name=postid]")?.attr("value") ?: return false
-
         // Submit the next form and get the final page
         val finalPage = app.post(
             nextFormAction,
             data = mapOf("postid" to postId)
         ).document
-
-        // Step 4 & 5: Check for a form that redirects to another URL
-        val redirectFormAction = finalPage.selectFirst("form#watch1")?.attr("action")
-        if (redirectFormAction != null) {
-            val quality = "720" // Always use 720p quality
-            val postIdForNextRedirect = finalPage.selectFirst("form#watch1 input[name=postid]")?.attr("value") ?: return false
-
+        // Step 4 & 5: Check for forms that redirect to another URL
+        val qualityForms = finalPage.select("form[id^=watch]")
+        if (qualityForms.isNotEmpty()) {
+            val availableQualities = qualityForms.mapNotNull { form ->
+                form.selectFirst("input[name=q]")?.attr("value")?.toIntOrNull()
+            }
+            
+            val preferredQuality = when {
+                720 in availableQualities -> 720
+                1080 in availableQualities -> 1080
+                480 in availableQualities -> 480
+                else -> availableQualities.firstOrNull() ?: return false
+            }
+            
+            val selectedForm = qualityForms.first { form ->
+                form.selectFirst("input[name=q]")?.attr("value")?.toIntOrNull() == preferredQuality
+            }
+            
+            val redirectFormAction = selectedForm.attr("action")
+            val postIdForNextRedirect = selectedForm.selectFirst("input[name=postid]")?.attr("value") ?: return false
+            
             // Submit the form to the new URL
             val finalRedirectPage = app.post(
                 redirectFormAction,
-                data = mapOf("q" to quality, "postid" to postIdForNextRedirect)
+                data = mapOf("q" to preferredQuality.toString(), "postid" to postIdForNextRedirect)
             ).document
-
+            
             // Extract the MP4 link from the final redirect page
             val finalMp4Link = extractMp4Link(finalRedirectPage)
             if (finalMp4Link.isNotBlank()) {
+                val qualityEnum = when (preferredQuality) {
+                    1080 -> Qualities.P1080
+                    720 -> Qualities.P720
+                    480 -> Qualities.P480
+                    else -> Qualities.P720
+                }
                 callback.invoke(
                     ExtractorLink(
                         this.name,
                         this.name,
                         finalMp4Link,
                         referer = data,
-                        quality = Qualities.P720.value
+                        quality = qualityEnum.value
                     )
                 )
                 true
@@ -220,14 +236,13 @@ override suspend fun loadLinks(
     }
 }
 
-// Function to extract MP4 link
+// Function to extract MP4 link remains the same
 private fun extractMp4Link(page: Document): String {
     // Check if there is a video element first
     val mp4Link = page.select("video.jw-video").attr("src")
     if (mp4Link.isNotBlank()) {
         return mp4Link
     }
-
     // If the MP4 link was not found in the video element, look for the script
     page.select("script").forEach { scriptElement ->
         val scriptContent = scriptElement.html()
@@ -240,7 +255,6 @@ private fun extractMp4Link(page: Document): String {
             }
         }
     }
-
     return ""
 }
         
