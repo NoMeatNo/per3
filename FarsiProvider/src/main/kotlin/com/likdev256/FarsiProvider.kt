@@ -134,7 +134,8 @@ override suspend fun load(url: String): LoadResponse? {
         val title = document.selectFirst("div#info h2")?.text()?.trim() ?: return null
 //        val poster = fixUrlNull(document.selectFirst("div#dt_galery .g-item img")?.attr("data-src"))
 //        val poster = fixUrlNull(document.selectFirst("#fakeplayer > a > div > img")?.attr("src"))
-        val poster = fixUrlNull(document.selectFirst("#fakeplayer .playbox img.cover")?.attr("src"))
+    // w   val poster = fixUrlNull(document.selectFirst("#fakeplayer .playbox img.cover")?.attr("src"))
+        val poster = fixUrlNull(document.selectFirst("#dt_galery .g-item img")?.attr("src"))
 //       val poster = fixUrlNull(document.selectFirst("div#fakeplayer img.cover")?.attr("data-src"))
         val plot = document.selectFirst("div#info div.wp-content p")?.text()?.trim()
 
