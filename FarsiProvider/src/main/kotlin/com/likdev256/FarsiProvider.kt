@@ -133,7 +133,7 @@ override suspend fun load(url: String): LoadResponse? {
         // Adjust the selectors for movies
         val title = document.selectFirst("div#info h2")?.text()?.trim() ?: return null
 //        val poster = fixUrlNull(document.selectFirst("div#dt_galery .g-item img")?.attr("data-src"))
-        val poster = fixUrlNull(document.selectFirst("div#dt_galery .g-item a img")?.attr("data-src"))
+        val poster = fixUrlNull(document.selectFirst("div#fakeplayer img.cover")?.attr("data-src"))
         val plot = document.selectFirst("div#info div.wp-content p")?.text()?.trim()
 
         newMovieLoadResponse(title, url, TvType.Movie, url) {
