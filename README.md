@@ -1,4 +1,4 @@
-# `Cloudstream3 Plugin Repo Templa`
+# `Cloudstream3 Plugin Repo Templ`
 
 Template for a [Cloudstream3](https://github.com/recloudstream) plugin repo
 
