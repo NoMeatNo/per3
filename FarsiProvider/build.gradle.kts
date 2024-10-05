@@ -2,11 +2,11 @@ version = 1
 
 
 cloudstream {
-    language = "te"
+    language = "Fa"
     // All of these properties are optional, you can safely remove them
 
     // description = "Lorem Ipsum"
-    authors = listOf("darkdemon, likdev256")
+    authors = listOf("Naser, likdev256")
 
     /**
      * Status int as the following:
