@@ -15,9 +15,9 @@ import java.net.URLEncoder
 import com.lagradost.nicehttp.NiceResponse
 import okhttp3.FormBody
 
-class IBommaProvider : MainAPI() { // all providers must be an instance of MainAPI
+class FarsiFlixProvider : MainAPI() { // all providers must be an instance of MainAPI
     override var mainUrl = "https://www.diycraftsguide.com"
-    override var name = "Persian World 3"
+    override var name = "Farsi Flix #1"
     override val hasMainPage = true
     override var lang = "fa"
     override val hasDownloadSupport = true
@@ -63,7 +63,7 @@ private fun Element.toLiveTvSearchResult(): LiveSearchResponse? {
     return LiveSearchResponse(
         this.selectFirst("figcaption.figure-caption")?.text() ?: return null,
         fixUrlNull(this.selectFirst("a")?.attr("href")) ?: return null,
-        this@IBommaProvider.name, // This provides the type
+        this@FarsiFlixProvider.name, // This provides the type
         TvType.Live,
         fixUrlNull(this.select("img").attr("data-src")),
     )
