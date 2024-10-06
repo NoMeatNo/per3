@@ -22,5 +22,5 @@ cloudstream {
         "Live",
     )
 
-    iconUrl = "https://raw.githubusercontent.com/NoMeatNo/per3/master/logos/logo.png"
+    iconUrl = "https://raw.githubusercontent.com/NoMeatNo/per3/master/logos/icon.png"
 }
