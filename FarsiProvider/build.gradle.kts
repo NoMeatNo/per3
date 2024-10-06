@@ -2,11 +2,11 @@ version = 1
 
 
 cloudstream {
-    language = "Fa"
+    language = "fa"
     // All of these properties are optional, you can safely remove them
 
-    // description = "Lorem Ipsum"
-    authors = listOf("Naser, likdev256")
+    description = "Iranian/Persian Flix #1"
+    authors = listOf("Naser")
 
     /**
      * Status int as the following:
@@ -22,5 +22,5 @@ cloudstream {
         "Live",
     )
 
-    iconUrl = "https://www.google.com/s2/favicons?domain=ww2.ibomma.cx&sz=%size%"
+    iconUrl = "https://raw.githubusercontent.com/NoMeatNo/per3/master/logos/logo.png"
 }
