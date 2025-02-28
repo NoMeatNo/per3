@@ -28,8 +28,8 @@ class FarsiFlixProvider : MainAPI() { // all providers must be an instance of Ma
     )
 
     override val mainPage = mainPageOf(
-        "$mainUrl/film1.html" to "Movies",
-        "$mainUrl/ser.html" to "TV Shows",
+        "$mainUrl/movies.html" to "Movies",
+        "$mainUrl/tv-series.html" to "TV Shows",
         "$mainUrl/live-tv/category/iran.html" to "Live TVs",        
     )
 
@@ -38,8 +38,8 @@ override suspend fun getMainPage(
     request: MainPageRequest
 ): HomePageResponse {
     val link = when (request.name) {
-        "Movies" -> "$mainUrl/film1.html"
-        "TV Shows" -> "$mainUrl/ser.html"
+        "Movies" -> "$mainUrl/movies.html"
+        "TV Shows" -> "$mainUrl/tv-series.html"
         "Live TVs" -> "$mainUrl/live-tv/category/iran.html"
         else -> throw IllegalArgumentException("Invalid section name: ${request.name}")
     }
