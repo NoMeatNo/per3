@@ -29,11 +29,11 @@ class FarsiProvider : MainAPI() { // all providers must be an instance of MainAP
     )
 
     override val mainPage = mainPageOf(
-        "$mainUrl/new-iranian-movies-1/" to "Movies",
-        "$mainUrl/series-21/" to "Last Series",
-        "$mainUrl/tv-series-old/" to "Old Series",
-        "$mainUrl/old-movies/" to "Old Movies",
-        "$mainUrl/episodes-10/" to "Last Episodes",
+        "$mainUrl/new-persian-movies-2024/" to "Movies",
+        "$mainUrl/series-22/" to "Last Series",
+        "$mainUrl/iranian-series/" to "Old Series",
+        "$mainUrl/old-iranian-movies/" to "Old Movies",
+        "$mainUrl/episodes-12/" to "Last Episodes",
         "$mainUrl/live-tv/category/iran.html" to "Live TVs",        
     )
 
@@ -42,11 +42,11 @@ override suspend fun getMainPage(
     request: MainPageRequest
 ): HomePageResponse {
     val link = when (request.name) {
-        "Movies" -> "$mainUrl/new-iranian-movies-1/"
-        "Last Series" -> "$mainUrl/series-21/"
-        "Old Series" -> "$mainUrl/tv-series-old/"
-        "Old Movies" -> "$mainUrl/old-movies/"
-        "Last Episodes" -> "$mainUrl/episodes-10/"
+        "Movies" -> "$mainUrl/new-persian-movies-2024/"
+        "Last Series" -> "$mainUrl/series-22/"
+        "Old Series" -> "$mainUrl/iranian-series/"
+        "Old Movies" -> "$mainUrl/old-iranian-movies/"
+        "Last Episodes" -> "$mainUrl/episodes-12/"
         "Live TVs" -> "$mainUrl/live-tv/category/iran.html"
         else -> throw IllegalArgumentException("Invalid section name: ${request.name}")
     }
