@@ -68,11 +68,10 @@ override suspend fun getMainPage(
 
 private fun Element.toLiveTvSearchResult(): LiveSearchResponse? {
     return newLiveSearchResponse(
-        this.selectFirst("figcaption.figure-caption")?.text() ?: return null, // Name (String)
-        fixUrlNull(this.selectFirst("a")?.attr("href")) ?: return null, // URL (String)
-        this@FarsiProvider.name // API Name (String)
+        name = this.selectFirst("figcaption.figure-caption")?.text() ?: return null,
+        url = fixUrlNull(this.selectFirst("a")?.attr("href")) ?: return null,
     ) {
-        type = TvType.Live // Set TvType here in the lambda
+        type = TvType.Live  // Set type in the lambda block
         posterUrl = fixUrlNull(
             this@toLiveTvSearchResult.select("img").attr("data-src") 
                 ?: this@toLiveTvSearchResult.select("img").attr("src")
@@ -120,17 +119,19 @@ override suspend fun load(url: String): LoadResponse? {
         val poster = fixUrlNull(document.selectFirst("div.poster img")?.attr("src"))
         val plot = document.selectFirst("div.contenido p")?.text()?.trim()
         val episodes = mutableListOf<Episode>()
-        document.select("#seasons .se-c").forEach { season ->
-            var seasonNumber = season.selectFirst(".se-t")?.text()?.toIntOrNull() ?: return@forEach
-            season.select("ul.episodios li").forEach { episode ->
-                val epNumber = episode.selectFirst(".numerando")?.text()?.substringAfter("-")?.trim()?.toIntOrNull() ?: return@forEach
+        document.select("#seasons .se-c").forEach { seasonElement ->  // Renamed to seasonElement
+            val seasonNumber = seasonElement.selectFirst(".se-t")?.text()?.toIntOrNull() ?: return@forEach
+            seasonElement.select("ul.episodios li").forEach { episode ->
+                val epNumber = episode.selectFirst(".numerando")?.text()
+                    ?.substringAfter("-")?.trim()?.toIntOrNull() ?: return@forEach
                 val epTitle = episode.selectFirst(".episodiotitle a")?.text() ?: return@forEach
-                val epLink = fixUrl(episode.selectFirst(".episodiotitle a")?.attr("href") ?: return@forEach)
+                val epLink = fixUrl(episode.selectFirst(".episodiotitle a")?.attr("href") ?: return@forEach
+                
                 episodes.add(newEpisode(epLink) {
                     name = epTitle
-                    season = seasonNumber
+                    season = seasonNumber  // Now references the Int value
                     episode = epNumber
-                })
+                }
             }
         }
         newTvSeriesLoadResponse(title, url, TvType.TvSeries, episodes) {
