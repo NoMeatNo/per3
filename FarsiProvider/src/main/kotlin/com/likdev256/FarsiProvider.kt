@@ -70,9 +70,9 @@ private fun Element.toLiveTvSearchResult(): LiveSearchResponse? {
     return newLiveSearchResponse(
         this.selectFirst("figcaption.figure-caption")?.text() ?: return null, // Name
         fixUrlNull(this.selectFirst("a")?.attr("href")) ?: return null, // URL
-        this@FarsiProvider.name // API Name (String)
+        TvType.Live // Correct type for the third argument
     ) {
-        type = TvType.Live // Set TvType here
+        apiName = this@FarsiProvider.name // Set API name in the lambda
         posterUrl = fixUrlNull(
             this@toLiveTvSearchResult.select("img").attr("data-src") 
                 ?: this@toLiveTvSearchResult.select("img").attr("src")
