@@ -64,10 +64,9 @@ private fun Element.toLiveTvSearchResult(): LiveSearchResponse? {
         name = this.selectFirst("figcaption.figure-caption")?.text() ?: return null,
         url = fixUrlNull(this.selectFirst("a")?.attr("href")) ?: return null,
     ) {
-        // Set properties in the lambda block
-        this.apiName = this@FarsiFlixProvider.name
-        this.type = TvType.Live
-        this.posterUrl = fixUrlNull(this@toLiveTvSearchResult.select("img").attr("data-src"))
+        // apiName is automatically inherited from the MainAPI class
+        type = TvType.Live
+        posterUrl = fixUrlNull(this@toLiveTvSearchResult.select("img").attr("data-src"))
     }
 }
 
