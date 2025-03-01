@@ -38,7 +38,12 @@ jobs:
         uses: actions/setup-java@v1
         with:
           java-version: 11
-
+          
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v2
+        with:
+          cmdline-tools: "6.0"  # Use an older version compatible with Java 11
+    
       - name: Setup Android SDK
         uses: android-actions/setup-android@v2
 
