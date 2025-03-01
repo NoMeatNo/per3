@@ -61,11 +61,11 @@ override suspend fun getMainPage(
 
 private fun Element.toLiveTvSearchResult(): LiveSearchResponse? {
     return newLiveSearchResponse(
-        this.selectFirst("figcaption.figure-caption")?.text() ?: return null, // Name
-        fixUrlNull(this.selectFirst("a")?.attr("href")) ?: return null, // URL
-        TvType.Live // Correct type for the third argument
+        this.selectFirst("figcaption.figure-caption")?.text() ?: return null, // Name (String)
+        fixUrlNull(this.selectFirst("a")?.attr("href")) ?: return null, // URL (String)
+        this@FarsiFlixProvider.name // API Name (String)
     ) {
-        apiName = this@FarsiFlixProvider.name // Set API name in the lambda
+        type = TvType.Live // Set TvType here in the lambda
         posterUrl = fixUrlNull(this@toLiveTvSearchResult.select("img").attr("data-src"))
     }
 }
@@ -105,7 +105,7 @@ override suspend fun load(url: String): LoadResponse? {
             val poster = fixUrlNull(document.selectFirst("video#play")?.attr("poster"))
             val episodes = mutableListOf<Episode>()
             val rows = document.select(".row")
-            var seasonNumber = 0
+            var seasonNumber: Int = 0
             rows.forEachIndexed { index, row ->
                 if (row.select(".movie-heading").isNotEmpty()) {
                     // This row contains season information
