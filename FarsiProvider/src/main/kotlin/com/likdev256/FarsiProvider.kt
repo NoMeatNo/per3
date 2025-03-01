@@ -121,7 +121,7 @@ override suspend fun load(url: String): LoadResponse? {
         val plot = document.selectFirst("div.contenido p")?.text()?.trim()
         val episodes = mutableListOf<Episode>()
         document.select("#seasons .se-c").forEach { season ->
-            val seasonNumber = season.selectFirst(".se-t")?.text()?.toIntOrNull() ?: return@forEach
+            var seasonNumber = season.selectFirst(".se-t")?.text()?.toIntOrNull() ?: return@forEach
             season.select("ul.episodios li").forEach { episode ->
                 val epNumber = episode.selectFirst(".numerando")?.text()?.substringAfter("-")?.trim()?.toIntOrNull() ?: return@forEach
                 val epTitle = episode.selectFirst(".episodiotitle a")?.text() ?: return@forEach
