@@ -45,6 +45,7 @@ subprojects {
             minSdk = 21
             compileSdkVersion(33)
             targetSdk = 33
+            namespace = "com.likdev256.${project.name}"
         }
 
         compileOptions {
