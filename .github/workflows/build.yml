@@ -44,8 +44,8 @@ jobs:
         with:
           cmdline-tools: "6.0"  # Use an older version compatible with Java 11
     
-      - name: Setup Android SDK
-        uses: android-actions/setup-android@v2
+#      - name: Setup Android SDK
+#        uses: android-actions/setup-android@v2
 
       - name: Build Plugins
         run: |
