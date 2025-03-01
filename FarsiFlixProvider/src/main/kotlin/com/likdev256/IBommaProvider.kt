@@ -63,10 +63,10 @@ private fun Element.toLiveTvSearchResult(): LiveSearchResponse? {
     return newLiveSearchResponse(
         name = this.selectFirst("figcaption.figure-caption")?.text() ?: return null,
         url = fixUrlNull(this.selectFirst("a")?.attr("href")) ?: return null,
+        apiName = this@FarsiFlixProvider.name,  // ✅ Pass `apiName` here
         type = TvType.Live
     ) {
         this.posterUrl = fixUrlNull(this@toLiveTvSearchResult.select("img").attr("data-src"))
-        this.apiName = this@FarsiFlixProvider.name
     }
 }
 
