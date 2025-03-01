@@ -122,7 +122,7 @@ private fun Element.toParseSearchResult(): SearchResponse? {
 
         document.select("#seasons .se-c").forEach { seasonElement ->
             val seasonNumber = seasonElement.selectFirst(".se-t")?.text()?.toIntOrNull() ?: return@forEach
-            seasonElement.select("ul.episodios li").forEach { episode ->
+            seasonElement.select("ul.episodios li").forEach { episodeElement ->
                 val epNumber = episode.selectFirst(".numerando")?.text()
                     ?.substringAfter("-")?.trim()?.toIntOrNull() ?: return@forEach
                 val epTitle = episode.selectFirst(".episodiotitle a")?.text() ?: return@forEach
