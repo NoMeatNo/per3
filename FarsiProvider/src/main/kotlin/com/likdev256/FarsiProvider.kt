@@ -108,32 +108,34 @@ private fun Element.toParseSearchResult(): SearchResponse? {
         return resultFarsi.sortedBy { -FuzzySearch.partialRatio(it.name.replace("(\\()+(.*)+(\\))".toRegex(), "").lowercase(), query.lowercase()) }
     }
 
-override suspend fun load(url: String): LoadResponse? {
-    val document = app.get(url).document
-    val isTvSeries = url.contains("/tvshows/")
-    val isMovie = url.contains("/movies/")
-    val isEpisode = url.contains("/episodes/")
+    override suspend fun load(url: String): LoadResponse? {
+        val document = app.get(url).document
+        val isTvSeries = url.contains("/tvshows/")
+        val isMovie = url.contains("/movies/")
+        val isEpisode = url.contains("/episodes/")
 
-    return if (isTvSeries) {
+        return if (isTvSeries) {
         val title = document.selectFirst("div.data h1")?.text()?.trim() ?: return null
         val poster = fixUrlNull(document.selectFirst("div.poster img")?.attr("src"))
         val plot = document.selectFirst("div.contenido p")?.text()?.trim()
         val episodes = mutableListOf<Episode>()
-        document.select("#seasons .se-c").forEach { seasonElement ->  // Renamed to seasonElement
+
+        document.select("#seasons .se-c").forEach { seasonElement ->
             val seasonNumber = seasonElement.selectFirst(".se-t")?.text()?.toIntOrNull() ?: return@forEach
             seasonElement.select("ul.episodios li").forEach { episode ->
                 val epNumber = episode.selectFirst(".numerando")?.text()
                     ?.substringAfter("-")?.trim()?.toIntOrNull() ?: return@forEach
                 val epTitle = episode.selectFirst(".episodiotitle a")?.text() ?: return@forEach
-                val epLink = fixUrl(episode.selectFirst(".episodiotitle a")?.attr("href") ?: return@forEach
-                
+                val epLink = fixUrl(episode.selectFirst(".episodiotitle a")?.attr("href") ?: return@forEach)
+
                 episodes.add(newEpisode(epLink) {
                     name = epTitle
-                    season = seasonNumber  // Now references the Int value
+                    season = seasonNumber
                     episode = epNumber
-                }
+                })  // Properly close the lambda
             }
         }
+
         newTvSeriesLoadResponse(title, url, TvType.TvSeries, episodes) {
             this.posterUrl = poster
             this.plot = plot
