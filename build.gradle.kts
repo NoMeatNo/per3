@@ -41,11 +41,11 @@ subprojects {
     }
 
     android {
+        namespace = "com.likdev256" 
         defaultConfig {
             minSdk = 21
             compileSdkVersion(33)
             targetSdk = 33
-            namespace = "com.likdev256.${project.name}"
         }
 
         compileOptions {
