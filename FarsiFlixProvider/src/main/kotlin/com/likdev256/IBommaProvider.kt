@@ -148,13 +148,13 @@ isLiveTv -> {
         name = title,
         url = liveTvUrl,
         dataUrl = dataUrl ?: "",
-        type = TvType.Live
     ) {
+        this.type = TvType.Live // Set `type` here
         this.posterUrl = posterUrl
         this.plot = plot
         this.apiName = this@FarsiFlixProvider.name
         this.contentRating = null // Required parameter
-    }
+}
 }
 
 
