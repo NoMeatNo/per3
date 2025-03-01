@@ -63,10 +63,10 @@ private fun Element.toLiveTvSearchResult(): LiveSearchResponse? {
     return newLiveSearchResponse(
         this.selectFirst("figcaption.figure-caption")?.text() ?: return null, // Name
         fixUrlNull(this.selectFirst("a")?.attr("href")) ?: return null, // URL
-        this@FarsiFlixProvider.name // API Name (String)
+        this@FarsiFlixProvider.name // API Name
     ) {
-        type = TvType.Live // Set TvType here
-        posterUrl = fixUrlNull(this@toLiveTvSearchResult.select("img").attr("data-src"))
+        type = TvType.Live
+        posterUrl = fixUrlNull(this@toLiveTvSearchResult.selectFirst("img")?.attr("data-src"))
     }
 }
 
@@ -105,7 +105,7 @@ override suspend fun load(url: String): LoadResponse? {
             val poster = fixUrlNull(document.selectFirst("video#play")?.attr("poster"))
             val episodes = mutableListOf<Episode>()
             val rows = document.select(".row")
-            var seasonNumber = 0
+            var seasonNumber: Int = 0
             rows.forEachIndexed { index, row ->
                 if (row.select(".movie-heading").isNotEmpty()) {
                     // This row contains season information
@@ -144,7 +144,7 @@ isLiveTv -> {
     val matchResult = m3u8LinkRegex.find(scriptContent)
     val dataUrl = matchResult?.groupValues?.get(1)
 
-    return LiveStreamLoadResponse(
+    return newLiveStreamLoadResponse(
         name = title,
         url = liveTvUrl,
         apiName = this.name, // Assuming this.name is the apiName for LiveStreamLoadResponse
