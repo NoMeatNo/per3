@@ -67,7 +67,7 @@ override suspend fun getMainPage(
 }
 
 private fun Element.toLiveTvSearchResult(): LiveSearchResponse? {
-    return LiveSearchResponse(
+    return newLiveSearchResponse(
         this.selectFirst("figcaption.figure-caption")?.text() ?: return null,
         fixUrlNull(this.selectFirst("a")?.attr("href")) ?: return null,
         this@FarsiProvider.name,
@@ -122,7 +122,7 @@ override suspend fun load(url: String): LoadResponse? {
                 val epNumber = episode.selectFirst(".numerando")?.text()?.substringAfter("-")?.trim()?.toIntOrNull() ?: return@forEach
                 val epTitle = episode.selectFirst(".episodiotitle a")?.text() ?: return@forEach
                 val epLink = fixUrl(episode.selectFirst(".episodiotitle a")?.attr("href") ?: return@forEach)
-                episodes.add(Episode(epLink, epTitle, seasonNumber, epNumber))
+                episodes.add(newEpisode(epLink, epTitle, seasonNumber, epNumber))
             }
         }
         newTvSeriesLoadResponse(title, url, TvType.TvSeries, episodes) {

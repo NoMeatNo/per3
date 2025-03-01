@@ -60,7 +60,7 @@ override suspend fun getMainPage(
 }
 
 private fun Element.toLiveTvSearchResult(): LiveSearchResponse? {
-    return LiveSearchResponse(
+    return newLiveSearchResponse(
         this.selectFirst("figcaption.figure-caption")?.text() ?: return null,
         fixUrlNull(this.selectFirst("a")?.attr("href")) ?: return null,
         this@FarsiFlixProvider.name, // This provides the type
@@ -119,7 +119,7 @@ override suspend fun load(url: String): LoadResponse? {
                         val episodeNumber = episodeNumberText.removePrefix("E").toIntOrNull() ?: 0
                         val episodeName = "Season $seasonNumber Episode $episodeNumber"
                         if (episodeLink.isNotEmpty()) {
-                            episodes.add(Episode(episodeLink, episodeName, seasonNumber, episodeNumber))
+                            episodes.add(newEpisode(episodeLink, episodeName, seasonNumber, episodeNumber))
                         }
                     }
                 }
