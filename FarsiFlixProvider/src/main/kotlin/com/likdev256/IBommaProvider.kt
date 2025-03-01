@@ -61,11 +61,11 @@ override suspend fun getMainPage(
 
 private fun Element.toLiveTvSearchResult(): LiveSearchResponse? {
     return newLiveSearchResponse(
-        this.selectFirst("figcaption.figure-caption")?.text() ?: return null, // Name (String)
-        fixUrlNull(this.selectFirst("a")?.attr("href")) ?: return null, // URL (String)
+        this.selectFirst("figcaption.figure-caption")?.text() ?: return null, // Name
+        fixUrlNull(this.selectFirst("a")?.attr("href")) ?: return null, // URL
         this@FarsiFlixProvider.name // API Name (String)
     ) {
-        type = TvType.Live // Set TvType here in the lambda
+        type = TvType.Live // Set TvType here
         posterUrl = fixUrlNull(this@toLiveTvSearchResult.select("img").attr("data-src"))
     }
 }
@@ -89,9 +89,9 @@ private fun Element.toLiveTvSearchResult(): LiveSearchResponse? {
         return resultFarsi.sortedBy { -FuzzySearch.partialRatio(it.name.replace("(\\()+(.*)+(\\))".toRegex(), "").lowercase(), query.lowercase()) }
     }
 
-    override suspend fun load(url: String): LoadResponse? {
+override suspend fun load(url: String): LoadResponse? {
     val document = app.get(url).document
-    val data =
+     val data =
         document.select("script").find { it.data().contains("var channelName =") }?.data()
     val title = document.selectFirst("div.col-sm-9 p.m-t-10 strong")?.text()?.trim() ?: return null
     val poster = fixUrlNull(document.selectFirst("video#play")?.attr("poster"))
@@ -99,14 +99,13 @@ private fun Element.toLiveTvSearchResult(): LiveSearchResponse? {
     val channel = data?.substringAfter("var channelName = \"")?.substringBefore("\";")
     val isTvSeries = document.select(".col-md-12.col-sm-12:has(div.owl-carousel)").isNotEmpty()
     val isLiveTv = document.select(".col-md-12.col-sm-12:has(div.live_tv_owl)").isNotEmpty()
-
-    return when {
+        return when {
         isTvSeries -> {
             val title = document.selectFirst("div.col-sm-9 p.m-t-10 strong")?.text()?.trim() ?: return null
             val poster = fixUrlNull(document.selectFirst("video#play")?.attr("poster"))
             val episodes = mutableListOf<Episode>()
             val rows = document.select(".row")
-            var seasonNumber: Int = 0 // Use 'var' instead of 'val'
+            var seasonNumber = 0
             rows.forEachIndexed { index, row ->
                 if (row.select(".movie-heading").isNotEmpty()) {
                     // This row contains season information
@@ -122,10 +121,10 @@ private fun Element.toLiveTvSearchResult(): LiveSearchResponse? {
                         val episodeName = "Season $seasonNumber Episode $episodeNumber"
                         if (episodeLink.isNotEmpty()) {
                             episodes.add(newEpisode(episodeLink) {
-                                name = episodeName
-                                season = seasonNumber
-                                episode = episodeNumber
-                            }
+                            name = episodeName
+                            season = seasonNumber
+                            episode = episodeNumber
+                        })
                         }
                     }
                 }
@@ -135,25 +134,26 @@ private fun Element.toLiveTvSearchResult(): LiveSearchResponse? {
                 this.posterUrl = poster
             }
         }
+isLiveTv -> {
+    val title = document.selectFirst(".media-heading")?.text()?.trim() ?: return null
+    val posterUrl = fixUrlNull(document.selectFirst("img.media-object")?.attr("src")) ?: ""
+    val plot = document.select("p.live").text()
+    val liveTvUrl = document.selectFirst(".btn-group a")?.attr("href") ?: return null
+    val scriptContent = document.selectFirst("script:containsData('videojs')")?.data() ?: ""
+    val m3u8LinkRegex = Regex("""src: '(https?://[^']+\.m3u8)'""")
+    val matchResult = m3u8LinkRegex.find(scriptContent)
+    val dataUrl = matchResult?.groupValues?.get(1)
 
-        isLiveTv -> {
-            val title = document.selectFirst(".media-heading")?.text()?.trim() ?: return null
-            val posterUrl = fixUrlNull(document.selectFirst("img.media-object")?.attr("src")) ?: ""
-            val plot = document.select("p.live").text()
-            val liveTvUrl = document.selectFirst(".btn-group a")?.attr("href") ?: return null
-            val scriptContent = document.selectFirst("script:containsData('videojs')")?.data() ?: ""
-            val m3u8LinkRegex = Regex("""src: '(https?://[^']+\.m3u8)'""")
-            val matchResult = m3u8LinkRegex.find(scriptContent)
-            val dataUrl = matchResult?.groupValues?.get(1)
+    return LiveStreamLoadResponse(
+        name = title,
+        url = liveTvUrl,
+        apiName = this.name, // Assuming this.name is the apiName for LiveStreamLoadResponse
+        dataUrl = dataUrl ?: "",
+        posterUrl = posterUrl,
+        plot = plot
+    )
+}
 
-            return LiveStreamLoadResponse(
-                name = title,
-                url = liveTvUrl,
-                apiName = this.name, // Ensure this is a String
-                dataUrl = dataUrl ?: "",
-                posterUrl = posterUrl,
-                plot = plot
-            )
 
         else -> {
             return newMovieLoadResponse(title, url, TvType.Movie, url) {
@@ -175,7 +175,7 @@ private fun Element.toLiveTvSearchResult(): LiveSearchResponse? {
             val scriptContent = document.selectFirst("script:containsData('video/mp4')")?.data() ?: ""
             val mp4LinkRegex = Regex("""src: '(https?://[^']+\.mp4)'""")
             val matchResults = mp4LinkRegex.findAll(scriptContent)
-            matchResults.forEach { matchResult ->
+        matchResults.forEach { matchResult ->
                 val mp4Link = matchResult.groupValues[1]
                 callback.invoke(
                     ExtractorLink(
@@ -190,7 +190,6 @@ private fun Element.toLiveTvSearchResult(): LiveSearchResponse? {
         }
         return true
     }
-
         
     private suspend fun getUrls(url: String): List<String>? {
 
