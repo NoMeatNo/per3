@@ -61,12 +61,12 @@ override suspend fun getMainPage(
 
 private fun Element.toLiveTvSearchResult(): LiveSearchResponse? {
     return newLiveSearchResponse(
-        this.selectFirst("figcaption.figure-caption")?.text() ?: return null,
-        fixUrlNull(this.selectFirst("a")?.attr("href")) ?: return null,
-        this@FarsiFlixProvider.name
+        this.selectFirst("figcaption.figure-caption")?.text() ?: return null, // Name
+        fixUrlNull(this.selectFirst("a")?.attr("href")) ?: return null, // URL
+        this@FarsiFlixProvider.name // API Name (String)
     ) {
-        type = TvType.Live
-        posterUrl = fixUrlNull(this.select("img").attr("data-src"))
+        type = TvType.Live // Set TvType here
+        posterUrl = fixUrlNull(this@toLiveTvSearchResult.select("img").attr("data-src"))
     }
 }
 
