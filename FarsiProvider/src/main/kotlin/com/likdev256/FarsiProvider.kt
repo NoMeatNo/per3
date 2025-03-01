@@ -18,7 +18,7 @@ import org.jsoup.nodes.Document
 
 class FarsiProvider : MainAPI() { // all providers must be an instance of MainAPI
     override var mainUrl = "https://farsiland.com"
-    override var name = "Persian Flix #1"
+    override var name = "Farsi Flix #1"
     override val hasMainPage = true
     override var lang = "fa"
     override val hasDownloadSupport = true
