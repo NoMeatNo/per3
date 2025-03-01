@@ -61,12 +61,12 @@ override suspend fun getMainPage(
 
 private fun Element.toLiveTvSearchResult(): LiveSearchResponse? {
     return newLiveSearchResponse(
-        this.selectFirst("figcaption.figure-caption")?.text() ?: return null, // Name
-        fixUrlNull(this.selectFirst("a")?.attr("href")) ?: return null, // URL
-        this@FarsiFlixProvider.name // API Name
-    ) {
+        name = this.selectFirst("figcaption.figure-caption")?.text() ?: return null,
+        url = fixUrlNull(this.selectFirst("a")?.attr("href")) ?: return null,
         type = TvType.Live
-        posterUrl = fixUrlNull(this@toLiveTvSearchResult.selectFirst("img")?.attr("data-src"))
+    ) {
+        this.posterUrl = fixUrlNull(this@toLiveTvSearchResult.select("img").attr("data-src"))
+        this.apiName = this@FarsiFlixProvider.name
     }
 }
 
@@ -147,11 +147,14 @@ isLiveTv -> {
     return newLiveStreamLoadResponse(
         name = title,
         url = liveTvUrl,
-        apiName = this.name, // Assuming this.name is the apiName for LiveStreamLoadResponse
         dataUrl = dataUrl ?: "",
-        posterUrl = posterUrl,
-        plot = plot
-    )
+        type = TvType.Live
+    ) {
+        this.posterUrl = posterUrl
+        this.plot = plot
+        this.apiName = this@FarsiFlixProvider.name
+        this.contentRating = null // Required parameter
+    }
 }
 
 
