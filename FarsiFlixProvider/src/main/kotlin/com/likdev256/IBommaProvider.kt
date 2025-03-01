@@ -63,10 +63,11 @@ private fun Element.toLiveTvSearchResult(): LiveSearchResponse? {
     return newLiveSearchResponse(
         this.selectFirst("figcaption.figure-caption")?.text() ?: return null,
         fixUrlNull(this.selectFirst("a")?.attr("href")) ?: return null,
-        this@FarsiFlixProvider.name, // This provides the type
-        TvType.Live,
-        fixUrlNull(this.select("img").attr("data-src")),
-    )
+        this@FarsiFlixProvider.name
+    ) {
+        type = TvType.Live
+        posterUrl = fixUrlNull(this.select("img").attr("data-src"))
+    }
 }
 
 
@@ -119,7 +120,11 @@ override suspend fun load(url: String): LoadResponse? {
                         val episodeNumber = episodeNumberText.removePrefix("E").toIntOrNull() ?: 0
                         val episodeName = "Season $seasonNumber Episode $episodeNumber"
                         if (episodeLink.isNotEmpty()) {
-                            episodes.add(newEpisode(episodeLink, episodeName, seasonNumber, episodeNumber))
+                            episodes.add(newEpisode(episodeLink) {
+                            name = episodeName
+                            season = seasonNumber
+                            episode = episodeNumber
+                        })
                         }
                     }
                 }

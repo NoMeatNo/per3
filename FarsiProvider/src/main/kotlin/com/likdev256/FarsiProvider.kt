@@ -70,10 +70,11 @@ private fun Element.toLiveTvSearchResult(): LiveSearchResponse? {
     return newLiveSearchResponse(
         this.selectFirst("figcaption.figure-caption")?.text() ?: return null,
         fixUrlNull(this.selectFirst("a")?.attr("href")) ?: return null,
-        this@FarsiProvider.name,
-        TvType.Live,
-        fixUrlNull(this.select("img").attr("data-src") ?: this.select("img").attr("src")),
-    )
+        this@FarsiProvider.name
+    ) {
+        type = TvType.Live
+        posterUrl = fixUrlNull(this.select("img").attr("data-src") ?: this.select("img").attr("src"))
+    }
 }
 
 private fun Element.toSearchResult(): SearchResponse? {
@@ -122,7 +123,11 @@ override suspend fun load(url: String): LoadResponse? {
                 val epNumber = episode.selectFirst(".numerando")?.text()?.substringAfter("-")?.trim()?.toIntOrNull() ?: return@forEach
                 val epTitle = episode.selectFirst(".episodiotitle a")?.text() ?: return@forEach
                 val epLink = fixUrl(episode.selectFirst(".episodiotitle a")?.attr("href") ?: return@forEach)
-                episodes.add(newEpisode(epLink, epTitle, seasonNumber, epNumber))
+                episodes.add(newEpisode(epLink) {
+                    name = epTitle
+                    season = seasonNumber
+                    episode = epNumber
+                })
             }
         }
         newTvSeriesLoadResponse(title, url, TvType.TvSeries, episodes) {
