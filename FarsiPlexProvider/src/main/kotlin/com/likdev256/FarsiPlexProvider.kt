@@ -136,8 +136,8 @@ private fun Element.toParseSearchResult(): SearchResponse? {
         }
     } else if (isMovie) {
         // Adjust the selectors for movies
-        val title = document.selectFirst("div.data h2")?.text()?.trim() ?: return null
-        val poster = fixUrlNull(document.selectFirst("meta[property=og:image]")?.attr("content"))
+        val title = document.selectFirst("div.data h1")?.text()?.trim() ?: return null
+        val poster = fixUrlNull(document.selectFirst("div.playbox img.cover")?.attr("src"))
         val plot = document.selectFirst("div#info div.wp-content p")?.text()?.trim()
 
         newMovieLoadResponse(title, url, TvType.Movie, url) {
