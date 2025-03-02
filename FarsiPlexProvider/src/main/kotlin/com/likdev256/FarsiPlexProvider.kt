@@ -104,9 +104,9 @@ private fun Element.toParseSearchResult(): SearchResponse? {
 
     override suspend fun load(url: String): LoadResponse? {
         val document = app.get(url).document
-        val isTvSeries = url.contains("/tvshows/")
-        val isMovie = url.contains("/movies/")
-        val isEpisode = url.contains("/episodes/")
+        val isTvSeries = url.contains("/tvshow/")
+        val isMovie = url.contains("/movie/")
+        val isEpisode = url.contains("/episode/")
 
         return if (isTvSeries) {
         val title = document.selectFirst("div.data h1")?.text()?.trim() ?: return null
