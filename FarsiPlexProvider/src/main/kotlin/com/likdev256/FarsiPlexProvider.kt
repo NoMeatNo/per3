@@ -186,18 +186,37 @@ override suspend fun loadLinks(
         val player3Link = playPage.selectFirst("a[href*='pname=videojs']")?.attr("href") ?: return false
         val player3Page = app.get(player3Link).document
 
-        // Step 4: Extract 720p MP4 link directly from video sources
-        val mp4Link = player3Page.selectFirst("source[label=\"720\"]")?.attr("src") 
-            ?: return false
+        // Step 4: Extract all available video sources
+        val videoSources = player3Page.select("video source")
+        val availableSources = videoSources.mapNotNull { element ->
+            val label = element.attr("label")
+            val src = element.attr("src")
+            if (src.isNotBlank()) Pair(label, src) else null
+        }
 
-        // Invoke callback with extracted link
+        if (availableSources.isEmpty()) return false
+
+        // Quality selection logic with fallback
+        val selectedSource = availableSources.firstOrNull { it.first == "720" }
+            ?: availableSources.firstOrNull { it.first == "480" }
+            ?: availableSources.firstOrNull { it.first == "1080" }
+            ?: availableSources.first()
+
+        // Determine quality value
+        val qualityValue = when (selectedSource.first) {
+            "720" -> Qualities.P720.value
+            "480" -> Qualities.P480.value
+            "1080" -> Qualities.P1080.value
+            else -> Qualities.P480.value // Default to 480 if unknown
+        }
+
         callback.invoke(
             ExtractorLink(
                 this.name,
                 this.name,
-                mp4Link,
+                selectedSource.second,
                 referer = player3Link,
-                quality = Qualities.P720.value
+                quality = qualityValue
             )
         )
         true
