@@ -30,7 +30,7 @@ class FarsiFlixProvider : MainAPI() { // all providers must be an instance of Ma
     override val mainPage = mainPageOf(
         "$mainUrl/movies.html" to "Movies",
         "$mainUrl/tv-series.html" to "TV Shows",
-        "$mainUrl/live-tv/category/iran.html" to "Live TVs",        
+//        "$mainUrl/live-tv/category/iran.html" to "Live TVs",        
     )
 
 override suspend fun getMainPage(
@@ -40,7 +40,7 @@ override suspend fun getMainPage(
     val link = when (request.name) {
         "Movies" -> "$mainUrl/movies.html"
         "TV Shows" -> "$mainUrl/tv-series.html"
-        "Live TVs" -> "$mainUrl/live-tv/category/iran.html"
+//        "Live TVs" -> "$mainUrl/live-tv/category/iran.html"
         else -> throw IllegalArgumentException("Invalid section name: ${request.name}")
     }
 
@@ -48,7 +48,7 @@ override suspend fun getMainPage(
     val home = when (request.name) {
         "Live TVs" -> {
             // For Live TVs, select the 'div.item' elements within 'div.owl-item'
-            document.select("figure.col-md-3.col-sm-4.col-xs-6").mapNotNull { it.toLiveTvSearchResult() }
+            document.select("figure.col-md-3.col-sm-4.col-xs-6").mapNotNull { it.toSearchResult() }
         }
         else -> {
             // For Movies and TV Shows, select 'div.col-md-2.col-sm-3.col-xs-6' elements
