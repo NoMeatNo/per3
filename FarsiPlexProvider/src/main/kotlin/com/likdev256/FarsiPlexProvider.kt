@@ -175,41 +175,32 @@ override suspend fun loadLinks(
     callback: (ExtractorLink) -> Unit
 ): Boolean {
     return try {
-        // Initial page loading and navigation remains the same
+        // Step 1-3 remains the same as before
         val initialDocument = app.get(data).document
         val playLink = initialDocument.selectFirst("a[href*='/play/?id=']")?.attr("href") ?: return false
         val playPage = app.get(playLink).document
         val player3Link = playPage.selectFirst("a[href*='pname=videojs']")?.attr("href") ?: return false
         val player3Page = app.get(player3Link).document
 
-        // Extract and prioritize sources
+        // Step 4: Extract all quality links
         val videoSources = player3Page.select("video source")
         val foundLinks = mutableListOf<ExtractorLink>()
 
-        // Create a priority list with 480p first
-        val priorityOrder = listOf("480", "720", "1080")
-        
-        // Sort sources according to our priority
-        val sortedSources = videoSources.sortedBy { source ->
-            val label = source.attr("label")
-            priorityOrder.indexOf(label).takeIf { it != -1 } ?: Int.MAX_VALUE
-        }
-
-        sortedSources.forEach { source ->
+        videoSources.forEach { source ->
             val label = source.attr("label")
             val src = source.attr("src").takeIf { it.isNotBlank() } ?: return@forEach
             
             val quality = when {
-                label.contains("480") -> Qualities.P480
                 label.contains("720") -> Qualities.P720
                 label.contains("1080") -> Qualities.P1080
+                label.contains("480") -> Qualities.P480
                 else -> Qualities.Unknown
             }.value
 
             foundLinks.add(
                 ExtractorLink(
                     this.name,
-                    "Player 3 - ${label}p", 
+                    "Player 3 - ${label}p",
                     src,
                     referer = player3Link,
                     quality = quality
@@ -217,29 +208,9 @@ override suspend fun loadLinks(
             )
         }
 
-        // Add fallback to first available if no prioritized sources
-        if (foundLinks.isEmpty()) {
-            videoSources.firstOrNull()?.let { source ->
-                val src = source.attr("src")
-                foundLinks.add(
-                    ExtractorLink(
-                        this.name,
-                        "Player 3 - Auto",
-                        src,
-                        referer = player3Link,
-                        quality = Qualities.P480.value
-                    )
-                )
-            }
-        }
-
+        // Send all found links to callback
         if (foundLinks.isNotEmpty()) {
-            // Send default (480p) first
-            foundLinks.firstOrNull { it.quality == Qualities.P480.value }?.let(callback)
-            
-            // Send all other links
-            foundLinks.forEach(callback)
-            
+            foundLinks.forEach { callback.invoke(it) }
             true
         } else {
             false
