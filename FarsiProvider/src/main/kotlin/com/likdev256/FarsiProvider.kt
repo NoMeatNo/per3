@@ -181,78 +181,59 @@ override suspend fun loadLinks(
     callback: (ExtractorLink) -> Unit
 ): Boolean {
     return try {
-        // Step 1: Get the initial document
         val document = app.get(data).document
-        // Extract the form action URL and id
         val formAction = document.selectFirst("form#watch")?.attr("action") ?: return false
         val formId = document.selectFirst("form#watch input[name=id]")?.attr("value") ?: return false
-        // Step 2: Submit the form and get the redirect page
-        val redirectPage = app.post(
-            formAction,
-            data = mapOf("id" to formId)
-        ).document
-        // Step 3: Extract the next form action and submit it
+
+        val redirectPage = app.post(formAction, data = mapOf("id" to formId)).document
         val nextFormAction = redirectPage.selectFirst("form#watch")?.attr("action") ?: return false
         val postId = redirectPage.selectFirst("form#watch input[name=postid]")?.attr("value") ?: return false
-        // Submit the next form and get the final page
-        val finalPage = app.post(
-            nextFormAction,
-            data = mapOf("postid" to postId)
-        ).document
-        // Step 4 & 5: Check for forms that redirect to another URL
+
+        val finalPage = app.post(nextFormAction, data = mapOf("postid" to postId)).document
         val qualityForms = finalPage.select("form[id^=watch]")
+
         if (qualityForms.isNotEmpty()) {
-            val availableQualities = qualityForms.mapNotNull { form ->
-                form.selectFirst("input[name=q]")?.attr("value")?.toIntOrNull()
-            }
-            
-            val preferredQuality = when {
-                720 in availableQualities -> 720
-                1080 in availableQualities -> 1080
-                480 in availableQualities -> 480
-                else -> availableQualities.firstOrNull() ?: return false
-            }
-            
-            val selectedForm = qualityForms.first { form ->
-                form.selectFirst("input[name=q]")?.attr("value")?.toIntOrNull() == preferredQuality
-            }
-            
-            val redirectFormAction = selectedForm.attr("action")
-            val postIdForNextRedirect = selectedForm.selectFirst("input[name=postid]")?.attr("value") ?: return false
-            
-            // Submit the form to the new URL
-            val finalRedirectPage = app.post(
-                redirectFormAction,
-                data = mapOf("q" to preferredQuality.toString(), "postid" to postIdForNextRedirect)
-            ).document
-            
-            // Extract the MP4 link from the final redirect page
-            val finalMp4Link = extractMp4Link(finalRedirectPage)
-            if (finalMp4Link.isNotBlank()) {
-                val qualityEnum = when (preferredQuality) {
-                    1080 -> Qualities.P1080
-                    720 -> Qualities.P720
-                    480 -> Qualities.P480
-                    else -> Qualities.P720
+            var foundAny = false
+            qualityForms.forEach { form ->
+                val q = form.selectFirst("input[name=q]")?.attr("value")?.toIntOrNull() ?: return@forEach
+                val action = form.attr("action") ?: return@forEach
+                val postIdForRedirect = form.selectFirst("input[name=postid]")?.attr("value") ?: return@forEach
+
+                try {
+                    val finalRedirectPage = app.post(
+                        action,
+                        data = mapOf("q" to q.toString(), "postid" to postIdForRedirect)
+                    ).document
+
+                    val mp4Link = extractMp4Link(finalRedirectPage)
+                    if (mp4Link.isNotBlank()) {
+                        val quality = when (q) {
+                            1080 -> Qualities.P1080
+                            720 -> Qualities.P720
+                            480 -> Qualities.P480
+                            else -> Qualities.Unknown
+                        }.value
+
+                        callback.invoke(
+                            ExtractorLink(
+                                this.name,
+                                "${this.name} ${q}p",  // Name includes quality
+                                mp4Link,
+                                referer = data,
+                                quality = quality
+                            )
+                        )
+                        foundAny = true
+                    }
+                } catch (e: Exception) {
+                    // Skip failed form submission
                 }
-                callback.invoke(
-                    ExtractorLink(
-                        this.name,
-                        this.name,
-                        finalMp4Link,
-                        referer = data,
-                        quality = qualityEnum.value
-                    )
-                )
-                true
-            } else {
-                false
             }
+            foundAny
         } else {
             false
         }
     } catch (e: Exception) {
-        // Instead of logging, we'll just return false to indicate failure
         false
     }
 }
