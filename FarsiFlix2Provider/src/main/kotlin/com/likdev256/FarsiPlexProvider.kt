@@ -17,8 +17,8 @@ import okhttp3.FormBody
 import org.jsoup.nodes.Document
 
 class FarsiFlix2Provider : MainAPI() { // all providers must be an instance of MainAPI
-    override var mainUrl = "https://FarsiFlix2.com/"
-    override var name = "Farsi Plex"
+    override var mainUrl = "https://Farsiplex.com/"
+    override var name = "Farsi Flix #2"
     override val hasMainPage = true
     override var lang = "fa"
     override val hasDownloadSupport = true
