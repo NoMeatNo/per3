@@ -16,9 +16,9 @@ import com.lagradost.nicehttp.NiceResponse
 import okhttp3.FormBody
 import org.jsoup.nodes.Document
 
-class FarsiPlexProvider : MainAPI() { // all providers must be an instance of MainAPI
-    override var mainUrl = "https://farsiplex.com/"
-    override var name = "Farsi Plex"
+class FarsiFlix3Provider : MainAPI() { // all providers must be an instance of MainAPI
+    override var mainUrl = "https://FarsiFlix3land.com"
+    override var name = "Persian Flix #1"
     override val hasMainPage = true
     override var lang = "fa"
     override val hasDownloadSupport = true
@@ -29,8 +29,11 @@ class FarsiPlexProvider : MainAPI() { // all providers must be an instance of Ma
     )
 
     override val mainPage = mainPageOf(
-        "$mainUrl/movie/" to "Movies",
-        "$mainUrl/tvshow/" to "Series",
+        "$mainUrl/new-persian-movies-2024/" to "Movies",
+        "$mainUrl/series-22/" to "Last Series",
+        "$mainUrl/iranian-series/" to "Old Series",
+        "$mainUrl/old-iranian-movies/" to "Old Movies",
+        "$mainUrl/episodes-12/" to "Last Episodes",
         "$mainUrl/live-tv/category/iran.html" to "Live TVs",        
     )
 
@@ -39,8 +42,11 @@ override suspend fun getMainPage(
     request: MainPageRequest
 ): HomePageResponse {
     val link = when (request.name) {
-        "Movies" -> "$mainUrl/movie/"
-        "Series" -> "$mainUrl/tvshow/"
+        "Movies" -> "$mainUrl/new-persian-movies-2024/"
+        "Last Series" -> "$mainUrl/series-22/"
+        "Old Series" -> "$mainUrl/iranian-series/"
+        "Old Movies" -> "$mainUrl/old-iranian-movies/"
+        "Last Episodes" -> "$mainUrl/episodes-12/"
         "Live TVs" -> "$mainUrl/live-tv/category/iran.html"
         else -> throw IllegalArgumentException("Invalid section name: ${request.name}")
     }
@@ -95,18 +101,18 @@ private fun Element.toParseSearchResult(): SearchResponse? {
 }
     override suspend fun search(query: String): List<SearchResponse>? {
         val fixedQuery = query.replace(" ", "+")
-        val resultFarsi = app.get("$mainUrl/search/$fixedQuery")
+        val resultFarsiFlix3 = app.get("$mainUrl/search/$fixedQuery")
             .document.select("div.result-item")
             .mapNotNull { it.toParseSearchResult() }
 
-        return resultFarsi.sortedBy { -FuzzySearch.partialRatio(it.name.replace("(\\()+(.*)+(\\))".toRegex(), "").lowercase(), query.lowercase()) }
+        return resultFarsiFlix3.sortedBy { -FuzzySearch.partialRatio(it.name.replace("(\\()+(.*)+(\\))".toRegex(), "").lowercase(), query.lowercase()) }
     }
 
     override suspend fun load(url: String): LoadResponse? {
         val document = app.get(url).document
-        val isTvSeries = url.contains("/tvshow/")
-        val isMovie = url.contains("/movie/")
-        val isEpisode = url.contains("/episode/")
+        val isTvSeries = url.contains("/tvshows/")
+        val isMovie = url.contains("/movies/")
+        val isEpisode = url.contains("/episodes/")
 
         return if (isTvSeries) {
         val title = document.selectFirst("div.data h1")?.text()?.trim() ?: return null
@@ -136,8 +142,8 @@ private fun Element.toParseSearchResult(): SearchResponse? {
         }
     } else if (isMovie) {
         // Adjust the selectors for movies
-        val title = document.selectFirst("div.data h1")?.text()?.trim() ?: return null
-        val poster = fixUrlNull(document.selectFirst("div.playbox img.cover")?.attr("src"))
+        val title = document.selectFirst("div.data h2")?.text()?.trim() ?: return null
+        val poster = fixUrlNull(document.selectFirst("meta[property=og:image]")?.attr("content"))
         val plot = document.selectFirst("div#info div.wp-content p")?.text()?.trim()
 
         newMovieLoadResponse(title, url, TvType.Movie, url) {
@@ -175,49 +181,83 @@ override suspend fun loadLinks(
     callback: (ExtractorLink) -> Unit
 ): Boolean {
     return try {
-        // Step 1-3 remains the same as before
-        val initialDocument = app.get(data).document
-        val playLink = initialDocument.selectFirst("a[href*='/play/?id=']")?.attr("href") ?: return false
-        val playPage = app.get(playLink).document
-        val player3Link = playPage.selectFirst("a[href*='pname=videojs']")?.attr("href") ?: return false
-        val player3Page = app.get(player3Link).document
+        val document = app.get(data).document
+        val formAction = document.selectFirst("form#watch")?.attr("action") ?: return false
+        val formId = document.selectFirst("form#watch input[name=id]")?.attr("value") ?: return false
 
-        // Step 4: Extract all quality links
-        val videoSources = player3Page.select("video source")
-        val foundLinks = mutableListOf<ExtractorLink>()
+        val redirectPage = app.post(formAction, data = mapOf("id" to formId)).document
+        val nextFormAction = redirectPage.selectFirst("form#watch")?.attr("action") ?: return false
+        val postId = redirectPage.selectFirst("form#watch input[name=postid]")?.attr("value") ?: return false
 
-        videoSources.forEach { source ->
-            val label = source.attr("label")
-            val src = source.attr("src").takeIf { it.isNotBlank() } ?: return@forEach
-            
-            val quality = when {
-                label.contains("720") -> Qualities.P720
-                label.contains("1080") -> Qualities.P1080
-                label.contains("480") -> Qualities.P480
-                else -> Qualities.Unknown
-            }.value
+        val finalPage = app.post(nextFormAction, data = mapOf("postid" to postId)).document
+        val qualityForms = finalPage.select("form[id^=watch]")
 
-            foundLinks.add(
-                ExtractorLink(
-                    this.name,
-                    "Player 3 - ${label}p",
-                    src,
-                    referer = player3Link,
-                    quality = quality
-                )
-            )
-        }
+        if (qualityForms.isNotEmpty()) {
+            var foundAny = false
+            qualityForms.forEach { form ->
+                val q = form.selectFirst("input[name=q]")?.attr("value")?.toIntOrNull() ?: return@forEach
+                val action = form.attr("action") ?: return@forEach
+                val postIdForRedirect = form.selectFirst("input[name=postid]")?.attr("value") ?: return@forEach
 
-        // Send all found links to callback
-        if (foundLinks.isNotEmpty()) {
-            foundLinks.forEach { callback.invoke(it) }
-            true
+                try {
+                    val finalRedirectPage = app.post(
+                        action,
+                        data = mapOf("q" to q.toString(), "postid" to postIdForRedirect)
+                    ).document
+
+                    val mp4Link = extractMp4Link(finalRedirectPage)
+                    if (mp4Link.isNotBlank()) {
+                        val quality = when (q) {
+                            1080 -> Qualities.P1080
+                            720 -> Qualities.P720
+                            480 -> Qualities.P480
+                            else -> Qualities.Unknown
+                        }.value
+
+                        callback.invoke(
+                            ExtractorLink(
+                                this.name,
+                                "${this.name} ${q}p",  // Name includes quality
+                                mp4Link,
+                                referer = data,
+                                quality = quality
+                            )
+                        )
+                        foundAny = true
+                    }
+                } catch (e: Exception) {
+                    // Skip failed form submission
+                }
+            }
+            foundAny
         } else {
             false
         }
     } catch (e: Exception) {
         false
     }
+}
+
+// Function to extract MP4 link remains the same
+private fun extractMp4Link(page: Document): String {
+    // Check if there is a video element first
+    val mp4Link = page.select("video.jw-video").attr("src")
+    if (mp4Link.isNotBlank()) {
+        return mp4Link
+    }
+    // If the MP4 link was not found in the video element, look for the script
+    page.select("script").forEach { scriptElement ->
+        val scriptContent = scriptElement.html()
+        if (scriptContent.contains("sources: [")) {
+            // Extract the MP4 link from the script
+            val mp4Pattern = """file:\s*['"]([^'"]+)['"]""".toRegex()
+            val matchResult = mp4Pattern.find(scriptContent)
+            if (matchResult != null) {
+                return matchResult.groupValues[1]
+            }
+        }
+    }
+    return ""
 }
         
     private suspend fun getUrls(url: String): List<String>? {

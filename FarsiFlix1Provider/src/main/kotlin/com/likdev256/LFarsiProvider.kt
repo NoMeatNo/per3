@@ -15,7 +15,7 @@ import java.net.URLEncoder
 import com.lagradost.nicehttp.NiceResponse
 import okhttp3.FormBody
 
-class FarsiFlixProvider : MainAPI() { // all providers must be an instance of MainAPI
+class FarsiFlix1Provider : MainAPI() { // all providers must be an instance of MainAPI
     override var mainUrl = "https://www.diycraftsguide.com"
     override var name = "Farsi Flix #1"
     override val hasMainPage = true
@@ -152,7 +152,7 @@ isLiveTv -> {
         this.type = TvType.Live // Set `type` here
         this.posterUrl = posterUrl
         this.plot = plot
-        this.apiName = this@FarsiFlixProvider.name
+        this.apiName = this@FarsiFlix1Provider.name
         this.contentRating = null // Required parameter
 }
 }

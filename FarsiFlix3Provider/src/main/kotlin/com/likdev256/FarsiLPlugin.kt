@@ -5,9 +5,9 @@ import com.lagradost.cloudstream3.plugins.Plugin
 import android.content.Context
 
 @CloudstreamPlugin
-class FarsiFlixPlugin : Plugin() {
+class FarsiFlix3Plugin : Plugin() {
     override fun load(context: Context) {
         // All providers should be added in this manner. Please don't edit the providers list directly.
-        registerMainAPI(FarsiFlixProvider())
+        registerMainAPI(FarsiFlix3Provider())
     }
 }
