@@ -5,7 +5,7 @@ cloudstream {
     language = "fa"
     // All of these properties are optional, you can safely remove them
 
-    description = "Farsi Plex"
+    description = "Farsi Flix #2"
     authors = listOf("Naser")
 
     /**
