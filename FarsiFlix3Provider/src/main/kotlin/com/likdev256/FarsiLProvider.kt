@@ -223,14 +223,13 @@ override suspend fun loadLinks(
                         }
 
                         callback.invoke(
-                            newExtractorLink( // Use newExtractorLink helper function
+                            newExtractorLink(
                                 source = this.name,
                                 name = "${this.name} ${q}p",  // Name includes quality
-                                url = mp4Link,
-                                quality = qualityEnum, // Pass Qualities enum directly
-                                // referer might be passed via headers or is implicit
-                                // isM3u8 = false // Optional: default is false
-                            )
+                                url = mp4Link
+                            ).apply {
+                                this.quality = qualityEnum.value
+                            }
                         )
                         foundAny = true
                     }

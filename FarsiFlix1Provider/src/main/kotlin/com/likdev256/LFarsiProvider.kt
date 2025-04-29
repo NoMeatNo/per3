@@ -183,14 +183,13 @@ isLiveTv -> {
                     val mp4Link = matchResult.groupValues[1]
                     if (mp4Link.isNotBlank()) { // Ensure link is not blank
                         callback.invoke(
-                            newExtractorLink( // Use newExtractorLink helper function
-                                source = this.name, // Source name
-                                name = this.name,   // Link name
-                                url = mp4Link,
-                                quality = Qualities.Unknown, // Pass Qualities enum directly
-                                // referer might be passed via headers or is implicit
-                                // isM3u8 = false // Optional: default is false
-                            )
+                            newExtractorLink(
+                                source = this.name,
+                                name = this.name,
+                                url = mp4Link
+                            ).apply {
+                                this.quality = Qualities.Unknown.value
+                            }
                         )
                     }
                 }
