@@ -197,13 +197,22 @@ override suspend fun loadLinks(
                 else -> Qualities.Unknown
             }.value
 
+            // Determine the Qualities enum based on the numeric quality value
+            val qualityEnum = when (quality) {
+                Qualities.P1080.value -> Qualities.P1080
+                Qualities.P720.value -> Qualities.P720
+                Qualities.P480.value -> Qualities.P480
+                else -> Qualities.Unknown
+            }
+
             foundLinks.add(
-                ExtractorLink(
-                    this.name,
-                    "Player 3 - ${label}p",
-                    src,
-                    referer = player3Link,
-                    quality = quality
+                newExtractorLink( // Use newExtractorLink helper function
+                    source = this.name,
+                    name = "Player 3 - ${label}p",
+                    url = src,
+                    quality = qualityEnum, // Pass Qualities enum directly
+                    // referer might be passed via headers or is implicit
+                    // isM3u8 = false // Optional: default is false
                 )
             )
         }
