@@ -167,36 +167,36 @@ isLiveTv -> {
 }
 
     
-    override suspend fun loadLinks(
-        data: String,
-        isCasting: Boolean,
-        subtitleCallback: (SubtitleFile) -> Unit,
-        callback: (ExtractorLink) -> Unit
-    ): Boolean {
-        data.split(",").forEach { url ->
-            val document = app.get(url.trim()).document
-            val scriptContent = document.selectFirst("script:containsData('video/mp4')")?.data() ?: ""
-            val mp4LinkRegex = Regex("""src: '(https?://[^']+\.mp4)'""")
-            val matchResults = mp4LinkRegex.findAll(scriptContent)
-        matchResults.forEach { matchResult ->
-                if (matchResult.groupValues.size > 1) { // Ensure group 1 exists
-                    val mp4Link = matchResult.groupValues[1]
-                    if (mp4Link.isNotBlank()) { // Ensure link is not blank
-                        callback.invoke(
-                            newExtractorLink(
-                                source = this.name,
-                                name = this.name,
-                                url = mp4Link
-                            ).apply {
-                                this.quality = Qualities.Unknown.value
-                            }
-                        )
-                    }
+override suspend fun loadLinks(
+    data: String,
+    isCasting: Boolean,
+    subtitleCallback: (SubtitleFile) -> Unit,
+    callback: (ExtractorLink) -> Unit
+): Boolean {
+    data.split(",").forEach { url ->
+        val document = app.get(url.trim()).document
+        val scriptContent = document.selectFirst("script:containsData('video/mp4')")?.data() ?: ""
+        val mp4LinkRegex = Regex("""src: '(https?://[^']+\.mp4)'""")
+        val matchResults = mp4LinkRegex.findAll(scriptContent)
+    matchResults.forEach { matchResult ->
+            if (matchResult.groupValues.size > 1) { // Ensure group 1 exists
+                val mp4Link = matchResult.groupValues[1]
+                if (mp4Link.isNotBlank()) { // Ensure link is not blank
+                    callback.invoke(
+                        newExtractorLink(
+                            source = this.name,
+                            name = this.name,
+                            url = mp4Link
+                        ).apply {
+                            this.quality = Qualities.Unknown.value
+                        }
+                    )
                 }
             }
         }
-        return true
     }
+    return true
+}
         
     private suspend fun getUrls(url: String): List<String>? {
 
