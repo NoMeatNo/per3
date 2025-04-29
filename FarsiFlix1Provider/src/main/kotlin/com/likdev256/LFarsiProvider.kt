@@ -179,16 +179,21 @@ isLiveTv -> {
             val mp4LinkRegex = Regex("""src: '(https?://[^']+\.mp4)'""")
             val matchResults = mp4LinkRegex.findAll(scriptContent)
         matchResults.forEach { matchResult ->
-                val mp4Link = matchResult.groupValues[1]
-                callback.invoke(
-                    ExtractorLink(
-                        this.name,
-                        this.name,
-                        mp4Link,
-                        referer = url.trim(),
-                        quality = Qualities.Unknown.value,
-                    )
-                )
+                if (matchResult.groupValues.size > 1) { // Ensure group 1 exists
+                    val mp4Link = matchResult.groupValues[1]
+                    if (mp4Link.isNotBlank()) { // Ensure link is not blank
+                        callback.invoke(
+                            newExtractorLink( // Use newExtractorLink helper function
+                                source = this.name, // Source name
+                                name = this.name,   // Link name
+                                url = mp4Link,
+                                referer = url.trim(),
+                                quality = Qualities.Unknown.value,
+                                // isM3u8 = false // Optional: default is false
+                            )
+                        )
+                    }
+                }
             }
         }
         return true
