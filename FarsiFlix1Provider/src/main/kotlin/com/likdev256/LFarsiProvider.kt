@@ -187,8 +187,8 @@ isLiveTv -> {
                                 source = this.name, // Source name
                                 name = this.name,   // Link name
                                 url = mp4Link,
-                                referer = url.trim(),
-                                quality = Qualities.Unknown.value,
+                                quality = Qualities.Unknown, // Pass Qualities enum directly
+                                // referer might be passed via headers or is implicit
                                 // isM3u8 = false // Optional: default is false
                             )
                         )
