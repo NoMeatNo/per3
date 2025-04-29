@@ -42,7 +42,7 @@ override suspend fun getMainPage(
     request: MainPageRequest
 ): HomePageResponse {
     val link = when (request.name) {
-        "Movies" -> "$mainUrl/new-persian-movies-2024/"
+        "Movies" -> "$mainUrl/iranian-movies-2025/"
         "Last Series" -> "$mainUrl/series-22/"
         "Old Series" -> "$mainUrl/iranian-series/"
         "Old Movies" -> "$mainUrl/old-iranian-movies/"
