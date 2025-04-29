@@ -206,13 +206,14 @@ override suspend fun loadLinks(
             }
 
             foundLinks.add(
-                            newExtractorLink(
-                                source = this.name,
-                                name = "Player 3 - ${label}p",
-                                url = src
-                            ).apply {
-                                this.quality = qualityEnum.value
-                            }
+                newExtractorLink(
+                    source = this.name,
+                    name = "Player 3 - ${label}p",
+                    url = src
+                ).apply {
+                    this.referer = player3Link
+                    this.quality = quality
+                }
             )
         }
 
