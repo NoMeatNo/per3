@@ -29,7 +29,7 @@ class FarsiFlix3Provider : MainAPI() { // all providers must be an instance of M
     )
 
     override val mainPage = mainPageOf(
-        "$mainUrl/new-persian-movies-2024/" to "Movies",
+        "$mainUrl/iranian-movies-2025/" to "Movies",
         "$mainUrl/series-22/" to "Last Series",
         "$mainUrl/iranian-series/" to "Old Series",
         "$mainUrl/old-iranian-movies/" to "Old Movies",
