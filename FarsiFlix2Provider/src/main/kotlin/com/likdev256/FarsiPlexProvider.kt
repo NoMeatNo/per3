@@ -175,56 +175,75 @@ override suspend fun loadLinks(
     callback: (ExtractorLink) -> Unit
 ): Boolean {
     return try {
-        // Step 1-3 remains the same as before
+        // Step 1: Get initial page
         val initialDocument = app.get(data).document
-        val playLink = initialDocument.selectFirst("a[href*='/play/?id=']")?.attr("href") ?: return false
+        val playLink = initialDocument.selectFirst("a[href*='/play/?id=']")?.attr("href") 
+            ?: return false.also { println("No play link found") }
+
+        // Step 2: Get play page
         val playPage = app.get(playLink).document
-        val player3Link = playPage.selectFirst("a[href*='pname=videojs']")?.attr("href") ?: return false
-        val player3Page = app.get(player3Link).document
+        val player3Link = playPage.selectFirst("a[href*='pname=videojs']")?.attr("href") 
+            ?: return false.also { println("No player3 link found") }
 
-        // Step 4: Extract all quality links
-        val videoSources = player3Page.select("video source")
+        // Step 3: Get player3 page with referer
+        val player3Page = app.get(player3Link, referer = playLink).document
+
+        // Step 4: Extract all possible video sources
+        val videoSources = player3Page.select("video source, source[type^='video/']")
+        if (videoSources.isEmpty()) {
+            println("No video sources found in player3 page")
+            return false
+        }
+
         val foundLinks = mutableListOf<ExtractorLink>()
-
         videoSources.forEach { source ->
-            val label = source.attr("label")
-            val src = source.attr("src").takeIf { it.isNotBlank() } ?: return@forEach
-            
-            val quality = when {
-                label.contains("720") -> Qualities.P720
-                label.contains("1080") -> Qualities.P1080
-                label.contains("480") -> Qualities.P480
-                else -> Qualities.Unknown
-            }.value
+            try {
+                val label = source.attr("label").takeIf { it.isNotBlank() } ?: "Unknown"
+                val src = source.attr("src").takeIf { it.isNotBlank() } ?: return@forEach
+                
+                // More flexible quality detection
+                val quality = when {
+                    label.contains("1080", true) -> Qualities.P1080
+                    label.contains("720", true) -> Qualities.P720 
+                    label.contains("480", true) -> Qualities.P480
+                    label.contains("360", true) -> Qualities.P360
+                    label.matches(".*\\d{3,4}.*".toRegex()) -> {
+                        val num = label.filter { it.isDigit() }.toIntOrNull() ?: 0
+                        when {
+                            num >= 1080 -> Qualities.P1080
+                            num >= 720 -> Qualities.P720
+                            num >= 480 -> Qualities.P480
+                            else -> Qualities.Unknown
+                        }
+                    }
+                    else -> Qualities.Unknown
+                }.value
 
-            // Determine the Qualities enum based on the numeric quality value
-            val qualityEnum = when (quality) {
-                Qualities.P1080.value -> Qualities.P1080
-                Qualities.P720.value -> Qualities.P720
-                Qualities.P480.value -> Qualities.P480
-                else -> Qualities.Unknown
+                foundLinks.add(
+                    newExtractorLink(
+                        source = this.name,
+                        name = "Player 3 - ${label}p",
+                        url = src
+                    ).apply {
+                        this.referer = player3Link
+                        this.quality = quality
+                        this.headers = mapOf("Referer" to player3Link)
+                    }
+                )
+            } catch (e: Exception) {
+                println("Error processing video source: ${e.message}")
             }
-
-            foundLinks.add(
-                newExtractorLink(
-                    source = this.name,
-                    name = "Player 3 - ${label}p",
-                    url = src
-                ).apply {
-                    this.referer = player3Link
-                    this.quality = quality
-                }
-            )
         }
 
-        // Send all found links to callback
-        if (foundLinks.isNotEmpty()) {
-            foundLinks.forEach { callback.invoke(it) }
-            true
-        } else {
-            false
+        if (foundLinks.isEmpty()) {
+            println("No valid video links found after processing")
+            return false
         }
+
+        foundLinks.forEach { callback.invoke(it) }
+        true
     } catch (e: Exception) {
+        println("Error in loadLinks: ${e.message}")
         false
     }
 }
