@@ -175,13 +175,15 @@ override suspend fun loadLinks(
 ): Boolean {
     data.split(",").forEach { url ->
         val document = app.get(url.trim()).document
+        
+        // Extract MP4 links from scripts (existing logic)
         val scriptContent = document.selectFirst("script:containsData('video/mp4')")?.data() ?: ""
         val mp4LinkRegex = Regex("""src: '(https?://[^']+\.mp4)'""")
         val matchResults = mp4LinkRegex.findAll(scriptContent)
-    matchResults.forEach { matchResult ->
-            if (matchResult.groupValues.size > 1) { // Ensure group 1 exists
+        matchResults.forEach { matchResult ->
+            if (matchResult.groupValues.size > 1) {
                 val mp4Link = matchResult.groupValues[1]
-                if (mp4Link.isNotBlank()) { // Ensure link is not blank
+                if (mp4Link.isNotBlank()) {
                     callback.invoke(
                         newExtractorLink(
                             source = this.name,
@@ -192,6 +194,25 @@ override suspend fun loadLinks(
                         }
                     )
                 }
+            }
+        }
+        
+        // Extract ok.ru / VK embedded videos from iframes
+        document.select("iframe").forEach { iframe ->
+            val iframeSrc = iframe.attr("src")
+            if (iframeSrc.isNotBlank()) {
+                // Handle ok.ru embeds (e.g., https://ok.ru/videoembed/...)
+                if (iframeSrc.contains("ok.ru") || iframeSrc.contains("vk.com")) {
+                    loadExtractor(iframeSrc, mainUrl, subtitleCallback, callback)
+                }
+            }
+        }
+        
+        // Also check for video-embed-container divs with iframes
+        document.select("div.video-embed-container iframe").forEach { iframe ->
+            val iframeSrc = iframe.attr("src")
+            if (iframeSrc.isNotBlank() && (iframeSrc.contains("ok.ru") || iframeSrc.contains("vk.com"))) {
+                loadExtractor(iframeSrc, mainUrl, subtitleCallback, callback)
             }
         }
     }
