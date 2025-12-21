@@ -121,7 +121,7 @@ class FarsiFlixMegaProvider : MainAPI() {
             
             val site2Deferred = async {
                 try {
-                    app.get("$SITE2_URL/search/$fixedQuery")
+                    app.get("$SITE2_URL/?s=$fixedQuery")
                         .document.select("div.result-item")
                         .mapNotNull { it.toParseSearchResult() }
                 } catch (e: Exception) { emptyList() }
@@ -129,7 +129,7 @@ class FarsiFlixMegaProvider : MainAPI() {
             
             val site3Deferred = async {
                 try {
-                    app.get("$SITE3_URL/search/$fixedQuery")
+                    app.get("$SITE3_URL/?s=$fixedQuery")
                         .document.select("div.result-item")
                         .mapNotNull { it.toParseSearchResult() }
                 } catch (e: Exception) { emptyList() }
@@ -384,7 +384,7 @@ class FarsiFlixMegaProvider : MainAPI() {
                     if (!data.contains(SITE2_URL)) {
                         async {
                             try {
-                                val searchResults = app.get("$SITE2_URL/search/${titleForSearch.replace(" ", "+")}")
+                                val searchResults = app.get("$SITE2_URL/?s=${titleForSearch.replace(" ", "+")}")
                                     .document.select("div.result-item")
                                     .mapNotNull { it.toParseSearchResult() }
                                 
@@ -400,7 +400,7 @@ class FarsiFlixMegaProvider : MainAPI() {
                     if (!data.contains(SITE3_URL)) {
                         async {
                             try {
-                                val searchResults = app.get("$SITE3_URL/search/${titleForSearch.replace(" ", "+")}")
+                                val searchResults = app.get("$SITE3_URL/?s=${titleForSearch.replace(" ", "+")}")
                                     .document.select("div.result-item")
                                     .mapNotNull { it.toParseSearchResult() }
                                 

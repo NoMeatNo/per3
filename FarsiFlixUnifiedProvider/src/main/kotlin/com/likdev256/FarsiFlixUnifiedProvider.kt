@@ -227,7 +227,7 @@ class FarsiFlixUnifiedProvider : MainAPI() {
             
             val site2Deferred = async {
                 try {
-                    app.get("$SITE2_URL/search/$fixedQuery")
+                    app.get("$SITE2_URL/?s=$fixedQuery")
                         .document.select("div.result-item")
                         .mapNotNull { elem ->
                             val titleElement = elem.selectFirst("div.details div.title a")
@@ -242,7 +242,7 @@ class FarsiFlixUnifiedProvider : MainAPI() {
             
             val site3Deferred = async {
                 try {
-                    app.get("$SITE3_URL/search/$fixedQuery")
+                    app.get("$SITE3_URL/?s=$fixedQuery")
                         .document.select("div.result-item")
                         .mapNotNull { elem ->
                             val titleElement = elem.selectFirst("div.details div.title a")
@@ -503,7 +503,7 @@ class FarsiFlixUnifiedProvider : MainAPI() {
                 if (SITE2_NAME !in sitesSearched) {
                     async {
                         try {
-                            val results = app.get("$SITE2_URL/search/${searchTitle.replace(" ", "+")}")
+                            val results = app.get("$SITE2_URL/?s=${searchTitle.replace(" ", "+")}")
                                 .document.select("div.result-item")
                             
                             results.firstOrNull { elem ->
@@ -520,7 +520,7 @@ class FarsiFlixUnifiedProvider : MainAPI() {
                 if (SITE3_NAME !in sitesSearched) {
                     async {
                         try {
-                            val results = app.get("$SITE3_URL/search/${searchTitle.replace(" ", "+")}")
+                            val results = app.get("$SITE3_URL/?s=${searchTitle.replace(" ", "+")}")
                                 .document.select("div.result-item")
                             
                             results.firstOrNull { elem ->
