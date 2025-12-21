@@ -176,73 +176,38 @@ override suspend fun loadLinks(
 ): Boolean {
     return try {
         val document = app.get(data).document
+        var foundLinks = 0
         
-        // Method 1: Try to extract video URLs from the dooplayer API
-        // Find post ID from the page
-        val postId = document.selectFirst("li.dooplay_player_option[data-post]")?.attr("data-post")
-            ?: document.selectFirst("[data-post]")?.attr("data-post")
-        
-        if (postId != null) {
-            // Try to get sources from the dooplayer API
-            val playerOptions = document.select("li.dooplay_player_option")
-            playerOptions.forEach { option ->
-                val nume = option.attr("data-nume")
-                val dataType = option.attr("data-type")
-                val qualityLabel = option.selectFirst("span.title")?.text() ?: "Unknown"
-                
-                try {
-                    // Call the dooplayer API
-                    val apiUrl = "$mainUrl/wp-json/dooplayer/v2/$postId/$nume"
-                    val apiResponse = app.get(apiUrl).text
-                    
-                    // Parse the response to get the embed URL
-                    val embedUrlRegex = Regex(""""embed_url"\s*:\s*"([^"]+)"""")
-                    val embedMatch = embedUrlRegex.find(apiResponse)
-                    if (embedMatch != null) {
-                        var embedUrl = embedMatch.groupValues[1].replace("\\/", "/")
-                        
-                        // Extract the source parameter from the iframe URL
-                        if (embedUrl.contains("source=")) {
-                            val sourceParam = embedUrl.substringAfter("source=").substringBefore("&")
-                            val decodedUrl = java.net.URLDecoder.decode(sourceParam, "UTF-8")
-                            
-                            if (decodedUrl.isNotBlank() && (decodedUrl.endsWith(".mp4") || decodedUrl.endsWith(".m3u8"))) {
-                                val quality = when {
-                                    qualityLabel.contains("1080") -> Qualities.P1080.value
-                                    qualityLabel.contains("720") -> Qualities.P720.value
-                                    qualityLabel.contains("480") -> Qualities.P480.value
-                                    qualityLabel.contains("360") -> Qualities.P360.value
-                                    else -> Qualities.Unknown.value
-                                }
-                                
-                                callback.invoke(
-                                    newExtractorLink(
-                                        source = this.name,
-                                        name = "${this.name} - ${qualityLabel}p",
-                                        url = decodedUrl
-                                    ).apply {
-                                        this.quality = quality
-                                        this.referer = mainUrl
-                                    }
-                                )
-                            }
-                        }
-                    }
-                } catch (e: Exception) {
-                    println("Error fetching player option $nume: ${e.message}")
-                }
+        // Method 1: Check if page has a watch form to navigate to player page
+        // This is required for episode pages which have form id="watch-XXXXX"
+        val watchForm = document.selectFirst("form[id^=watch-]")
+        val playerDocument = if (watchForm != null) {
+            val formAction = watchForm.attr("action")
+            val formId = watchForm.selectFirst("input[name=id]")?.attr("value") ?: ""
+            
+            if (formAction.isNotEmpty() && formId.isNotEmpty()) {
+                // Submit the form to get the player page
+                app.post(
+                    formAction,
+                    data = mapOf("id" to formId),
+                    referer = data
+                ).document
+            } else {
+                document
             }
+        } else {
+            document
         }
         
-        // Method 2: Fallback - Extract directly from iframe sources on the page
-        document.select("iframe.metaframe, iframe.rptss, iframe[src*='source=']").forEach { iframe ->
+        // Method 2: Extract video URLs from iframes on the player page
+        // The iframes have the video source URL encoded in the "source=" parameter
+        playerDocument.select("iframe.metaframe, iframe.rptss, iframe[src*='source=']").forEach { iframe ->
             val iframeSrc = iframe.attr("src")
             if (iframeSrc.contains("source=")) {
                 val sourceParam = iframeSrc.substringAfter("source=").substringBefore("&")
                 val decodedUrl = java.net.URLDecoder.decode(sourceParam, "UTF-8")
                 
                 if (decodedUrl.isNotBlank() && (decodedUrl.endsWith(".mp4") || decodedUrl.endsWith(".m3u8"))) {
-                    // Try to determine quality from URL
                     val quality = when {
                         decodedUrl.contains("1080") -> Qualities.P1080.value
                         decodedUrl.contains("720") -> Qualities.P720.value
@@ -269,38 +234,99 @@ override suspend fun loadLinks(
                             this.referer = mainUrl
                         }
                     )
+                    foundLinks++
                 }
             }
         }
         
-        // Method 3: Also check for direct video sources in scripts
-        val scriptContent = document.selectFirst("script:containsData('video/mp4')")?.data() ?: ""
-        val mp4LinkRegex = Regex("""src:\s*['"]?(https?://[^'"]+\.mp4)['"]?""")
-        mp4LinkRegex.findAll(scriptContent).forEach { matchResult ->
-            val mp4Link = matchResult.groupValues[1]
-            if (mp4Link.isNotBlank()) {
-                val quality = when {
-                    mp4Link.contains("1080") -> Qualities.P1080.value
-                    mp4Link.contains("720") -> Qualities.P720.value
-                    mp4Link.contains("480") -> Qualities.P480.value
-                    else -> Qualities.Unknown.value
-                }
-                callback.invoke(
-                    newExtractorLink(
-                        source = this.name,
-                        name = this.name,
-                        url = mp4Link
-                    ).apply {
-                        this.quality = quality
-                        this.referer = mainUrl
+        // Method 3: If no iframes found yet, try the dooplayer API
+        if (foundLinks == 0) {
+            val postId = playerDocument.selectFirst("li.dooplay_player_option[data-post]")?.attr("data-post")
+                ?: playerDocument.selectFirst("[data-post]")?.attr("data-post")
+            
+            if (postId != null) {
+                val playerOptions = playerDocument.select("li.dooplay_player_option")
+                playerOptions.forEach { option ->
+                    val nume = option.attr("data-nume")
+                    val dataType = option.attr("data-type")
+                    val qualityLabel = option.selectFirst("span.title")?.text() ?: "Unknown"
+                    
+                    try {
+                        // Call the dooplayer API
+                        val apiUrl = "$mainUrl/wp-json/dooplayer/v2/$postId/$dataType/$nume"
+                        val apiResponse = app.get(apiUrl).text
+                        
+                        // Parse the response to get the embed URL
+                        val embedUrlRegex = Regex(""""embed_url"\s*:\s*"([^"]+)"""")
+                        val embedMatch = embedUrlRegex.find(apiResponse)
+                        if (embedMatch != null) {
+                            val embedUrl = embedMatch.groupValues[1].replace("\\/", "/")
+                            
+                            // Extract the source parameter from the iframe URL
+                            if (embedUrl.contains("source=")) {
+                                val sourceParam = embedUrl.substringAfter("source=").substringBefore("&")
+                                val decodedUrl = java.net.URLDecoder.decode(sourceParam, "UTF-8")
+                                
+                                if (decodedUrl.isNotBlank() && (decodedUrl.endsWith(".mp4") || decodedUrl.endsWith(".m3u8"))) {
+                                    val quality = when {
+                                        qualityLabel.contains("1080") || decodedUrl.contains("1080") -> Qualities.P1080.value
+                                        qualityLabel.contains("720") || decodedUrl.contains("720") -> Qualities.P720.value
+                                        qualityLabel.contains("480") || decodedUrl.contains("480") -> Qualities.P480.value
+                                        qualityLabel.contains("360") || decodedUrl.contains("360") -> Qualities.P360.value
+                                        else -> Qualities.Unknown.value
+                                    }
+                                    
+                                    callback.invoke(
+                                        newExtractorLink(
+                                            source = this.name,
+                                            name = "${this.name} - ${qualityLabel}p",
+                                            url = decodedUrl
+                                        ).apply {
+                                            this.quality = quality
+                                            this.referer = mainUrl
+                                        }
+                                    )
+                                    foundLinks++
+                                }
+                            }
+                        }
+                    } catch (e: Exception) {
+                        // Silent fail for individual player options
                     }
-                )
+                }
             }
         }
         
-        true
+        // Method 4: Check for direct video sources in scripts (fallback)
+        if (foundLinks == 0) {
+            val scriptContent = playerDocument.selectFirst("script:containsData('video/mp4')")?.data() ?: ""
+            val mp4LinkRegex = Regex("""src:\s*['"]?(https?://[^'"]+\.mp4)['"]?""")
+            mp4LinkRegex.findAll(scriptContent).forEach { matchResult ->
+                val mp4Link = matchResult.groupValues[1]
+                if (mp4Link.isNotBlank()) {
+                    val quality = when {
+                        mp4Link.contains("1080") -> Qualities.P1080.value
+                        mp4Link.contains("720") -> Qualities.P720.value
+                        mp4Link.contains("480") -> Qualities.P480.value
+                        else -> Qualities.Unknown.value
+                    }
+                    callback.invoke(
+                        newExtractorLink(
+                            source = this.name,
+                            name = this.name,
+                            url = mp4Link
+                        ).apply {
+                            this.quality = quality
+                            this.referer = mainUrl
+                        }
+                    )
+                    foundLinks++
+                }
+            }
+        }
+        
+        foundLinks > 0
     } catch (e: Exception) {
-        println("Error in loadLinks: ${e.message}")
         false
     }
 }
