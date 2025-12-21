@@ -43,6 +43,23 @@ class FarsiFlixUnifiedProvider : MainAPI() {
         const val SITE3_NAME = "FarsiLand"
         
         const val FUZZY_MATCH_THRESHOLD = 85
+        const val CROSS_SITE_FUZZY_THRESHOLD = 60 // Lower threshold for cross-site matching
+    }
+    
+    // Extract search keywords from URL slug
+    private fun extractSlugKeywords(url: String): String {
+        // Extract the slug part from URL like /movies/the-man-with-glasses/ -> "man with glasses"
+        // or /watch/marde-eynaki-hd.html -> "marde eynaki"
+        val slug = url
+            .substringAfterLast("/")
+            .substringBefore(".html")
+            .substringBefore(".htm")
+            .replace("-", " ")
+            .replace("_", " ")
+            // Remove common suffixes
+            .replace(Regex("\\s+(hd|kamel|full|720p|1080p|480p)\\s*$", RegexOption.IGNORE_CASE), "")
+            .trim()
+        return if (slug.length > 2) slug else ""
     }
 
     // Data class to store content with source info
@@ -336,7 +353,9 @@ class FarsiFlixUnifiedProvider : MainAPI() {
                 this.posterUrl = poster
             }
         } else {
-            newMovieLoadResponse(title, combinedData, TvType.Movie, combinedData) {
+            // For movies, also store the URL slug for cross-site search
+            val urlSlug = extractSlugKeywords(sourceUrl)
+            newMovieLoadResponse(title, combinedData, TvType.Movie, "$combinedData|SLUG::$urlSlug") {
                 this.posterUrl = poster
             }
         }
@@ -388,7 +407,8 @@ class FarsiFlixUnifiedProvider : MainAPI() {
                 this.plot = plot
             }
         } else {
-            newMovieLoadResponse(title, combinedData, TvType.Movie, combinedData) {
+            val urlSlug = extractSlugKeywords(sourceUrl)
+            newMovieLoadResponse(title, combinedData, TvType.Movie, "$combinedData|SLUG::$urlSlug") {
                 this.posterUrl = poster
                 this.plot = plot
             }
@@ -438,7 +458,8 @@ class FarsiFlixUnifiedProvider : MainAPI() {
                 this.plot = plot
             }
         } else {
-            newMovieLoadResponse(title, combinedData, TvType.Movie, combinedData) {
+            val urlSlug = extractSlugKeywords(sourceUrl)
+            newMovieLoadResponse(title, combinedData, TvType.Movie, "$combinedData|SLUG::$urlSlug") {
                 this.posterUrl = poster
                 this.plot = plot
             }
@@ -456,18 +477,24 @@ class FarsiFlixUnifiedProvider : MainAPI() {
         // Parse the combined data format
         val parts = data.split("|")
         var searchTitle: String? = null
+        var urlSlug: String? = null
         val directSources = mutableListOf<Pair<String, String>>()
         
         for (part in parts) {
             val split = part.split("::")
             if (split.size == 2) {
-                if (split[0] == "SEARCH") {
-                    searchTitle = split[1]
-                } else {
-                    directSources.add(split[0] to split[1])
+                when (split[0]) {
+                    "SEARCH" -> searchTitle = split[1]
+                    "SLUG" -> urlSlug = split[1]
+                    else -> directSources.add(split[0] to split[1])
                 }
             }
         }
+        
+        // Collect all search terms to try
+        val searchTerms = mutableListOf<String>()
+        if (!searchTitle.isNullOrBlank() && searchTitle.length > 2) searchTerms.add(searchTitle)
+        if (!urlSlug.isNullOrBlank() && urlSlug.length > 2) searchTerms.add(urlSlug)
         
         // Load from direct sources
         for ((siteName, sourceUrl) in directSources) {
@@ -478,59 +505,96 @@ class FarsiFlixUnifiedProvider : MainAPI() {
             }
         }
         
-        // If we have a search title, search other sites for the same content
-        if (searchTitle != null && searchTitle.length > 2) {
+        // Search other sites using all search terms
+        if (searchTerms.isNotEmpty()) {
             val sitesSearched = directSources.map { it.first }.toSet()
             
             coroutineScope {
                 if (SITE1_NAME !in sitesSearched) {
                     async {
-                        try {
-                            val results = app.get("$SITE1_URL/search?q=${searchTitle.replace(" ", "+")}")
-                                .document.select("div.col-md-2.col-sm-3.col-xs-6")
-                            
-                            results.firstOrNull { elem ->
-                                val title = elem.selectFirst("div.movie-title h3 a")?.text()?.trim() ?: ""
-                                FuzzySearch.ratio(normalizeTitle(title), normalizeTitle(searchTitle)) >= FUZZY_MATCH_THRESHOLD
-                            }?.let { elem ->
-                                val url = fixUrl(elem.selectFirst("div.movie-title h3 a")?.attr("href") ?: "")
-                                if (url.isNotBlank()) loadLinksSite1(url, subtitleCallback, callback)
-                            }
-                        } catch (_: Exception) {}
+                        for (term in searchTerms) {
+                            try {
+                                val results = app.get("$SITE1_URL/search?q=${term.replace(" ", "+")}")
+                                    .document.select("div.col-md-2.col-sm-3.col-xs-6")
+                                
+                                // Try both fuzzy match and simple contains
+                                val match = results.firstOrNull { elem ->
+                                    val title = elem.selectFirst("div.movie-title h3 a")?.text()?.trim() ?: ""
+                                    val elemUrl = elem.selectFirst("div.movie-title h3 a")?.attr("href") ?: ""
+                                    val elemSlug = extractSlugKeywords(elemUrl)
+                                    
+                                    FuzzySearch.ratio(normalizeTitle(title), normalizeTitle(term)) >= CROSS_SITE_FUZZY_THRESHOLD ||
+                                    FuzzySearch.ratio(elemSlug.lowercase(), term.lowercase()) >= CROSS_SITE_FUZZY_THRESHOLD ||
+                                    elemSlug.lowercase().contains(term.lowercase().take(5))
+                                }
+                                
+                                if (match != null) {
+                                    val url = fixUrl(match.selectFirst("div.movie-title h3 a")?.attr("href") ?: "")
+                                    if (url.isNotBlank()) {
+                                        loadLinksSite1(url, subtitleCallback, callback)
+                                        return@async // Found match, stop searching
+                                    }
+                                }
+                            } catch (_: Exception) {}
+                        }
                     }
                 }
                 
                 if (SITE2_NAME !in sitesSearched) {
                     async {
-                        try {
-                            val results = app.get("$SITE2_URL/?s=${searchTitle.replace(" ", "+")}")
-                                .document.select("div.result-item")
-                            
-                            results.firstOrNull { elem ->
-                                val title = elem.selectFirst("div.details div.title a")?.text()?.trim() ?: ""
-                                FuzzySearch.ratio(normalizeTitle(title), normalizeTitle(searchTitle)) >= FUZZY_MATCH_THRESHOLD
-                            }?.let { elem ->
-                                val url = fixUrl(elem.selectFirst("div.details div.title a")?.attr("href") ?: "")
-                                if (url.isNotBlank()) loadLinksSite2(url, subtitleCallback, callback)
-                            }
-                        } catch (_: Exception) {}
+                        for (term in searchTerms) {
+                            try {
+                                val results = app.get("$SITE2_URL/?s=${term.replace(" ", "+")}")
+                                    .document.select("div.result-item")
+                                
+                                val match = results.firstOrNull { elem ->
+                                    val title = elem.selectFirst("div.details div.title a")?.text()?.trim() ?: ""
+                                    val elemUrl = elem.selectFirst("div.details div.title a")?.attr("href") ?: ""
+                                    val elemSlug = extractSlugKeywords(elemUrl)
+                                    
+                                    FuzzySearch.ratio(normalizeTitle(title), normalizeTitle(term)) >= CROSS_SITE_FUZZY_THRESHOLD ||
+                                    FuzzySearch.ratio(elemSlug.lowercase(), term.lowercase()) >= CROSS_SITE_FUZZY_THRESHOLD ||
+                                    elemSlug.lowercase().contains(term.lowercase().take(5))
+                                }
+                                
+                                if (match != null) {
+                                    val url = fixUrl(match.selectFirst("div.details div.title a")?.attr("href") ?: "")
+                                    if (url.isNotBlank()) {
+                                        loadLinksSite2(url, subtitleCallback, callback)
+                                        return@async
+                                    }
+                                }
+                            } catch (_: Exception) {}
+                        }
                     }
                 }
                 
                 if (SITE3_NAME !in sitesSearched) {
                     async {
-                        try {
-                            val results = app.get("$SITE3_URL/?s=${searchTitle.replace(" ", "+")}")
-                                .document.select("div.result-item")
-                            
-                            results.firstOrNull { elem ->
-                                val title = elem.selectFirst("div.details div.title a")?.text()?.trim() ?: ""
-                                FuzzySearch.ratio(normalizeTitle(title), normalizeTitle(searchTitle)) >= FUZZY_MATCH_THRESHOLD
-                            }?.let { elem ->
-                                val url = fixUrl(elem.selectFirst("div.details div.title a")?.attr("href") ?: "")
-                                if (url.isNotBlank()) loadLinksSite3(url, subtitleCallback, callback)
-                            }
-                        } catch (_: Exception) {}
+                        for (term in searchTerms) {
+                            try {
+                                val results = app.get("$SITE3_URL/?s=${term.replace(" ", "+")}")
+                                    .document.select("div.result-item")
+                                
+                                val match = results.firstOrNull { elem ->
+                                    val title = elem.selectFirst("div.details div.title a")?.text()?.trim() ?: ""
+                                    val elemUrl = elem.selectFirst("div.details div.title a")?.attr("href") ?: ""
+                                    val elemSlug = extractSlugKeywords(elemUrl)
+                                    
+                                    FuzzySearch.ratio(normalizeTitle(title), normalizeTitle(term)) >= CROSS_SITE_FUZZY_THRESHOLD ||
+                                    FuzzySearch.ratio(elemSlug.lowercase(), term.lowercase()) >= CROSS_SITE_FUZZY_THRESHOLD ||
+                                    elemSlug.lowercase().contains(term.lowercase().take(5))
+                                }
+                                
+                                if (match != null) {
+                                    val url = fixUrl(match.selectFirst("div.details div.title a")?.attr("href") ?: "")
+                                    if (url.isNotBlank()) {
+                                        loadLinksSite3(url, subtitleCallback, callback)
+                                        return@async
+                                    }
+                                }
+                            } catch (_: Exception) {}
+                        }
                     }
                 }
             }
