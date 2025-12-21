@@ -646,15 +646,22 @@ class FarsiFlixUnifiedProvider : MainAPI() {
         for (pattern in patterns) {
             val match = pattern.find(slug.lowercase())
             if (match != null) {
-                return when (match.groupValues.size) {
-                    2 -> 1 to match.groupValues[1].toIntOrNull() ?: return null  // Season 1 assumed
-                    3 -> (match.groupValues[1].toIntOrNull() ?: 1) to (match.groupValues[2].toIntOrNull() ?: return null)
-                    else -> null
+                when (match.groupValues.size) {
+                    2 -> {
+                        val ep = match.groupValues[1].toIntOrNull() ?: continue
+                        return 1 to ep  // Season 1 assumed
+                    }
+                    3 -> {
+                        val season = match.groupValues[1].toIntOrNull() ?: 1
+                        val ep = match.groupValues[2].toIntOrNull() ?: continue
+                        return season to ep
+                    }
                 }
             }
         }
         return null
     }
+
     
     // Find matching episode on FarsiPlex
     private suspend fun findEpisodeOnSite2(showUrl: String, episodeInfo: Pair<Int, Int>): String? {
