@@ -74,6 +74,8 @@ class FarsiFlixUnifiedProvider : MainAPI() {
     override val mainPage = mainPageOf(
         "movies" to "Movies",
         "series" to "Series",
+        "movies2" to "More Movies",
+        "series2" to "More Series",
     )
 
     override suspend fun getMainPage(
@@ -143,6 +145,39 @@ class FarsiFlixUnifiedProvider : MainAPI() {
                     allContent.addAll(site1Deferred.await())
                     allContent.addAll(site2Deferred.await())
                     allContent.addAll(site3Deferred.await())
+                }
+                "More Movies" -> {
+                    // Fetch more movies from additional pages
+                    val site3OldDeferred = async {
+                        try {
+                            app.get("$SITE3_URL/old-iranian-movies/").document
+                                .select("article.item")
+                                .mapNotNull { it.toSite23Content(TvType.Movie) }
+                        } catch (e: Exception) { emptyList() }
+                    }
+                    
+                    allContent.addAll(site3OldDeferred.await())
+                }
+                "More Series" -> {
+                    // Fetch more series from additional pages
+                    val site3OldDeferred = async {
+                        try {
+                            app.get("$SITE3_URL/iranian-series/").document
+                                .select("article.item")
+                                .mapNotNull { it.toSite23Content(TvType.TvSeries) }
+                        } catch (e: Exception) { emptyList() }
+                    }
+                    
+                    val site3LatestDeferred = async {
+                        try {
+                            app.get("$SITE3_URL/episodes-15/").document
+                                .select("article.item")
+                                .mapNotNull { it.toSite23Content(TvType.TvSeries) }
+                        } catch (e: Exception) { emptyList() }
+                    }
+                    
+                    allContent.addAll(site3OldDeferred.await())
+                    allContent.addAll(site3LatestDeferred.await())
                 }
             }
         }
@@ -338,8 +373,9 @@ class FarsiFlixUnifiedProvider : MainAPI() {
                         val episodeNumber = episodeNumberText.removePrefix("E").toIntOrNull() ?: 0
                         val episodeName = "Season $seasonNumber Episode $episodeNumber"
                         if (episodeLink.isNotEmpty()) {
-                            // Store combined data for episode
-                            episodes.add(newEpisode("$SITE1_NAME::$episodeLink|SEARCH::$title") {
+                            // Store combined data for episode with URL slug
+                            val epSlug = extractSlugKeywords(episodeLink)
+                            episodes.add(newEpisode("$SITE1_NAME::$episodeLink|SEARCH::$title|SLUG::$epSlug") {
                                 name = episodeName
                                 season = seasonNumber
                                 episode = episodeNumber
@@ -394,7 +430,7 @@ class FarsiFlixUnifiedProvider : MainAPI() {
                     val epTitle = episodeElement.selectFirst(".episodiotitle a")?.text() ?: return@forEach
                     val epLink = fixUrl(episodeElement.selectFirst(".episodiotitle a")?.attr("href") ?: return@forEach)
 
-                    episodes.add(newEpisode("$SITE2_NAME::$epLink|SEARCH::$title") {
+                    episodes.add(newEpisode("$SITE2_NAME::$epLink|SEARCH::$title|SLUG::${extractSlugKeywords(epLink)}") {
                         name = epTitle
                         season = seasonNumber
                         episode = epNumber
@@ -445,7 +481,7 @@ class FarsiFlixUnifiedProvider : MainAPI() {
                     val epTitle = episodeElement.selectFirst(".episodiotitle a")?.text() ?: return@forEach
                     val epLink = fixUrl(episodeElement.selectFirst(".episodiotitle a")?.attr("href") ?: return@forEach)
 
-                    episodes.add(newEpisode("$SITE3_NAME::$epLink|SEARCH::$title") {
+                    episodes.add(newEpisode("$SITE3_NAME::$epLink|SEARCH::$title|SLUG::${extractSlugKeywords(epLink)}") {
                         name = epTitle
                         season = seasonNumber
                         episode = epNumber
