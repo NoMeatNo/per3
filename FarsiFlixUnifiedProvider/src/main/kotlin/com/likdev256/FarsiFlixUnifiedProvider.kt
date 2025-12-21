@@ -331,7 +331,7 @@ class FarsiFlixUnifiedProvider : MainAPI() {
     override suspend fun load(url: String): LoadResponse? {
         // Parse the combined data format: "siteName::url|siteName::url|..."
         val sources = url.split("|").mapNotNull { part ->
-            val split = part.split("::")
+            val split = part.split("::", limit = 2)
             if (split.size == 2) split[0] to split[1] else null
         }
         
@@ -517,7 +517,7 @@ class FarsiFlixUnifiedProvider : MainAPI() {
         val directSources = mutableListOf<Pair<String, String>>()
         
         for (part in parts) {
-            val split = part.split("::")
+            val split = part.split("::", limit = 2)
             if (split.size == 2) {
                 when (split[0]) {
                     "SEARCH" -> searchTitle = split[1]
