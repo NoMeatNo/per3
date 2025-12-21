@@ -527,12 +527,7 @@ class FarsiFlixUnifiedProvider : MainAPI() {
             }
         }
         
-        // Collect all search terms to try
-        val searchTerms = mutableListOf<String>()
-        if (!searchTitle.isNullOrBlank() && searchTitle.length > 2) searchTerms.add(searchTitle)
-        if (!urlSlug.isNullOrBlank() && urlSlug.length > 2) searchTerms.add(urlSlug)
-        
-        // Load from direct sources
+        // Load from direct sources first
         for ((siteName, sourceUrl) in directSources) {
             when (siteName) {
                 SITE1_NAME -> if (loadLinksSite1(sourceUrl, subtitleCallback, callback)) foundLinks = true
@@ -541,96 +536,95 @@ class FarsiFlixUnifiedProvider : MainAPI() {
             }
         }
         
-        // Search other sites using all search terms
-        if (searchTerms.isNotEmpty()) {
-            val sitesSearched = directSources.map { it.first }.toSet()
-            
+        // Extract episode info from slug (e.g., "bamdade khomar ep01" -> episode 1)
+        val episodeInfo = extractEpisodeFromSlug(urlSlug ?: "")
+        val isEpisode = episodeInfo != null
+        
+        // Search other sites for additional sources
+        val sitesSearched = directSources.map { it.first }.toSet()
+        val searchTerm = searchTitle ?: urlSlug ?: return foundLinks
+        
+        if (searchTerm.length > 2) {
             coroutineScope {
+                // Search Site 1 (DiyGuide)
                 if (SITE1_NAME !in sitesSearched) {
                     async {
-                        for (term in searchTerms) {
-                            try {
-                                val results = app.get("$SITE1_URL/search?q=${term.replace(" ", "+")}")
-                                    .document.select("div.col-md-2.col-sm-3.col-xs-6")
-                                
-                                // Try both fuzzy match and simple contains
-                                val match = results.firstOrNull { elem ->
-                                    val title = elem.selectFirst("div.movie-title h3 a")?.text()?.trim() ?: ""
-                                    val elemUrl = elem.selectFirst("div.movie-title h3 a")?.attr("href") ?: ""
-                                    val elemSlug = extractSlugKeywords(elemUrl)
-                                    
-                                    FuzzySearch.ratio(normalizeTitle(title), normalizeTitle(term)) >= CROSS_SITE_FUZZY_THRESHOLD ||
-                                    FuzzySearch.ratio(elemSlug.lowercase(), term.lowercase()) >= CROSS_SITE_FUZZY_THRESHOLD ||
-                                    elemSlug.lowercase().contains(term.lowercase().take(5))
+                        try {
+                            val results = app.get("$SITE1_URL/search?q=${searchTerm.replace(" ", "+")}")
+                                .document.select("div.col-md-2.col-sm-3.col-xs-6")
+                            
+                            val match = results.firstOrNull { elem ->
+                                val title = elem.selectFirst("div.movie-title h3 a")?.text()?.trim() ?: ""
+                                FuzzySearch.ratio(normalizeTitle(title), normalizeTitle(searchTerm)) >= CROSS_SITE_FUZZY_THRESHOLD
+                            }
+                            
+                            if (match != null) {
+                                val url = fixUrl(match.selectFirst("div.movie-title h3 a")?.attr("href") ?: "")
+                                if (url.isNotBlank()) {
+                                    loadLinksSite1(url, subtitleCallback, callback)
                                 }
-                                
-                                if (match != null) {
-                                    val url = fixUrl(match.selectFirst("div.movie-title h3 a")?.attr("href") ?: "")
-                                    if (url.isNotBlank()) {
-                                        loadLinksSite1(url, subtitleCallback, callback)
-                                        return@async // Found match, stop searching
-                                    }
-                                }
-                            } catch (_: Exception) {}
-                        }
+                            }
+                        } catch (_: Exception) {}
                     }
                 }
                 
+                // Search Site 2 (FarsiPlex)
                 if (SITE2_NAME !in sitesSearched) {
                     async {
-                        for (term in searchTerms) {
-                            try {
-                                val results = app.get("$SITE2_URL/?s=${term.replace(" ", "+")}")
-                                    .document.select("div.result-item")
-                                
-                                val match = results.firstOrNull { elem ->
-                                    val title = elem.selectFirst("div.details div.title a")?.text()?.trim() ?: ""
-                                    val elemUrl = elem.selectFirst("div.details div.title a")?.attr("href") ?: ""
-                                    val elemSlug = extractSlugKeywords(elemUrl)
-                                    
-                                    FuzzySearch.ratio(normalizeTitle(title), normalizeTitle(term)) >= CROSS_SITE_FUZZY_THRESHOLD ||
-                                    FuzzySearch.ratio(elemSlug.lowercase(), term.lowercase()) >= CROSS_SITE_FUZZY_THRESHOLD ||
-                                    elemSlug.lowercase().contains(term.lowercase().take(5))
-                                }
-                                
-                                if (match != null) {
-                                    val url = fixUrl(match.selectFirst("div.details div.title a")?.attr("href") ?: "")
-                                    if (url.isNotBlank()) {
-                                        loadLinksSite2(url, subtitleCallback, callback)
-                                        return@async
+                        try {
+                            val results = app.get("$SITE2_URL/?s=${searchTerm.replace(" ", "+")}")
+                                .document.select("div.result-item")
+                            
+                            val match = results.firstOrNull { elem ->
+                                val title = elem.selectFirst("div.details div.title a")?.text()?.trim() ?: ""
+                                FuzzySearch.ratio(normalizeTitle(title), normalizeTitle(searchTerm)) >= CROSS_SITE_FUZZY_THRESHOLD
+                            }
+                            
+                            if (match != null) {
+                                val showUrl = fixUrl(match.selectFirst("div.details div.title a")?.attr("href") ?: "")
+                                if (showUrl.isNotBlank()) {
+                                    if (isEpisode && showUrl.contains("/tvshow/")) {
+                                        // For episodes, navigate to the show and find the matching episode
+                                        val episodeUrl = findEpisodeOnSite2(showUrl, episodeInfo!!)
+                                        if (episodeUrl != null) {
+                                            loadLinksSite2(episodeUrl, subtitleCallback, callback)
+                                        }
+                                    } else {
+                                        loadLinksSite2(showUrl, subtitleCallback, callback)
                                     }
                                 }
-                            } catch (_: Exception) {}
-                        }
+                            }
+                        } catch (_: Exception) {}
                     }
                 }
                 
+                // Search Site 3 (FarsiLand)
                 if (SITE3_NAME !in sitesSearched) {
                     async {
-                        for (term in searchTerms) {
-                            try {
-                                val results = app.get("$SITE3_URL/?s=${term.replace(" ", "+")}")
-                                    .document.select("div.result-item")
-                                
-                                val match = results.firstOrNull { elem ->
-                                    val title = elem.selectFirst("div.details div.title a")?.text()?.trim() ?: ""
-                                    val elemUrl = elem.selectFirst("div.details div.title a")?.attr("href") ?: ""
-                                    val elemSlug = extractSlugKeywords(elemUrl)
-                                    
-                                    FuzzySearch.ratio(normalizeTitle(title), normalizeTitle(term)) >= CROSS_SITE_FUZZY_THRESHOLD ||
-                                    FuzzySearch.ratio(elemSlug.lowercase(), term.lowercase()) >= CROSS_SITE_FUZZY_THRESHOLD ||
-                                    elemSlug.lowercase().contains(term.lowercase().take(5))
-                                }
-                                
-                                if (match != null) {
-                                    val url = fixUrl(match.selectFirst("div.details div.title a")?.attr("href") ?: "")
-                                    if (url.isNotBlank()) {
-                                        loadLinksSite3(url, subtitleCallback, callback)
-                                        return@async
+                        try {
+                            val results = app.get("$SITE3_URL/?s=${searchTerm.replace(" ", "+")}")
+                                .document.select("div.result-item")
+                            
+                            val match = results.firstOrNull { elem ->
+                                val title = elem.selectFirst("div.details div.title a")?.text()?.trim() ?: ""
+                                FuzzySearch.ratio(normalizeTitle(title), normalizeTitle(searchTerm)) >= CROSS_SITE_FUZZY_THRESHOLD
+                            }
+                            
+                            if (match != null) {
+                                val showUrl = fixUrl(match.selectFirst("div.details div.title a")?.attr("href") ?: "")
+                                if (showUrl.isNotBlank()) {
+                                    if (isEpisode && showUrl.contains("/tvshows/")) {
+                                        // For episodes, navigate to the show and find the matching episode
+                                        val episodeUrl = findEpisodeOnSite3(showUrl, episodeInfo!!)
+                                        if (episodeUrl != null) {
+                                            loadLinksSite3(episodeUrl, subtitleCallback, callback)
+                                        }
+                                    } else {
+                                        loadLinksSite3(showUrl, subtitleCallback, callback)
                                     }
                                 }
-                            } catch (_: Exception) {}
-                        }
+                            }
+                        } catch (_: Exception) {}
                     }
                 }
             }
@@ -638,6 +632,80 @@ class FarsiFlixUnifiedProvider : MainAPI() {
 
         return foundLinks
     }
+    
+    // Extract episode number from slug like "bamdade khomar ep01" or "series-name-s01-e05"
+    private fun extractEpisodeFromSlug(slug: String): Pair<Int, Int>? {
+        // Try patterns like: ep01, ep1, e01, e1, episode-1, episode01
+        val patterns = listOf(
+            Regex("""ep(\d+)""", RegexOption.IGNORE_CASE),
+            Regex("""episode[\s-]*(\d+)""", RegexOption.IGNORE_CASE),
+            Regex("""e(\d+)""", RegexOption.IGNORE_CASE),
+            Regex("""s(\d+)[\s-]*e(\d+)""", RegexOption.IGNORE_CASE)
+        )
+        
+        for (pattern in patterns) {
+            val match = pattern.find(slug.lowercase())
+            if (match != null) {
+                return when (match.groupValues.size) {
+                    2 -> 1 to match.groupValues[1].toIntOrNull() ?: return null  // Season 1 assumed
+                    3 -> (match.groupValues[1].toIntOrNull() ?: 1) to (match.groupValues[2].toIntOrNull() ?: return null)
+                    else -> null
+                }
+            }
+        }
+        return null
+    }
+    
+    // Find matching episode on FarsiPlex
+    private suspend fun findEpisodeOnSite2(showUrl: String, episodeInfo: Pair<Int, Int>): String? {
+        return try {
+            val (targetSeason, targetEpisode) = episodeInfo
+            val showDoc = app.get(showUrl).document
+            
+            showDoc.select("#seasons .se-c").forEach { seasonElement ->
+                val seasonNumber = seasonElement.selectFirst(".se-t")?.text()?.toIntOrNull() ?: return@forEach
+                if (seasonNumber == targetSeason) {
+                    seasonElement.select("ul.episodios li").forEach { episodeElement ->
+                        val epNumber = episodeElement.selectFirst(".numerando")?.text()
+                            ?.substringAfter("-")?.trim()?.toIntOrNull() ?: return@forEach
+                        if (epNumber == targetEpisode) {
+                            val epLink = episodeElement.selectFirst(".episodiotitle a")?.attr("href")
+                            if (!epLink.isNullOrBlank()) {
+                                return fixUrl(epLink)
+                            }
+                        }
+                    }
+                }
+            }
+            null
+        } catch (_: Exception) { null }
+    }
+    
+    // Find matching episode on FarsiLand
+    private suspend fun findEpisodeOnSite3(showUrl: String, episodeInfo: Pair<Int, Int>): String? {
+        return try {
+            val (targetSeason, targetEpisode) = episodeInfo
+            val showDoc = app.get(showUrl).document
+            
+            showDoc.select("#seasons .se-c").forEach { seasonElement ->
+                val seasonNumber = seasonElement.selectFirst(".se-t")?.text()?.toIntOrNull() ?: return@forEach
+                if (seasonNumber == targetSeason) {
+                    seasonElement.select("ul.episodios li").forEach { episodeElement ->
+                        val epNumber = episodeElement.selectFirst(".numerando")?.text()
+                            ?.substringAfter("-")?.trim()?.toIntOrNull() ?: return@forEach
+                        if (epNumber == targetEpisode) {
+                            val epLink = episodeElement.selectFirst(".episodiotitle a")?.attr("href")
+                            if (!epLink.isNullOrBlank()) {
+                                return fixUrl(epLink)
+                            }
+                        }
+                    }
+                }
+            }
+            null
+        } catch (_: Exception) { null }
+    }
+
 
     // Site 1 link extraction (DiyGuide)
     private suspend fun loadLinksSite1(
