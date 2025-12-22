@@ -97,7 +97,8 @@ class Site4IranTamasha(override val api: MainAPI) : SiteHandler {
             // 1. Extract from current page - Look for iframes
             document.select("iframe").forEach { iframe ->
                 val src = iframe.attr("src")
-                if (src.contains("ok.ru") || src.contains("vk.com") || src.contains("vkvideo.ru") || src.contains("closeload") || src.contains("youtube")) {
+                if (src.contains("ok.ru") || src.contains("vk.com") || src.contains("vkvideo.ru") || 
+                    src.contains("closeload") || src.contains("youtube") || src.contains("dailymotion")) {
                     loadExtractor(src, data, subtitleCallback, callback)
                     foundLinks++
                 }
