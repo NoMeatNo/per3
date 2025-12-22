@@ -41,6 +41,9 @@ class FarsiFlixMegaProvider : MainAPI() {
         
         const val SITE3_URL = "https://farsiland.com"
         const val SITE3_NAME = "FarsiLand"
+
+        const val SITE4_URL = "https://www.irantamasha.com"
+        const val SITE4_NAME = "IranTamasha"
     }
 
     override val mainPage = mainPageOf(
@@ -55,6 +58,8 @@ class FarsiFlixMegaProvider : MainAPI() {
         "$SITE3_URL/series-26/" to "Series - $SITE3_NAME",
         "$SITE3_URL/iranian-series/" to "Old Series - $SITE3_NAME",
         "$SITE3_URL/episodes-15/" to "Latest Episodes - $SITE3_NAME",
+        // Site 4 - IranTamasha
+        "$SITE4_URL/series/" to "Series - $SITE4_NAME",
     )
 
     override suspend fun getMainPage(
@@ -66,6 +71,10 @@ class FarsiFlixMegaProvider : MainAPI() {
             // Site 1 selectors
             request.data.contains(SITE1_URL) -> {
                 document.select("div.col-md-2.col-sm-3.col-xs-6").mapNotNull { it.toSite1SearchResult() }
+            }
+            // Site 4 selectors
+            request.data.contains(SITE4_URL) -> {
+                 document.select("article.post-item").mapNotNull { it.toSite4SearchResult() }
             }
             // Site 2 & 3 selectors (they use similar structure)
             else -> {
@@ -90,6 +99,16 @@ class FarsiFlixMegaProvider : MainAPI() {
         val posterUrl = fixUrlNull(this.selectFirst("div.poster img")?.attr("src")?.trim())
         val type = if (this.hasClass("tvshows")) TvType.TvSeries else TvType.Movie
         return newMovieSearchResponse(title, href, type) {
+            this.posterUrl = posterUrl
+        }
+    }
+
+    private fun Element.toSite4SearchResult(): SearchResponse? {
+        val title = this.selectFirst("h3.entry-title a")?.text()?.trim() ?: return null
+        val href = fixUrl(this.selectFirst("h3.entry-title a")?.attr("href").toString())
+        val posterUrl = fixUrlNull(this.selectFirst("div.blog-pic img")?.attr("src")?.trim() ?:
+                                 this.selectFirst("div.blog-pic img")?.attr("data-src")?.trim())
+        return newTvSeriesSearchResponse(title, href, TvType.TvSeries) {
             this.posterUrl = posterUrl
         }
     }
@@ -138,6 +157,15 @@ class FarsiFlixMegaProvider : MainAPI() {
             allResults.addAll(site1Deferred.await())
             allResults.addAll(site2Deferred.await())
             allResults.addAll(site3Deferred.await())
+
+             val site4Deferred = async {
+                try {
+                    app.get("$SITE4_URL/?s=$fixedQuery")
+                        .document.select("article.post-item")
+                        .mapNotNull { it.toSite4SearchResult() }
+                } catch (e: Exception) { emptyList() }
+            }
+            allResults.addAll(site4Deferred.await())
         }
 
         return allResults.sortedBy { 
@@ -158,6 +186,8 @@ class FarsiFlixMegaProvider : MainAPI() {
             url.contains(SITE2_URL) -> loadSite2(url, document)
             // Site 3 - FarsiLand
             url.contains(SITE3_URL) -> loadSite3(url, document)
+            // Site 4 - IranTamasha
+            url.contains(SITE4_URL) -> loadSite4(url, document)
             else -> null
         }
     }
@@ -335,6 +365,47 @@ class FarsiFlixMegaProvider : MainAPI() {
         }
     }
 
+    private suspend fun loadSite4(url: String, document: Document): LoadResponse? {
+        val title = document.selectFirst("h1.entry-title")?.text()?.trim() ?: 
+                    document.selectFirst("h1")?.text()?.trim() ?: return null
+        val poster = fixUrlNull(document.selectFirst("div.blog-pic img")?.attr("src") ?: 
+                              document.selectFirst("meta[property=og:image]")?.attr("content"))
+        val plot = document.selectFirst("div.entry-content p")?.text()?.trim()
+
+        // Check if it is a series page (list of episodes)
+        val episodeElements = document.select("article.post-item")
+        
+        return if (episodeElements.isNotEmpty() && !url.contains("-0") && !url.contains("-1")) {
+            // Likely a series page listing episodes
+            val episodes = episodeElements.mapNotNull {
+                val epTitle = it.selectFirst("h3.entry-title a")?.text()?.trim() ?: return@mapNotNull null
+                val epUrl = fixUrl(it.selectFirst("h3.entry-title a")?.attr("href") ?: return@mapNotNull null)
+                val epPoster = fixUrlNull(it.selectFirst("img")?.attr("src"))
+                
+                 // Try to extract episode number from title (e.g. "Close Friend – 02")
+                val epNumber = Regex("""\d+$""").find(epTitle)?.value?.toIntOrNull() ?: 
+                               Regex(""" (\d+)""").findAll(epTitle).lastOrNull()?.value?.trim()?.toIntOrNull() ?: 0
+
+                newEpisode(epUrl) {
+                    name = epTitle
+                    episode = epNumber
+                    posterUrl = epPoster
+                }
+            }.reversed() // Usually listed newest first
+
+            newTvSeriesLoadResponse(title, url, TvType.TvSeries, episodes) {
+                this.posterUrl = poster
+                this.plot = plot
+            }
+        } else {
+            // Likely a single episode or movie page
+            newMovieLoadResponse(title, url, TvType.Movie, url) {
+                this.posterUrl = poster
+                this.plot = plot
+            }
+        }
+    }
+
     override suspend fun loadLinks(
         data: String,
         isCasting: Boolean,
@@ -353,6 +424,9 @@ class FarsiFlixMegaProvider : MainAPI() {
             }
             data.contains(SITE3_URL) -> {
                 if (loadLinksSite3(data, subtitleCallback, callback)) foundLinks = true
+            }
+            data.contains(SITE4_URL) -> {
+                if (loadLinksSite4(data, subtitleCallback, callback)) foundLinks = true
             }
         }
 
@@ -717,5 +791,68 @@ class FarsiFlixMegaProvider : MainAPI() {
             }
         }
         return ""
+    }
+
+    // Site 4 link extraction (IranTamasha)
+    private suspend fun loadLinksSite4(
+        data: String,
+        subtitleCallback: (SubtitleFile) -> Unit,
+        callback: (ExtractorLink) -> Unit
+    ): Boolean {
+        return try {
+            val document = app.get(data).document
+            var foundLinks = 0
+
+            // 1. Extract from current page
+            // Look for iframes
+            document.select("iframe").forEach { iframe ->
+                val src = iframe.attr("src")
+                if (src.contains("ok.ru") || src.contains("vk.com") || src.contains("closeload") || src.contains("youtube")) {
+                    loadExtractor(src, data, subtitleCallback, callback)
+                    foundLinks++
+                }
+            }
+            
+            // Look for Multi-Links (Server 1, Server 2, etc.)
+            // They appear as links with text "Server X"
+            val serverLinks = document.select("a").filter { it.text().contains("Server", ignoreCase = true) }
+            
+            serverLinks.forEach { link ->
+                val serverUrl = fixUrl(link.attr("href"))
+                if (serverUrl != data) { // Avoid infinite recursion if it's the same page
+                    try {
+                        val serverDoc = app.get(serverUrl).document
+                         serverDoc.select("iframe").forEach { iframe ->
+                            val src = iframe.attr("src")
+                            if (src.isNotBlank()) {
+                                loadExtractor(src, data, subtitleCallback, callback)
+                                foundLinks++
+                            }
+                        }
+                    } catch (_: Exception) {}
+                }
+            }
+
+            // Look for video elements or scripts
+            document.select("video source").forEach { source ->
+                val src = source.attr("src")
+                if (src.isNotBlank()) {
+                     callback.invoke(
+                        newExtractorLink(
+                            source = SITE4_NAME,
+                            name = SITE4_NAME,
+                            url = src
+                        ).apply {
+                            this.quality = Qualities.Unknown.value
+                        }
+                    )
+                    foundLinks++
+                }
+            }
+
+            foundLinks > 0
+        } catch (_: Exception) {
+            false
+        }
     }
 }
