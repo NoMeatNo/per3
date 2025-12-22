@@ -10,7 +10,7 @@ import org.jsoup.nodes.Element
 
 /**
  * Site 1: DiyGuide (diycraftsguide.com)
- * Handles movies and TV series from DiyGuide.
+ * Handles movies, TV series, and Live TV from DiyGuide.
  */
 class Site1DiyGuide(override val api: MainAPI) : SiteHandler {
     override val siteUrl = "https://www.diycraftsguide.com"
@@ -19,16 +19,44 @@ class Site1DiyGuide(override val api: MainAPI) : SiteHandler {
     override val mainPages = listOf(
         "$siteUrl/movies.html" to "Movies - $siteName",
         "$siteUrl/tv-series.html" to "Series - $siteName",
+        "$siteUrl/live-tv.html" to "Live TV - $siteName",
     )
     
-    override fun getHomeSelector(url: String): String = "div.col-md-2.col-sm-3.col-xs-6"
+    override fun getHomeSelector(url: String): String {
+        return when {
+            url.contains("live-tv") -> "figure.figure"
+            else -> "div.col-md-2.col-sm-3.col-xs-6"
+        }
+    }
     
     override fun parseHomeItem(element: Element): SearchResponse? {
+        // Check if this is a Live TV figure element
+        if (element.tagName() == "figure" || element.hasClass("figure")) {
+            return parseLiveItem(element)
+        }
+        
+        // Standard movie/series item
         val title = element.selectFirst("div.movie-title h3 a")?.text()?.trim() ?: return null
         val href = element.selectFirst("div.movie-title h3 a")?.attr("href")?.let { fixUrl(it) } ?: return null
         val posterUrl = element.selectFirst("div.latest-movie-img-container")?.attr("data-src")?.trim()?.let { fixUrlNull(it) }
         return with(api) {
             newMovieSearchResponse(title, href, TvType.Movie) {
+                this.posterUrl = posterUrl
+            }
+        }
+    }
+    
+    fun parseLiveItem(element: Element): SearchResponse? {
+        val title = element.selectFirst("figcaption.figure-caption")?.text()?.trim() ?: return null
+        val href = element.selectFirst("a")?.attr("href")?.let { fixUrl(it) } ?: return null
+        // Use data-src for lazy-loaded images, fallback to src
+        val posterUrl = element.selectFirst("img")?.let { img ->
+            val dataSrc = img.attr("data-src")
+            if (dataSrc.isNotBlank()) fixUrlNull(dataSrc) else fixUrlNull(img.attr("src"))
+        }
+        
+        return with(api) {
+            newMovieSearchResponse(title, href, TvType.Live) {
                 this.posterUrl = posterUrl
             }
         }
@@ -43,6 +71,21 @@ class Site1DiyGuide(override val api: MainAPI) : SiteHandler {
     }
     
     override suspend fun load(url: String, document: Document): LoadResponse? {
+        // Handle Live TV channel page
+        if (url.contains("/live-tv/") && !url.endsWith("live-tv.html") && !url.contains("/category/")) {
+            val title = document.selectFirst("h1")?.text()?.trim() 
+                ?: document.selectFirst("title")?.text()?.substringBefore("-")?.trim()
+                ?: return null
+            val poster = fixUrlNull(document.selectFirst("meta[property=og:image]")?.attr("content"))
+            
+            return with(api) {
+                newMovieLoadResponse(title, url, TvType.Live, url) {
+                    this.posterUrl = poster
+                }
+            }
+        }
+        
+        // Standard movie/series load
         val title = document.selectFirst("div.col-sm-9 p.m-t-10 strong")?.text()?.trim() ?: return null
         val poster = fixUrlNull(document.selectFirst("video#play")?.attr("poster"))
         val isTvSeries = document.select(".col-md-12.col-sm-12:has(div.owl-carousel)").isNotEmpty()
@@ -91,6 +134,58 @@ class Site1DiyGuide(override val api: MainAPI) : SiteHandler {
         callback: (ExtractorLink) -> Unit
     ): Boolean {
         var foundLinks = false
+        
+        // Handle Live TV stream extraction
+        if (data.contains("/live-tv/")) {
+            try {
+                val document = app.get(data).document
+                
+                // Extract from video#videojs-video element (HLS stream)
+                val videoSrc = document.selectFirst("video#videojs-video")?.attr("src")
+                if (!videoSrc.isNullOrBlank()) {
+                    callback.invoke(
+                        newExtractorLink(
+                            source = siteName,
+                            name = "$siteName - Live",
+                            url = videoSrc
+                        ).apply {
+                            this.quality = Qualities.Unknown.value
+                            this.referer = data
+                        }
+                    )
+                    foundLinks = true
+                }
+                
+                // Check for alternative HD/HD2/HD3 streams via URL keys
+                document.select(".btn-group a[href*='?key=']").forEach { btn ->
+                    val altUrl = fixUrl(btn.attr("href"))
+                    val label = btn.text().trim()
+                    try {
+                        val altDoc = app.get(altUrl).document
+                        val altVideoSrc = altDoc.selectFirst("video#videojs-video")?.attr("src")
+                        if (!altVideoSrc.isNullOrBlank() && altVideoSrc != videoSrc) {
+                            callback.invoke(
+                                newExtractorLink(
+                                    source = siteName,
+                                    name = "$siteName - $label",
+                                    url = altVideoSrc
+                                ).apply {
+                                    this.quality = Qualities.Unknown.value
+                                    this.referer = altUrl
+                                }
+                            )
+                            foundLinks = true
+                        }
+                    } catch (_: Exception) {}
+                }
+                
+                return foundLinks
+            } catch (_: Exception) {
+                return false
+            }
+        }
+        
+        // Standard movie/series link extraction
         data.split(",").forEach { url ->
             try {
                 val document = app.get(url.trim()).document
