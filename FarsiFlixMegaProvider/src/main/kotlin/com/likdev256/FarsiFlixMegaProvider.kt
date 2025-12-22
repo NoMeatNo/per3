@@ -895,11 +895,11 @@ class FarsiFlixMegaProvider : MainAPI() {
                                         newExtractorLink(
                                             source = SITE4_NAME,
                                             name = "$SITE4_NAME - EVP",
-                                            url = videoUrl,
-                                            isM3u8 = videoUrl.contains(".m3u8") || videoUrl.contains(".txt") // Assume txt is HLS as per script
+                                            url = videoUrl
                                         ).apply {
                                             this.quality = Qualities.Unknown.value
                                             this.referer = fullIframeUrl
+                                            this.isM3u8 = videoUrl.contains(".m3u8") || videoUrl.contains(".txt")
                                         }
                                     )
                                     foundLinks++
