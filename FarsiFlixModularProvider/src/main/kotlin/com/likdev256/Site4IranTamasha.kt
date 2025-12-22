@@ -102,7 +102,13 @@ class Site4IranTamasha(override val api: MainAPI) : SiteHandler {
                     when {
                         src.contains("ok.ru") || src.contains("vk.com") || src.contains("vkvideo.ru") || 
                         src.contains("closeload") || src.contains("youtube") || src.contains("dailymotion") -> {
-                            loadExtractor(src, data, subtitleCallback, callback)
+                            // Convert vkvideo.ru to vk.com for better extractor compatibility
+                            val extractorUrl = if (src.contains("vkvideo.ru")) {
+                                src.replace("vkvideo.ru", "vk.com")
+                            } else {
+                                src
+                            }
+                            loadExtractor(extractorUrl, data, subtitleCallback, callback)
                             foundLinks++
                         }
                         src.contains("evp_play") -> {
