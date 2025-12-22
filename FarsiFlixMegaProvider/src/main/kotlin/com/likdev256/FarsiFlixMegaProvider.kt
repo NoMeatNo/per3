@@ -160,11 +160,12 @@ class FarsiFlixMegaProvider : MainAPI() {
     }
 
     private fun Element.toSite5SearchResult(): SearchResponse? {
-        // Series page - link is in the title, NOT in pciwgas-hover (which only wraps image)
+        // Series page - link is in a.pciwgas-hover (covers image area), title is in .pciwgas-title a
         val titleElement = this.selectFirst("div.pciwgas-title a, div.pciw-title a")
         val title = titleElement?.text()?.trim() ?: return null
-        // The link is in the TITLE element, not the image wrapper
-        val href = fixUrl(titleElement.attr("href"))
+        // The LINK is in a.pciwgas-hover which wraps the image and links to category page
+        val hoverLink = this.selectFirst("a.pciwgas-hover, a.pciw-hover")
+        val href = fixUrl(hoverLink?.attr("href") ?: titleElement?.attr("href") ?: return null)
         val posterUrl = fixUrlNull(this.selectFirst("img.pciwgas-img, img.pciw-img")?.attr("src"))
         
         return newTvSeriesSearchResponse(title, href, TvType.TvSeries) {
@@ -189,7 +190,14 @@ class FarsiFlixMegaProvider : MainAPI() {
         val textElement = this.selectFirst(".icon-text")
         val title = textElement?.text()?.trim() ?: return null
         val videoId = this.attr("data-video-id")
-        val posterUrl = fixUrlNull(this.selectFirst("img")?.attr("src"))
+        
+        // Logo image uses img.icon class, and path is RELATIVE - need to prepend SITE5_URL
+        val imgSrc = this.selectFirst("img.icon, img")?.attr("src")
+        val posterUrl = if (imgSrc != null && imgSrc.startsWith("/")) {
+            "$SITE5_URL$imgSrc"
+        } else {
+            fixUrlNull(imgSrc)
+        }
         
         // Store video-id in URL for later extraction
         val href = "$SITE5_URL/live-tv/?channel=$videoId"
