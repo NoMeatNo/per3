@@ -95,7 +95,12 @@ class Site6PersianMovieBoxx(override val api: MainAPI) : SiteHandler {
     }
     
     override suspend fun load(url: String, document: Document): LoadResponse? {
-        val title = document.selectFirst("h1.entry-title, h1.movie__title, h1")?.text()?.trim() ?: return null
+        // Title: Try h1 first, then h3.movie__title (movie pages use h3), then fallback to title tag
+        val title = document.selectFirst("h1.entry-title, h1.movie__title, h1, h3.movie__title, h3.masvideos-loop-movie__title")?.text()?.trim()
+            ?: document.selectFirst("meta[property=og:title]")?.attr("content")?.trim()
+            ?: document.selectFirst("title")?.text()?.substringBefore(" - ")?.trim()
+            ?: return null
+        
         val poster = fixUrlNull(document.selectFirst("meta[property=og:image]")?.attr("content"))
             ?: fixUrlNull(document.selectFirst("img.movie-poster, .movie__poster img, img.wp-post-image")?.attr("src"))
         val description = document.selectFirst("div.movie__short-description, div.entry-content p, .description")?.text()?.trim()
