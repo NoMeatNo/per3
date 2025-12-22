@@ -84,37 +84,49 @@ class Site6PersianMovieBoxx(override val api: MainAPI) : SiteHandler {
         val description = document.selectFirst("div.movie__short-description, div.entry-content p, .description")?.text()?.trim()
         val year = document.selectFirst(".movie__meta--release-year, .release-year")?.text()?.toIntOrNull()
         
-        // Check if this is a TV show with seasons/episodes
-        val seasons = document.select("div.season, .episodes-list, .season-list")
-        if (seasons.isNotEmpty() || url.contains("tv_show") || url.contains("serial")) {
+        // Check if this is a TV show (URL contains tv-show or tv_show)
+        val isTvShow = url.contains("tv-show") || url.contains("tv_show")
+        
+        if (isTvShow) {
             val episodes = mutableListOf<Episode>()
             
-            // Try to find episodes
-            document.select("div.episode, .episode-item, a.episode-link").forEach { ep ->
-                val epTitle = ep.selectFirst("h4, .episode-title, a")?.text()?.trim() ?: "Episode"
-                val epUrl = ep.selectFirst("a")?.attr("href")?.let { fixUrl(it) } ?: url
-                val epNumber = Regex("""(\d+)""").find(epTitle)?.groupValues?.get(1)?.toIntOrNull()
-                
-                episodes.add(with(api) {
-                    newEpisode(epUrl) {
-                        name = epTitle
-                        episode = epNumber
-                    }
-                })
+            // Find episode links - the test showed a[href*=episode] selector works
+            // Use distinct URLs to avoid duplicates
+            val seenUrls = mutableSetOf<String>()
+            document.select("a[href*=episode]").forEach { ep ->
+                val epUrl = ep.attr("href")?.let { fixUrl(it) }
+                if (epUrl != null && epUrl.isNotBlank() && seenUrls.add(epUrl)) {
+                    val epTitle = ep.text()?.trim()?.ifBlank { null } ?: "Episode ${seenUrls.size}"
+                    val epNumber = Regex("""(?:Part|Episode|E|قسمت)\s*(\d+)""", RegexOption.IGNORE_CASE)
+                        .find(epTitle)?.groupValues?.get(1)?.toIntOrNull()
+                        ?: Regex("""(\d+)$""").find(epTitle)?.groupValues?.get(1)?.toIntOrNull()
+                    
+                    episodes.add(with(api) {
+                        newEpisode(epUrl) {
+                            name = epTitle
+                            episode = epNumber
+                        }
+                    })
+                }
             }
             
+            // Sort by episode number if available
+            val sortedEpisodes = episodes.sortedBy { it.episode ?: Int.MAX_VALUE }
+            
             // If no episodes found, treat the page itself as a single episode
-            if (episodes.isEmpty()) {
-                episodes.add(with(api) {
+            val finalEpisodes = if (sortedEpisodes.isEmpty()) {
+                listOf(with(api) {
                     newEpisode(url) {
                         name = title
                         episode = 1
                     }
                 })
+            } else {
+                sortedEpisodes
             }
             
             return with(api) {
-                newTvSeriesLoadResponse(title, url, TvType.TvSeries, episodes) {
+                newTvSeriesLoadResponse(title, url, TvType.TvSeries, finalEpisodes) {
                     this.posterUrl = poster
                     this.plot = description
                     this.year = year
@@ -122,9 +134,12 @@ class Site6PersianMovieBoxx(override val api: MainAPI) : SiteHandler {
             }
         }
         
+        // Check if this is a Live TV video
+        val isLive = url.contains("/video/")
+        
         // Regular movie/video
         return with(api) {
-            newMovieLoadResponse(title, url, TvType.Movie, url) {
+            newMovieLoadResponse(title, url, if (isLive) TvType.Live else TvType.Movie, url) {
                 this.posterUrl = poster
                 this.plot = description
                 this.year = year
