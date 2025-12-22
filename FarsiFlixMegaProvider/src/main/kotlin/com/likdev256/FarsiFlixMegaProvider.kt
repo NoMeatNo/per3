@@ -41,12 +41,8 @@ class FarsiFlixMegaProvider : MainAPI() {
         
         const val SITE3_URL = "https://farsiland.com"
         const val SITE3_NAME = "FarsiLand"
-
-        const val SITE4_URL = "https://www.irantamasha.com"
-        const val SITE4_NAME = "IranTamasha"
-
-        const val SITE5_URL = "https://persianhive.com"
-        const val SITE5_NAME = "PersianHive"
+        
+        // Site 4 and 5 constants are now in Site4IranTamasha.kt and Site5PersianHive.kt
     }
 
     override val mainPage = mainPageOf(
@@ -111,37 +107,10 @@ class FarsiFlixMegaProvider : MainAPI() {
         val type = if (this.hasClass("tvshows")) TvType.TvSeries else TvType.Movie
         return newMovieSearchResponse(title, href, type) {
             this.posterUrl = posterUrl
-        }
     }
 
-    private fun Element.toSite4SearchResult(): SearchResponse? {
-        val title = this.selectFirst("h3.entry-title a")?.text()?.trim() ?: return null
-        val href = fixUrl(this.selectFirst("h3.entry-title a")?.attr("href").toString())
-        val posterUrl = fixUrlNull(this.selectFirst("div.blog-pic img")?.attr("src")?.trim() ?:
-                                 this.selectFirst("div.blog-pic img")?.attr("data-src")?.trim())
-        return newTvSeriesSearchResponse(title, href, TvType.TvSeries) {
-            this.posterUrl = posterUrl
-        }
-    }
-
-    private fun Element.toSite5SearchResult(): SearchResponse? {
-        val title = this.selectFirst("div.pciwgas-title a, div.pciw-title a")?.text()?.trim() ?: return null
-        val href = fixUrl(this.selectFirst("a.pciwgas-hover, a.pciw-hover")?.attr("href").toString())
-        val posterUrl = fixUrlNull(this.selectFirst("img.pciwgas-img, img.pciw-img")?.attr("src"))
-        
-        // Determine type based on URL or assume series if not movie
-        val type = if (href.contains("movie") || href.contains("film")) TvType.Movie else TvType.TvSeries
-
-        return if (type == TvType.Movie) {
-            newMovieSearchResponse(title, href, TvType.Movie) {
-                 this.posterUrl = posterUrl
-            }
-        } else {
-             newTvSeriesSearchResponse(title, href, TvType.TvSeries) {
-                 this.posterUrl = posterUrl
-            }
-        }
-    }
+    // toSite4SearchResult is now in Site4IranTamasha.kt
+    // toSite5SearchResult is now in Site5PersianHive.kt
 
     private fun Element.toParseSearchResult(): SearchResponse? {
         val titleElement = this.selectFirst("div.details div.title a")
@@ -188,6 +157,7 @@ class FarsiFlixMegaProvider : MainAPI() {
             allResults.addAll(site2Deferred.await())
             allResults.addAll(site3Deferred.await())
 
+            val site4Deferred = async {
                 try {
                     app.get("$SITE4_URL/?s=$fixedQuery")
                         .document.select("article.post-item")
@@ -402,50 +372,10 @@ class FarsiFlixMegaProvider : MainAPI() {
                     this.posterUrl = poster
                     this.plot = plot
                 }
-            }
         }
     }
 
-    private suspend fun loadSite4(url: String, document: Document): LoadResponse? {
-        val title = document.selectFirst("h1.entry-title")?.text()?.trim() ?: 
-                    document.selectFirst("h1")?.text()?.trim() ?: return null
-        val poster = fixUrlNull(document.selectFirst("div.blog-pic img")?.attr("src") ?: 
-                              document.selectFirst("meta[property=og:image]")?.attr("content"))
-        val plot = document.selectFirst("div.entry-content p")?.text()?.trim()
-
-        // Check if it is a series page (list of episodes)
-        val episodeElements = document.select("article.post-item")
-        
-        return if (episodeElements.isNotEmpty() && !url.contains("-0") && !url.contains("-1")) {
-            // Likely a series page listing episodes
-            val episodes = episodeElements.mapNotNull {
-                val epTitle = it.selectFirst("h3.entry-title a")?.text()?.trim() ?: return@mapNotNull null
-                val epUrl = fixUrl(it.selectFirst("h3.entry-title a")?.attr("href") ?: return@mapNotNull null)
-                val epPoster = fixUrlNull(it.selectFirst("img")?.attr("src"))
-                
-                 // Try to extract episode number from title (e.g. "Close Friend – 02")
-                val epNumber = Regex("""\d+$""").find(epTitle)?.value?.toIntOrNull() ?: 
-                               Regex(""" (\d+)""").findAll(epTitle).lastOrNull()?.value?.trim()?.toIntOrNull() ?: 0
-
-                newEpisode(epUrl) {
-                    name = epTitle
-                    episode = epNumber
-                    posterUrl = epPoster
-                }
-            }.reversed() // Usually listed newest first
-
-            newTvSeriesLoadResponse(title, url, TvType.TvSeries, episodes) {
-                this.posterUrl = poster
-                this.plot = plot
-            }
-        } else {
-            // Likely a single episode or movie page
-            newMovieLoadResponse(title, url, TvType.Movie, url) {
-                this.posterUrl = poster
-                this.plot = plot
-            }
-        }
-    }
+    // loadSite4 is now an extension function in Site4IranTamasha.kt
 
     override suspend fun loadLinks(
         data: String,
