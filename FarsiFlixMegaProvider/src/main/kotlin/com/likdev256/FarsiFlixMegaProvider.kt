@@ -981,8 +981,6 @@ class FarsiFlixMegaProvider : MainAPI() {
             false
         }
     }
-
-
     // Site 5 link extraction (PersianHive)
     private suspend fun loadLinksSite5(
         data: String,
@@ -1026,16 +1024,19 @@ class FarsiFlixMegaProvider : MainAPI() {
     }
 
     private suspend fun loadSite5(url: String, document: Document): LoadResponse? {
-        val title = document.selectFirst("h1.pciwgas-title, h1.pciw-title")?.text()?.trim() ?: return null
-        val poster = fixUrlNull(document.selectFirst("img.pciwgas-img, img.pciw-img")?.attr("src"))
-        val description = document.select("div.pciwgas-desc p, div.pciw-desc p").text().trim()
+        val title = document.selectFirst("h1.pciwgas-title, h1.pciw-title, h1.entry-title, h1")?.text()?.trim() ?: return null
+        val poster = fixUrlNull(document.selectFirst("img.pciwgas-img, img.pciw-img, meta[property=og:image]")?.attr("src") ?: 
+                              document.selectFirst("meta[property=og:image]")?.attr("content"))
+        val description = document.selectFirst("div.pciwgas-desc p, div.pciw-desc p, div.entry-content p")?.text()?.trim()
         
         // Check if it's a TV Series with episodes
-        // Selector logic: usually category pages for series list episodes
-        val episodes = document.select("article.post-item, div.pciwgas-post-cat-inner").mapNotNull {
-             val epTitle = it.selectFirst("a.pciwgas-hover, h2 a")?.text() ?: return@mapNotNull null
+        val episodeElements = document.select("article.post-item, div.pciwgas-post-cat-inner")
+        val episodes = episodeElements.mapNotNull {
+             val epTitle = it.selectFirst("a.pciwgas-hover, h2 a, h3 a")?.text() ?: return@mapNotNull null
              val epUrl = fixUrl(it.selectFirst("a.pciwgas-hover, a")?.attr("href") ?: return@mapNotNull null)
-             Episode(epUrl, epTitle)
+             newEpisode(epUrl) {
+                 name = epTitle
+             }
         }
 
         return if (episodes.isNotEmpty()) {
