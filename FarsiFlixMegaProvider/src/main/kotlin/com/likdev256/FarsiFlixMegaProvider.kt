@@ -899,7 +899,6 @@ class FarsiFlixMegaProvider : MainAPI() {
                                         ).apply {
                                             this.quality = Qualities.Unknown.value
                                             this.referer = fullIframeUrl
-                                            this.isM3u8 = videoUrl.contains(".m3u8") || videoUrl.contains(".txt")
                                         }
                                     )
                                     foundLinks++
