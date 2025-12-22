@@ -2,6 +2,7 @@ package com.likdev256
 
 import com.lagradost.cloudstream3.*
 import com.lagradost.cloudstream3.utils.ExtractorLink
+import com.lagradost.cloudstream3.utils.ExtractorLinkType
 import com.lagradost.cloudstream3.utils.Qualities
 import com.lagradost.cloudstream3.utils.newExtractorLink
 import com.lagradost.cloudstream3.utils.loadExtractor
@@ -67,14 +68,30 @@ class Site6PersianMovieBoxx(override val api: MainAPI) : SiteHandler {
     }
     
     override suspend fun search(query: String): List<SearchResponse> {
-        return try {
-            val searchUrl = "$siteUrl/?s=${query.replace(" ", "+")}&post_type=movie"
-            app.get(searchUrl).document
+        val results = mutableListOf<SearchResponse>()
+        val encodedQuery = query.replace(" ", "+")
+        
+        try {
+            // Search both movies and TV shows using the /search/ endpoint
+            // First general search for all types
+            val generalUrl = "$siteUrl/search/$encodedQuery/"
+            app.get(generalUrl).document
                 .select("div.movies__inner > div.movie, div.tv-show, div.video")
                 .mapNotNull { parseHomeItem(it) }
-        } catch (_: Exception) {
-            emptyList()
-        }
+                .let { results.addAll(it) }
+            
+            // Also search specifically for TV shows if not many results
+            if (results.size < 5) {
+                val tvShowUrl = "$siteUrl/search/$encodedQuery/?post_type=tv_show"
+                app.get(tvShowUrl).document
+                    .select("div.tv-show")
+                    .mapNotNull { parseHomeItem(it) }
+                    .filter { r -> results.none { it.url == r.url } } // Avoid duplicates
+                    .let { results.addAll(it) }
+            }
+        } catch (_: Exception) {}
+        
+        return results
     }
     
     override suspend fun load(url: String, document: Document): LoadResponse? {
@@ -160,22 +177,52 @@ class Site6PersianMovieBoxx(override val api: MainAPI) : SiteHandler {
             document.select("iframe").forEach { iframe ->
                 val src = iframe.attr("src").ifBlank { iframe.attr("data-src") }
                 if (src.isNotBlank()) {
-                    try {
-                        loadExtractor(src, data, subtitleCallback, callback)
-                        foundLinks = true
-                    } catch (_: Exception) {}
+                    // Handle parsatv.com Live TV embeds - extract HLS stream
+                    if (src.contains("parsatv.com")) {
+                        try {
+                            val embedHtml = app.get(src, referer = data).text
+                            // Look for HLS stream in the embed page
+                            val hlsMatch = Regex("""(?:file|source|src)\s*[:=]\s*["']([^"']+\.m3u8[^"']*)["']""").find(embedHtml)
+                                ?: Regex("""https?://[^\s"'<>]+\.m3u8[^\s"'<>]*""").find(embedHtml)
+                            
+                            if (hlsMatch != null) {
+                                val streamUrl = hlsMatch.groupValues.getOrNull(1) ?: hlsMatch.value
+                                callback.invoke(
+                                    newExtractorLink(
+                                        source = siteName,
+                                        name = "$siteName - Live",
+                                        url = streamUrl,
+                                        type = ExtractorLinkType.M3U8
+                                    ) {
+                                        this.quality = Qualities.Unknown.value
+                                        this.referer = src
+                                    }
+                                )
+                                foundLinks = true
+                            }
+                        } catch (_: Exception) {}
+                    } else {
+                        // Try CloudStream's built-in extractors (YouTube, Dailymotion, etc.)
+                        try {
+                            loadExtractor(src, data, subtitleCallback, callback)
+                            foundLinks = true
+                        } catch (_: Exception) {}
+                    }
                 }
             }
             
-            // Check for video elements
+            // Check for video elements (direct MP4)
             document.select("video source").forEach { source ->
                 val src = source.attr("src")
                 if (src.isNotBlank()) {
+                    val videoUrl = fixUrl(src)
+                    val isHls = videoUrl.contains(".m3u8")
                     callback.invoke(
                         newExtractorLink(
                             source = siteName,
                             name = "$siteName - Direct",
-                            url = fixUrl(src)
+                            url = videoUrl,
+                            type = if (isHls) ExtractorLinkType.M3U8 else ExtractorLinkType.VIDEO
                         ) {
                             this.quality = Qualities.Unknown.value
                             this.referer = data
