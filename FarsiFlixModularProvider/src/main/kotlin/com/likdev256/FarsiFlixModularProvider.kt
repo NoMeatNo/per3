@@ -56,9 +56,11 @@ class FarsiFlixModularProvider : MainAPI() {
         
         // Wrap in try-catch so one failing site doesn't break the whole home page
         val home = try {
-            // Use Cloudflare bypass for PersianHive
+            // Use Cloudflare bypass for PersianHive with timeout to prevent long blocking
             val document = if (handler is Site5PersianHive) {
-                app.get(request.data, interceptor = site5.cfKiller).document
+                kotlinx.coroutines.withTimeoutOrNull(15000L) {
+                    app.get(request.data, interceptor = site5.cfKiller).document
+                } ?: return newHomePageResponse(request.name, emptyList()) // Timeout - return empty
             } else {
                 app.get(request.data).document
             }
