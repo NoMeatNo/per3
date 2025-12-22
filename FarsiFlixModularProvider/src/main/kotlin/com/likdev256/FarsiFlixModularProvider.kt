@@ -11,7 +11,7 @@ import kotlinx.coroutines.coroutineScope
  * FarsiFlix Modular Provider
  * 
  * A modular implementation that delegates to individual site handlers.
- * Each site (DiyGuide, FarsiPlex, FarsiLand, IranTamasha, PersianHive) 
+ * Each site (DiyGuide, FarsiPlex, FarsiLand, IranTamasha, PersianHive, PersianMovieBoxx) 
  * has its own file with encapsulated parsing logic.
  */
 class FarsiFlixModularProvider : MainAPI() {
@@ -34,6 +34,7 @@ class FarsiFlixModularProvider : MainAPI() {
             Site3FarsiLand(this),
             Site4IranTamasha(this),
             Site5PersianHive(this),
+            Site6PersianMovieBoxx(this),
         )
     }
     
