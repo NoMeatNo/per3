@@ -26,17 +26,19 @@ class FarsiFlixModularProvider : MainAPI() {
         TvType.Movie, TvType.TvSeries, TvType.Live
     )
 
-    // All site handlers
-    private val siteHandlers: List<SiteHandler> = listOf(
-        Site1DiyGuide(),
-        Site2FarsiPlex(),
-        Site3FarsiLand(),
-        Site4IranTamasha(),
-        Site5PersianHive(),
-    )
+    // All site handlers - pass 'this' (MainAPI) for extension function access
+    private val siteHandlers: List<SiteHandler> by lazy {
+        listOf(
+            Site1DiyGuide(this),
+            Site2FarsiPlex(this),
+            Site3FarsiLand(this),
+            Site4IranTamasha(this),
+            Site5PersianHive(this),
+        )
+    }
     
     // Reference to Site5 for Cloudflare interceptor
-    private val site5 = siteHandlers.filterIsInstance<Site5PersianHive>().first()
+    private val site5 by lazy { siteHandlers.filterIsInstance<Site5PersianHive>().first() }
 
     // Build main page from all site handlers
     override val mainPage by lazy {

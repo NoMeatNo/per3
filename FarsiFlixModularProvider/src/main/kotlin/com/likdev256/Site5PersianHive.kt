@@ -14,7 +14,7 @@ import org.jsoup.nodes.Element
  * Handles movies, TV series, and Live TV from PersianHive.
  * Uses Cloudflare bypass.
  */
-class Site5PersianHive : SiteHandler {
+class Site5PersianHive(override val api: MainAPI) : SiteHandler {
     override val siteUrl = "https://persianhive.com"
     override val siteName = "PersianHive"
     
@@ -43,8 +43,10 @@ class Site5PersianHive : SiteHandler {
         val href = (hoverLink?.attr("href") ?: titleElement?.attr("href"))?.let { fixUrl(it) } ?: return null
         val posterUrl = element.selectFirst("img.pciwgas-img, img.pciw-img")?.attr("src")?.let { fixUrlNull(it) }
         
-        return newTvSeriesSearchResponse(title, href, TvType.TvSeries) {
-            this.posterUrl = posterUrl
+        return with(api) {
+            newTvSeriesSearchResponse(title, href, TvType.TvSeries) {
+                this.posterUrl = posterUrl
+            }
         }
     }
     
@@ -54,8 +56,10 @@ class Site5PersianHive : SiteHandler {
         val href = fixUrl(titleElement.attr("href"))
         val posterUrl = fixUrlNull(element.selectFirst(".image_wrapper img, .image_frame img")?.attr("src"))
         
-        return newMovieSearchResponse(title, href, TvType.Movie) {
-            this.posterUrl = posterUrl
+        return with(api) {
+            newMovieSearchResponse(title, href, TvType.Movie) {
+                this.posterUrl = posterUrl
+            }
         }
     }
     
@@ -73,8 +77,10 @@ class Site5PersianHive : SiteHandler {
         
         val href = "$siteUrl/live-tv/?channel=$videoId"
         
-        return newMovieSearchResponse(title, href, TvType.Live) {
-            this.posterUrl = posterUrl
+        return with(api) {
+            newMovieSearchResponse(title, href, TvType.Live) {
+                this.posterUrl = posterUrl
+            }
         }
     }
     
@@ -89,10 +95,11 @@ class Site5PersianHive : SiteHandler {
     override suspend fun load(url: String, document: Document): LoadResponse? {
         // Handle Live TV channel with video ID
         if (url.contains("live-tv") && url.contains("channel=")) {
-            val channelId = url.substringAfter("channel=").substringBefore("&")
             val channelName = "Live Channel"
-            return newMovieLoadResponse(channelName, url, TvType.Live, url) {
-                this.posterUrl = null
+            return with(api) {
+                newMovieLoadResponse(channelName, url, TvType.Live, url) {
+                    this.posterUrl = null
+                }
             }
         }
         
@@ -104,37 +111,40 @@ class Site5PersianHive : SiteHandler {
         
         // Check if this is a category page (series episodes list)
         val categoryEpisodes = document.select("article.post-item, article.post")
-        if (categoryEpisodes.isNotEmpty()) {
-            val episodes = categoryEpisodes.mapNotNull {
-                val epTitleElement = it.selectFirst("h2.entry-title a") 
-                    ?: it.selectFirst(".post-title h2 a")
-                    ?: it.selectFirst(".image_wrapper a")
-                val epTitle = epTitleElement?.text()?.trim() ?: return@mapNotNull null
-                val epUrl = fixUrl(epTitleElement.attr("href"))
-                val epPoster = fixUrlNull(it.selectFirst(".image_wrapper img")?.attr("src"))
+        
+        return with(api) {
+            if (categoryEpisodes.isNotEmpty()) {
+                val episodes = categoryEpisodes.mapNotNull {
+                    val epTitleElement = it.selectFirst("h2.entry-title a") 
+                        ?: it.selectFirst(".post-title h2 a")
+                        ?: it.selectFirst(".image_wrapper a")
+                    val epTitle = epTitleElement?.text()?.trim() ?: return@mapNotNull null
+                    val epUrl = fixUrl(epTitleElement.attr("href"))
+                    val epPoster = fixUrlNull(it.selectFirst(".image_wrapper img")?.attr("src"))
+                    
+                    val epNumber = Regex("""Episode\s*(\d+)""", RegexOption.IGNORE_CASE).find(epTitle)?.groupValues?.get(1)?.toIntOrNull()
+                        ?: Regex("""\d+$""").find(epTitle)?.value?.toIntOrNull()
+                    
+                    newEpisode(epUrl) {
+                        name = epTitle
+                        episode = epNumber
+                        posterUrl = epPoster
+                    }
+                }
                 
-                val epNumber = Regex("""Episode\s*(\d+)""", RegexOption.IGNORE_CASE).find(epTitle)?.groupValues?.get(1)?.toIntOrNull()
-                    ?: Regex("""\d+$""").find(epTitle)?.value?.toIntOrNull()
-                
-                newEpisode(epUrl) {
-                    name = epTitle
-                    episode = epNumber
-                    posterUrl = epPoster
+                if (episodes.isNotEmpty()) {
+                    return newTvSeriesLoadResponse(title, url, TvType.TvSeries, episodes) {
+                        this.posterUrl = poster ?: episodes.firstOrNull()?.posterUrl
+                        this.plot = description
+                    }
                 }
             }
             
-            if (episodes.isNotEmpty()) {
-                return newTvSeriesLoadResponse(title, url, TvType.TvSeries, episodes) {
-                    this.posterUrl = poster ?: episodes.firstOrNull()?.posterUrl
-                    this.plot = description
-                }
+            // Single movie/episode page
+            newMovieLoadResponse(title, url, TvType.Movie, url) {
+                this.posterUrl = poster
+                this.plot = description
             }
-        }
-        
-        // Single movie/episode page
-        return newMovieLoadResponse(title, url, TvType.Movie, url) {
-            this.posterUrl = poster
-            this.plot = description
         }
     }
     
