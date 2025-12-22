@@ -19,7 +19,6 @@ class Site3FarsiLand(override val api: MainAPI) : SiteHandler {
         "$siteUrl/iran-movie-2025/" to "Movies - $siteName",
         "$siteUrl/series-26/" to "Series - $siteName",
         "$siteUrl/iranian-series/" to "Old Series - $siteName",
-        "$siteUrl/episodes-15/" to "Latest Episodes - $siteName",
     )
     
     override fun getHomeSelector(url: String): String = "article.item"

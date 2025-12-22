@@ -193,8 +193,8 @@ class Site4IranTamasha(override val api: MainAPI) : SiteHandler {
             // 1. Fetch the player page with Referer
             val playerDoc = app.get(fullIframeUrl, headers = mapOf("Referer" to refererUrl)).document
             
-            // 2. Extract CONFIG data from script
-            val scriptContent = playerDoc.select("script").find { it.data().contains("const CONFIG =") }?.data()
+            // 2. Extract CONFIG data from script - look for encrypted_id which is always present
+            val scriptContent = playerDoc.select("script").find { it.data().contains("encrypted_id") }?.data()
             
             if (scriptContent != null) {
                 val ajaxUrl = Regex("""ajax_url['""]?\s*:\s*['"]([^'"]+)['"]""").find(scriptContent)?.groupValues?.get(1)?.replace("\\/", "/")
@@ -209,7 +209,10 @@ class Site4IranTamasha(override val api: MainAPI) : SiteHandler {
                         "nonce" to nonce
                     )
                     
-                    val jsonResponse = app.post(ajaxUrl, data = postData, headers = mapOf("Referer" to fullIframeUrl)).text
+                    val jsonResponse = app.post(ajaxUrl, data = postData, headers = mapOf(
+                        "Referer" to fullIframeUrl,
+                        "X-Requested-With" to "XMLHttpRequest"
+                    )).text
                     
                     // 4. Extract URLs from JSON - the API returns {"servers":["url1", "url2", ...]}
                     val serversBlock = Regex(""""servers"\s*:\s*\[(.*?)\]""").find(jsonResponse)?.groupValues?.get(1)

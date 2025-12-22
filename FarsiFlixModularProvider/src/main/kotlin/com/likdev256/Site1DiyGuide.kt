@@ -138,44 +138,75 @@ class Site1DiyGuide(override val api: MainAPI) : SiteHandler {
         // Handle Live TV stream extraction
         if (data.contains("/live-tv/")) {
             try {
-                val pageHtml = app.get(data).text
+                val document = app.get(data).document
+                val pageHtml = document.html()
                 
-                // 1. Extract from videojs sources array in script: sources: [{src: 'url', type: ''}]
-                val sourcesRegex = Regex("""sources:\s*\[\s*\{\s*src:\s*['"]([^'"]+)['"]""")
-                sourcesRegex.find(pageHtml)?.groupValues?.get(1)?.let { streamUrl ->
-                    callback.invoke(
-                        newExtractorLink(
-                            source = siteName,
-                            name = "$siteName - Live",
-                            url = streamUrl
-                        ).apply {
-                            this.quality = Qualities.Unknown.value
-                            this.referer = data
-                        }
-                    )
-                    foundLinks = true
-                }
-                
-                // 2. Fallback: Extract from file: 'url' pattern
-                if (!foundLinks) {
-                    val fileRegex = Regex("""file:\s*['"]([^'"]+\.m3u8[^'"]*|[^'"]+\.mp4[^'"]*)['"]""")
-                    fileRegex.find(pageHtml)?.groupValues?.get(1)?.let { streamUrl ->
+                // Function to extract stream from page HTML
+                fun extractStreamFromHtml(html: String, serverName: String, referer: String): Boolean {
+                    var found = false
+                    
+                    // 1. Extract from videojs sources array in script: sources: [{src: 'url', type: ''}]
+                    val sourcesRegex = Regex("""sources:\s*\[\s*\{\s*src:\s*['"]([^'"]+)['"]""")
+                    sourcesRegex.find(html)?.groupValues?.get(1)?.let { streamUrl ->
                         callback.invoke(
                             newExtractorLink(
                                 source = siteName,
-                                name = "$siteName - Live",
+                                name = "$siteName - $serverName",
                                 url = streamUrl
                             ).apply {
                                 this.quality = Qualities.Unknown.value
-                                this.referer = data
+                                this.referer = referer
                             }
                         )
-                        foundLinks = true
+                        found = true
+                    }
+                    
+                    // 2. Fallback: Extract from file: 'url' pattern
+                    if (!found) {
+                        val fileRegex = Regex("""file:\s*['"]([^'"]+\.m3u8[^'"]*|[^'"]+\.mp4[^'"]*|[^'"]+\.txt[^'"]*)['"]""")
+                        fileRegex.find(html)?.groupValues?.get(1)?.let { streamUrl ->
+                            callback.invoke(
+                                newExtractorLink(
+                                    source = siteName,
+                                    name = "$siteName - $serverName",
+                                    url = streamUrl
+                                ).apply {
+                                    this.quality = Qualities.Unknown.value
+                                    this.referer = referer
+                                }
+                            )
+                            found = true
+                        }
+                    }
+                    
+                    return found
+                }
+                
+                // Try main page first
+                if (extractStreamFromHtml(pageHtml, "Live", data)) {
+                    foundLinks = true
+                }
+                
+                // Also check for alternative server buttons with ?key= parameter
+                val serverButtons = document.select("a[href*='?key='], button[data-key], .btn-group a, .server-list a")
+                val seenUrls = mutableSetOf(data)
+                
+                serverButtons.forEach { btn ->
+                    val altUrl = btn.attr("href").let { if (it.startsWith("http")) it else fixUrl(it) }
+                    if (altUrl.contains("?key=") && altUrl !in seenUrls) {
+                        seenUrls.add(altUrl)
+                        val serverLabel = btn.text().trim().ifBlank { "Server ${seenUrls.size}" }
+                        
+                        try {
+                            val altHtml = app.get(altUrl).text
+                            if (extractStreamFromHtml(altHtml, serverLabel, altUrl)) {
+                                foundLinks = true
+                            }
+                        } catch (_: Exception) {}
                     }
                 }
                 
-                // 3. Check for YouTube embeds
-                val document = app.get(data).document
+                // Check for YouTube embeds
                 document.select("iframe").forEach { iframe ->
                     val src = iframe.attr("src")
                     if (src.contains("youtube.com") || src.contains("youtu.be")) {
