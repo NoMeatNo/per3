@@ -896,10 +896,10 @@ class FarsiFlixMegaProvider : MainAPI() {
                                             source = SITE4_NAME,
                                             name = "$SITE4_NAME - EVP",
                                             url = videoUrl,
-                                            referer = fullIframeUrl,
-                                            quality = Qualities.Unknown.value
+                                            isM3u8 = videoUrl.contains(".m3u8") || videoUrl.contains(".txt") // Assume txt is HLS as per script
                                         ).apply {
-                                            this.isM3u8 = videoUrl.contains(".m3u8") || videoUrl.contains(".txt") // Assume txt is HLS as per script
+                                            this.quality = Qualities.Unknown.value
+                                            this.referer = fullIframeUrl
                                         }
                                     )
                                     foundLinks++
