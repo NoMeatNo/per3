@@ -813,9 +813,8 @@ class FarsiFlixMegaProvider : MainAPI() {
                 }
             }
             
-            // Look for Multi-Links (Server 1, Server 2, etc.)
-            // They appear as links with text "Server X"
-            val serverLinks = document.select("a").filter { it.text().contains("Server", ignoreCase = true) }
+            // Look for Multi-Links using class "series-item" (Server 1, Link 1, Original Video, etc.)
+            val serverLinks = document.select("a.series-item")
             
             serverLinks.forEach { link ->
                 val serverUrl = fixUrl(link.attr("href"))
@@ -848,6 +847,67 @@ class FarsiFlixMegaProvider : MainAPI() {
                     )
                     foundLinks++
                 }
+            }
+
+            // Look for evp_play iframe (local player)
+            document.select("iframe[src*='evp_play']").forEach { iframe ->
+                val src = iframe.attr("src")
+                val fullIframeUrl = fixUrl(src)
+                
+                try {
+                    // 1. Fetch the player page with Referer
+                    val playerDoc = app.get(fullIframeUrl, headers = mapOf("Referer" to data)).document
+                    
+                    // 2. Extract CONFIG data
+                    val scriptContent = playerDoc.select("script").find { it.data().contains("const CONFIG =") }?.data()
+                    
+                    if (scriptContent != null) {
+                        val ajaxUrl = Regex("ajax_url['\"]?:\\s*['\"]([^'\"]+)['\"]").find(scriptContent)?.groupValues?.get(1)?.replace("\\/", "/")
+                        val encryptedId = Regex("encrypted_id['\"]?:\\s*['\"]([^'\"]+)['\"]").find(scriptContent)?.groupValues?.get(1)
+                        val nonce = Regex("nonce['\"]?:\\s*['\"]([^'\"]+)['\"]").find(scriptContent)?.groupValues?.get(1)
+                        
+                        if (ajaxUrl != null && encryptedId != null && nonce != null) {
+                            // 3. Make POST request
+                            val postData = mapOf(
+                                "action" to "evp_get_video_url",
+                                "encrypted_id" to encryptedId,
+                                "nonce" to nonce
+                            )
+                            
+                            val jsonResponse = app.post(ajaxUrl, data = postData, headers = mapOf("Referer" to fullIframeUrl)).text
+                            
+                            // 4. Extract URLs from JSON
+                            // Response format: {"success":true,"data":{"servers":["url1", "url2", ...]}}
+                            val urlRegex = Regex(""""src"\s*:\s*"([^"]+)"""") // Based on typical JSON structure or just simple string extraction if array
+                            // The test output showed: "servers":["url1","url2"]
+                            // So we can extract string literals inside the servers array
+                            
+                            // Let's use a simpler regex that captures urls inside the servers array directly or iteratively
+                            // Since we don't have a full JSON parser handy or want to keep it simple:
+                            val serversBlock = Regex(""""servers"\s*:\s*\[(.*?)\]""").find(jsonResponse)?.groupValues?.get(1)
+                            
+                            if (serversBlock != null) {
+                                val urlMatches = Regex(""""([^"]+)"""").findAll(serversBlock)
+                                urlMatches.forEach { match ->
+                                    val videoUrl = match.groupValues[1].replace("\\/", "/")
+                                    
+                                    callback.invoke(
+                                        newExtractorLink(
+                                            source = SITE4_NAME,
+                                            name = "$SITE4_NAME - EVP",
+                                            url = videoUrl,
+                                            isM3u8 = videoUrl.contains(".m3u8") || videoUrl.contains(".txt") // Assume txt is HLS as per script
+                                        ).apply {
+                                            this.quality = Qualities.Unknown.value
+                                            this.referer = fullIframeUrl
+                                        }
+                                    )
+                                    foundLinks++
+                                }
+                            }
+                        }
+                    }
+                } catch (_: Exception) {}
             }
 
             foundLinks > 0
