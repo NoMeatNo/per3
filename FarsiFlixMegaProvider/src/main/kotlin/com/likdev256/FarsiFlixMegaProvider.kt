@@ -18,6 +18,7 @@ import org.jsoup.nodes.Document
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
+import com.lagradost.cloudstream3.network.CloudflareKiller
 
 class FarsiFlixMegaProvider : MainAPI() {
     override var mainUrl = "https://farsiplex.com"
@@ -28,8 +29,11 @@ class FarsiFlixMegaProvider : MainAPI() {
     override var sequentialMainPage = true
     override var sequentialMainPageDelay: Long = 100
     override val supportedTypes = setOf(
-        TvType.Movie, TvType.TvSeries
+        TvType.Movie, TvType.TvSeries, TvType.Live
     )
+
+    // Cloudflare bypass interceptor for PersianHive
+    private val cfKiller by lazy { CloudflareKiller() }
 
     // Site configurations
     companion object {
@@ -64,15 +68,22 @@ class FarsiFlixMegaProvider : MainAPI() {
         // Site 4 - IranTamasha
         "$SITE4_URL/series/" to "Series - $SITE4_NAME",
         // Site 5 - PersianHive
-        "$SITE5_URL/all-farsi-movies/" to "Movies - $SITE5_NAME",
-        "$SITE5_URL/all-farsi-series/" to "Series - $SITE5_NAME",
+        "$SITE5_URL/series-web/" to "Series - $SITE5_NAME",
+        "$SITE5_URL/movies_films/" to "Movies - $SITE5_NAME",
+        "$SITE5_URL/live-tv/" to "Live TV - $SITE5_NAME",
     )
 
     override suspend fun getMainPage(
         page: Int,
         request: MainPageRequest
     ): HomePageResponse {
-        val document = app.get(request.data).document
+        // Use Cloudflare bypass for PersianHive
+        val document = if (request.data.contains(SITE5_URL)) {
+            app.get(request.data, interceptor = cfKiller).document
+        } else {
+            app.get(request.data).document
+        }
+        
         val home = when {
             // Site 1 selectors
             request.data.contains(SITE1_URL) -> {
@@ -82,9 +93,18 @@ class FarsiFlixMegaProvider : MainAPI() {
             request.data.contains(SITE4_URL) -> {
                  document.select("article.post-item").mapNotNull { it.toSite4SearchResult() }
             }
-            // Site 5 selectors
+            // Site 5 selectors (PersianHive with Cloudflare)
             request.data.contains(SITE5_URL) -> {
-                document.select("div.pciwgas-post-cat-inner").mapNotNull { it.toSite5SearchResult() }
+                // Different selectors for different pages
+                when {
+                    request.data.contains("live-tv") -> {
+                        // Live TV page - parse channel buttons
+                        document.select("div.pciwgas-ep-count").mapNotNull { it.toSite5LiveResult() }
+                    }
+                    else -> {
+                        document.select("div.pciwgas-post-cat-inner").mapNotNull { it.toSite5SearchResult() }
+                    }
+                }
             }
             // Site 2 & 3 selectors (they use similar structure)
             else -> {
@@ -151,6 +171,15 @@ class FarsiFlixMegaProvider : MainAPI() {
         }
     }
 
+    private fun Element.toSite5LiveResult(): SearchResponse? {
+        // Live TV parsing - for now return the live-tv page itself as it loads channels dynamically
+        val title = this.text()?.trim() ?: "Live TV"
+        val href = "$SITE5_URL/live-tv/"
+        return newMovieSearchResponse(title, href, TvType.Live) {
+            this.posterUrl = null
+        }
+    }
+
     override suspend fun search(query: String): List<SearchResponse>? {
         val fixedQuery = query.replace(" ", "+")
         val allResults = mutableListOf<SearchResponse>()
@@ -194,10 +223,10 @@ class FarsiFlixMegaProvider : MainAPI() {
             }
             allResults.addAll(site4Deferred.await())
 
-            // Site 5 - PersianHive (behind Cloudflare, might need special handling)
+            // Site 5 - PersianHive (behind Cloudflare - use interceptor)
             val site5Deferred = async {
                 try {
-                    app.get("$SITE5_URL/?s=$fixedQuery")
+                    app.get("$SITE5_URL/?s=$fixedQuery", interceptor = cfKiller)
                         .document.select("div.pciwgas-post-cat-inner")
                         .mapNotNull { it.toSite5SearchResult() }
                 } catch (e: Exception) { emptyList() }
@@ -214,7 +243,12 @@ class FarsiFlixMegaProvider : MainAPI() {
     }
 
     override suspend fun load(url: String): LoadResponse? {
-        val document = app.get(url).document
+        // Use Cloudflare bypass for PersianHive
+        val document = if (url.contains(SITE5_URL)) {
+            app.get(url, interceptor = cfKiller).document
+        } else {
+            app.get(url).document
+        }
 
         return when {
             // Site 1 - DiyGuide
@@ -1015,7 +1049,8 @@ class FarsiFlixMegaProvider : MainAPI() {
         callback: (ExtractorLink) -> Unit
     ): Boolean {
         return try {
-            val document = app.get(data).document
+            // Use Cloudflare bypass interceptor
+            val document = app.get(data, interceptor = cfKiller).document
             var foundLinks = false
             
             // Check for iframes
