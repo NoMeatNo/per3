@@ -219,20 +219,24 @@ class Site4IranTamasha(override val api: MainAPI) : SiteHandler {
                     
                     if (serversBlock != null) {
                         var found = false
+                        var serverIndex = 0
                         val urlMatches = Regex(""""([^"]+)"""").findAll(serversBlock)
                         urlMatches.forEach { match ->
                             val videoUrl = match.groupValues[1].replace("\\/", "/")
                             
                             if (videoUrl.isNotBlank() && (videoUrl.startsWith("http") || videoUrl.contains(".m3u8") || videoUrl.contains(".mp4") || videoUrl.contains(".txt"))) {
+                                serverIndex++
+                                // Use direct ExtractorLink with isM3u8 flag for HLS streams
+                                val isHls = videoUrl.contains(".m3u8") || videoUrl.contains(".txt")
                                 callback.invoke(
-                                    newExtractorLink(
+                                    ExtractorLink(
                                         source = siteName,
-                                        name = "$siteName - EVP",
-                                        url = videoUrl
-                                    ).apply {
-                                        this.quality = Qualities.Unknown.value
-                                        this.referer = fullIframeUrl
-                                    }
+                                        name = if (serverIndex == 1) "$siteName - EVP" else "$siteName - Server $serverIndex",
+                                        url = videoUrl,
+                                        referer = fullIframeUrl,
+                                        quality = Qualities.Unknown.value,
+                                        isM3u8 = isHls
+                                    )
                                 )
                                 found = true
                             }
