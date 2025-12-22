@@ -153,17 +153,15 @@ class Site1DiyGuide(override val api: MainAPI) : SiteHandler {
                         }
                     
                     if (streamUrl != null) {
-                        // Use direct ExtractorLink with isM3u8 flag for HLS streams
-                        val isHls = streamUrl.contains(".m3u8") || streamUrl.contains(".txt")
                         callback.invoke(
-                            ExtractorLink(
+                            newExtractorLink(
                                 source = siteName,
                                 name = "$siteName - $serverName",
-                                url = streamUrl,
-                                referer = referer,
-                                quality = Qualities.Unknown.value,
-                                isM3u8 = isHls
-                            )
+                                url = streamUrl
+                            ).apply {
+                                this.quality = Qualities.Unknown.value
+                                this.referer = referer
+                            }
                         )
                         return true
                     }
