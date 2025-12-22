@@ -2,6 +2,7 @@ package com.likdev256
 
 import com.lagradost.cloudstream3.*
 import com.lagradost.cloudstream3.utils.ExtractorLink
+import com.lagradost.cloudstream3.utils.ExtractorLinkType
 import com.lagradost.cloudstream3.utils.Qualities
 import com.lagradost.cloudstream3.utils.newExtractorLink
 import com.lagradost.cloudstream3.utils.loadExtractor
@@ -227,13 +228,17 @@ class Site4IranTamasha(override val api: MainAPI) : SiteHandler {
                             if (videoUrl.isNotBlank() && (videoUrl.startsWith("http") || videoUrl.contains(".m3u8") || videoUrl.contains(".mp4") || videoUrl.contains(".txt"))) {
                                 serverIndex++
                                 val serverName = if (serverIndex == 1) "$siteName - EVP" else "$siteName - Server $serverIndex"
+                                // Determine if this is HLS (.m3u8 or .txt masquerading as HLS)
+                                val isHls = videoUrl.contains(".m3u8") || videoUrl.contains(".txt")
+                                val linkType = if (isHls) ExtractorLinkType.M3U8 else ExtractorLinkType.VIDEO
                                 
                                 callback.invoke(
                                     newExtractorLink(
                                         source = siteName,
                                         name = serverName,
-                                        url = videoUrl
-                                    ).apply {
+                                        url = videoUrl,
+                                        type = linkType
+                                    ) {
                                         this.quality = Qualities.Unknown.value
                                         this.referer = fullIframeUrl
                                         this.headers = mapOf(
