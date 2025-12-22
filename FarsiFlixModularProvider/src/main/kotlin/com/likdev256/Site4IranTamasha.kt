@@ -236,6 +236,10 @@ class Site4IranTamasha(override val api: MainAPI) : SiteHandler {
                                     ).apply {
                                         this.quality = Qualities.Unknown.value
                                         this.referer = fullIframeUrl
+                                        this.headers = mapOf(
+                                            "Referer" to fullIframeUrl,
+                                            "Origin" to "https://www.irantamasha.com"
+                                        )
                                     }
                                 )
                                 found = true

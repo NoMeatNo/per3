@@ -54,34 +54,40 @@ class FarsiFlixModularProvider : MainAPI() {
         // Find the handler for this request
         val handler = siteHandlers.find { it.handles(request.data) }
         
-        // Use Cloudflare bypass for PersianHive
-        val document = if (handler is Site5PersianHive) {
-            app.get(request.data, interceptor = site5.cfKiller).document
-        } else {
-            app.get(request.data).document
-        }
-        
-        val home = if (handler != null) {
-            val selector = handler.getHomeSelector(request.data)
-            when (handler) {
-                is Site5PersianHive -> {
-                    when {
-                        request.data.contains("live-tv") -> {
-                            document.select(selector).mapNotNull { handler.parseLiveItem(it) }
-                        }
-                        request.data.contains("movies") -> {
-                            document.select(selector).mapNotNull { handler.parseMovieItem(it) }
-                        }
-                        else -> {
-                            document.select(selector).mapNotNull { handler.parseHomeItem(it) }
+        // Wrap in try-catch so one failing site doesn't break the whole home page
+        val home = try {
+            // Use Cloudflare bypass for PersianHive
+            val document = if (handler is Site5PersianHive) {
+                app.get(request.data, interceptor = site5.cfKiller).document
+            } else {
+                app.get(request.data).document
+            }
+            
+            if (handler != null) {
+                val selector = handler.getHomeSelector(request.data)
+                when (handler) {
+                    is Site5PersianHive -> {
+                        when {
+                            request.data.contains("live-tv") -> {
+                                document.select(selector).mapNotNull { handler.parseLiveItem(it) }
+                            }
+                            request.data.contains("movies") -> {
+                                document.select(selector).mapNotNull { handler.parseMovieItem(it) }
+                            }
+                            else -> {
+                                document.select(selector).mapNotNull { handler.parseHomeItem(it) }
+                            }
                         }
                     }
+                    else -> {
+                        document.select(selector).mapNotNull { handler.parseHomeItem(it) }
+                    }
                 }
-                else -> {
-                    document.select(selector).mapNotNull { handler.parseHomeItem(it) }
-                }
+            } else {
+                emptyList()
             }
-        } else {
+        } catch (e: Exception) {
+            // If a site fails (e.g., Cloudflare issues), return empty list instead of crashing
             emptyList()
         }
         
