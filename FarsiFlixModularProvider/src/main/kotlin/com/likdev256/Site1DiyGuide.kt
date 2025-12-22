@@ -141,13 +141,18 @@ class Site1DiyGuide(override val api: MainAPI) : SiteHandler {
                 val document = app.get(data).document
                 val pageHtml = document.html()
                 
-                // Function to extract stream from page HTML
-                fun extractStreamFromHtml(html: String, serverName: String, referer: String): Boolean {
-                    var found = false
-                    
+                // Helper to extract and add stream link from HTML
+                suspend fun tryExtractStream(html: String, serverName: String, referer: String): Boolean {
                     // 1. Extract from videojs sources array in script: sources: [{src: 'url', type: ''}]
                     val sourcesRegex = Regex("""sources:\s*\[\s*\{\s*src:\s*['"]([^'"]+)['"]""")
-                    sourcesRegex.find(html)?.groupValues?.get(1)?.let { streamUrl ->
+                    val streamUrl = sourcesRegex.find(html)?.groupValues?.get(1)
+                        ?: run {
+                            // 2. Fallback: Extract from file: 'url' pattern  
+                            val fileRegex = Regex("""file:\s*['"]([^'"]+\.m3u8[^'"]*|[^'"]+\.mp4[^'"]*|[^'"]+\.txt[^'"]*)['"]""")
+                            fileRegex.find(html)?.groupValues?.get(1)
+                        }
+                    
+                    if (streamUrl != null) {
                         callback.invoke(
                             newExtractorLink(
                                 source = siteName,
@@ -158,32 +163,13 @@ class Site1DiyGuide(override val api: MainAPI) : SiteHandler {
                                 this.referer = referer
                             }
                         )
-                        found = true
+                        return true
                     }
-                    
-                    // 2. Fallback: Extract from file: 'url' pattern
-                    if (!found) {
-                        val fileRegex = Regex("""file:\s*['"]([^'"]+\.m3u8[^'"]*|[^'"]+\.mp4[^'"]*|[^'"]+\.txt[^'"]*)['"]""")
-                        fileRegex.find(html)?.groupValues?.get(1)?.let { streamUrl ->
-                            callback.invoke(
-                                newExtractorLink(
-                                    source = siteName,
-                                    name = "$siteName - $serverName",
-                                    url = streamUrl
-                                ).apply {
-                                    this.quality = Qualities.Unknown.value
-                                    this.referer = referer
-                                }
-                            )
-                            found = true
-                        }
-                    }
-                    
-                    return found
+                    return false
                 }
                 
                 // Try main page first
-                if (extractStreamFromHtml(pageHtml, "Live", data)) {
+                if (tryExtractStream(pageHtml, "Live", data)) {
                     foundLinks = true
                 }
                 
@@ -199,7 +185,7 @@ class Site1DiyGuide(override val api: MainAPI) : SiteHandler {
                         
                         try {
                             val altHtml = app.get(altUrl).text
-                            if (extractStreamFromHtml(altHtml, serverLabel, altUrl)) {
+                            if (tryExtractStream(altHtml, serverLabel, altUrl)) {
                                 foundLinks = true
                             }
                         } catch (_: Exception) {}
