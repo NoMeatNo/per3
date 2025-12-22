@@ -369,7 +369,7 @@ class FarsiFlixSuperProvider : MainAPI() {
                             .select("div.result-item")
                             .mapNotNull { elem ->
                                 (site2 as Site2FarsiPlex).parseSearchItem(elem)?.let { sr ->
-                                    UnifiedContent(sr.name, normalizeTitle(sr.name), sr.posterUrl, sr.type,
+                                    UnifiedContent(sr.name, normalizeTitle(sr.name), sr.posterUrl, sr.type ?: TvType.Movie,
                                         mutableListOf(site2.siteName to sr.url))
                                 }
                             }
@@ -381,7 +381,7 @@ class FarsiFlixSuperProvider : MainAPI() {
                             .select("div.result-item")
                             .mapNotNull { elem ->
                                 (site3 as Site3FarsiLand).parseSearchItem(elem)?.let { sr ->
-                                    UnifiedContent(sr.name, normalizeTitle(sr.name), sr.posterUrl, sr.type,
+                                    UnifiedContent(sr.name, normalizeTitle(sr.name), sr.posterUrl, sr.type ?: TvType.Movie,
                                         mutableListOf(site3.siteName to sr.url))
                                 }
                             }
@@ -406,7 +406,7 @@ class FarsiFlixSuperProvider : MainAPI() {
                                 .select("div.pciwgas-post-cat-inner")
                                 .mapNotNull { elem ->
                                     site5.parseHomeItem(elem)?.let { sr ->
-                                        UnifiedContent(sr.name, normalizeTitle(sr.name), sr.posterUrl, sr.type,
+                                        UnifiedContent(sr.name, normalizeTitle(sr.name), sr.posterUrl, sr.type ?: TvType.TvSeries,
                                             mutableListOf(site5.siteName to sr.url))
                                     }
                                 }
