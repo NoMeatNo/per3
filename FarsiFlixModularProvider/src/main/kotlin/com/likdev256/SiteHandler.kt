@@ -9,10 +9,15 @@ import org.jsoup.nodes.Element
  * Base interface for all site handlers.
  * Each site (DiyGuide, FarsiPlex, FarsiLand, IranTamasha, PersianHive) 
  * implements this interface to encapsulate its parsing logic.
+ * 
+ * The api parameter provides access to MainAPI extension functions.
  */
 interface SiteHandler {
     val siteUrl: String
     val siteName: String
+    
+    /** Reference to the MainAPI for extension function access */
+    val api: MainAPI
     
     /** Main page sections for this site (url to display name) */
     val mainPages: List<Pair<String, String>>

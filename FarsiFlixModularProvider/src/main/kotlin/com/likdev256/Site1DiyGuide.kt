@@ -12,7 +12,7 @@ import org.jsoup.nodes.Element
  * Site 1: DiyGuide (diycraftsguide.com)
  * Handles movies and TV series from DiyGuide.
  */
-class Site1DiyGuide : SiteHandler {
+class Site1DiyGuide(override val api: MainAPI) : SiteHandler {
     override val siteUrl = "https://www.diycraftsguide.com"
     override val siteName = "DiyGuide"
     
@@ -27,8 +27,10 @@ class Site1DiyGuide : SiteHandler {
         val title = element.selectFirst("div.movie-title h3 a")?.text()?.trim() ?: return null
         val href = element.selectFirst("div.movie-title h3 a")?.attr("href")?.let { fixUrl(it) } ?: return null
         val posterUrl = element.selectFirst("div.latest-movie-img-container")?.attr("data-src")?.trim()?.let { fixUrlNull(it) }
-        return newMovieSearchResponse(title, href, TvType.Movie) {
-            this.posterUrl = posterUrl
+        return with(api) {
+            newMovieSearchResponse(title, href, TvType.Movie) {
+                this.posterUrl = posterUrl
+            }
         }
     }
     
@@ -45,38 +47,40 @@ class Site1DiyGuide : SiteHandler {
         val poster = fixUrlNull(document.selectFirst("video#play")?.attr("poster"))
         val isTvSeries = document.select(".col-md-12.col-sm-12:has(div.owl-carousel)").isNotEmpty()
 
-        return if (isTvSeries) {
-            val episodes = mutableListOf<Episode>()
-            val rows = document.select(".row")
-            var seasonNumber = 0
-            
-            rows.forEach { row ->
-                if (row.select(".movie-heading").isNotEmpty()) {
-                    val seasonText = row.select(".movie-heading span").text().trim()
-                    seasonNumber = seasonText.removePrefix("Season").trim().toIntOrNull() ?: 0
-                } else if (row.select(".owl-carousel").isNotEmpty() && seasonNumber > 0) {
-                    row.select(".item").forEach { item ->
-                        val episodeLink = item.select("a").attr("href")
-                        val episodeNumberText = item.select(".figure-caption").text().trim()
-                        val episodeNumber = episodeNumberText.removePrefix("E").toIntOrNull() ?: 0
-                        val episodeName = "Season $seasonNumber Episode $episodeNumber"
-                        if (episodeLink.isNotEmpty()) {
-                            episodes.add(newEpisode(episodeLink) {
-                                name = episodeName
-                                season = seasonNumber
-                                episode = episodeNumber
-                            })
+        return with(api) {
+            if (isTvSeries) {
+                val episodes = mutableListOf<Episode>()
+                val rows = document.select(".row")
+                var seasonNumber = 0
+                
+                rows.forEach { row ->
+                    if (row.select(".movie-heading").isNotEmpty()) {
+                        val seasonText = row.select(".movie-heading span").text().trim()
+                        seasonNumber = seasonText.removePrefix("Season").trim().toIntOrNull() ?: 0
+                    } else if (row.select(".owl-carousel").isNotEmpty() && seasonNumber > 0) {
+                        row.select(".item").forEach { item ->
+                            val episodeLink = item.select("a").attr("href")
+                            val episodeNumberText = item.select(".figure-caption").text().trim()
+                            val episodeNumber = episodeNumberText.removePrefix("E").toIntOrNull() ?: 0
+                            val episodeName = "Season $seasonNumber Episode $episodeNumber"
+                            if (episodeLink.isNotEmpty()) {
+                                episodes.add(newEpisode(episodeLink) {
+                                    name = episodeName
+                                    season = seasonNumber
+                                    episode = episodeNumber
+                                })
+                            }
                         }
                     }
                 }
-            }
 
-            newTvSeriesLoadResponse(title, url, TvType.TvSeries, episodes) {
-                this.posterUrl = poster
-            }
-        } else {
-            newMovieLoadResponse(title, url, TvType.Movie, url) {
-                this.posterUrl = poster
+                newTvSeriesLoadResponse(title, url, TvType.TvSeries, episodes) {
+                    this.posterUrl = poster
+                }
+            } else {
+                newMovieLoadResponse(title, url, TvType.Movie, url) {
+                    this.posterUrl = poster
+                }
             }
         }
     }

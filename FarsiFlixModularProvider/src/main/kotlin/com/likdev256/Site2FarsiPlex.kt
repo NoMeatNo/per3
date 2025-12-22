@@ -11,7 +11,7 @@ import org.jsoup.nodes.Element
  * Site 2: FarsiPlex (farsiplex.com)
  * Handles movies and TV series from FarsiPlex.
  */
-class Site2FarsiPlex : SiteHandler {
+class Site2FarsiPlex(override val api: MainAPI) : SiteHandler {
     override val siteUrl = "https://farsiplex.com"
     override val siteName = "FarsiPlex"
     
@@ -27,8 +27,10 @@ class Site2FarsiPlex : SiteHandler {
         val href = element.selectFirst("div.data h3 a")?.attr("href")?.let { fixUrl(it) } ?: return null
         val posterUrl = element.selectFirst("div.poster img")?.attr("src")?.trim()?.let { fixUrlNull(it) }
         val type = if (element.hasClass("tvshows")) TvType.TvSeries else TvType.Movie
-        return newMovieSearchResponse(title, href, type) {
-            this.posterUrl = posterUrl
+        return with(api) {
+            newMovieSearchResponse(title, href, type) {
+                this.posterUrl = posterUrl
+            }
         }
     }
     
@@ -38,8 +40,10 @@ class Site2FarsiPlex : SiteHandler {
         val href = fixUrl(titleElement.attr("href"))
         val posterUrl = fixUrlNull(element.selectFirst("div.image img")?.attr("src"))
         val type = if (element.hasClass("tvshows")) TvType.TvSeries else TvType.Movie
-        return newMovieSearchResponse(title, href, type) {
-            this.posterUrl = posterUrl
+        return with(api) {
+            newMovieSearchResponse(title, href, type) {
+                this.posterUrl = posterUrl
+            }
         }
     }
     
@@ -56,62 +60,64 @@ class Site2FarsiPlex : SiteHandler {
         val isMovie = url.contains("/movie/")
         val isEpisode = url.contains("/episode/")
 
-        return when {
-            isTvSeries -> {
-                val title = document.selectFirst("div.data h1")?.text()?.trim() ?: return null
-                val poster = fixUrlNull(document.selectFirst("div.poster img")?.attr("src"))
-                val plot = document.selectFirst("div.contenido p")?.text()?.trim()
-                val episodes = mutableListOf<Episode>()
+        return with(api) {
+            when {
+                isTvSeries -> {
+                    val title = document.selectFirst("div.data h1")?.text()?.trim() ?: return null
+                    val poster = fixUrlNull(document.selectFirst("div.poster img")?.attr("src"))
+                    val plot = document.selectFirst("div.contenido p")?.text()?.trim()
+                    val episodes = mutableListOf<Episode>()
 
-                document.select("#seasons .se-c").forEach { seasonElement ->
-                    val seasonNumber = seasonElement.selectFirst(".se-t")?.text()?.toIntOrNull() ?: return@forEach
-                    seasonElement.select("ul.episodios li").forEach { episodeElement ->
-                        val epNumber = episodeElement.selectFirst(".numerando")?.text()
-                            ?.substringAfter("-")?.trim()?.toIntOrNull() ?: return@forEach
-                        val epTitle = episodeElement.selectFirst(".episodiotitle a")?.text() ?: return@forEach
-                        val epLink = fixUrl(episodeElement.selectFirst(".episodiotitle a")?.attr("href") ?: return@forEach)
+                    document.select("#seasons .se-c").forEach { seasonElement ->
+                        val seasonNumber = seasonElement.selectFirst(".se-t")?.text()?.toIntOrNull() ?: return@forEach
+                        seasonElement.select("ul.episodios li").forEach { episodeElement ->
+                            val epNumber = episodeElement.selectFirst(".numerando")?.text()
+                                ?.substringAfter("-")?.trim()?.toIntOrNull() ?: return@forEach
+                            val epTitle = episodeElement.selectFirst(".episodiotitle a")?.text() ?: return@forEach
+                            val epLink = fixUrl(episodeElement.selectFirst(".episodiotitle a")?.attr("href") ?: return@forEach)
 
-                        episodes.add(newEpisode(epLink) {
-                            name = epTitle
-                            season = seasonNumber
-                            episode = epNumber
-                        })
+                            episodes.add(newEpisode(epLink) {
+                                name = epTitle
+                                season = seasonNumber
+                                episode = epNumber
+                            })
+                        }
+                    }
+
+                    newTvSeriesLoadResponse(title, url, TvType.TvSeries, episodes) {
+                        this.posterUrl = poster
+                        this.plot = plot
                     }
                 }
+                isMovie -> {
+                    val title = document.selectFirst("div.data h1")?.text()?.trim() ?: return null
+                    val poster = fixUrlNull(document.selectFirst("div.playbox img.cover")?.attr("src"))
+                    val plot = document.selectFirst("div#info div.wp-content p")?.text()?.trim()
 
-                newTvSeriesLoadResponse(title, url, TvType.TvSeries, episodes) {
-                    this.posterUrl = poster
-                    this.plot = plot
+                    newMovieLoadResponse(title, url, TvType.Movie, url) {
+                        this.posterUrl = poster
+                        this.plot = plot
+                    }
                 }
-            }
-            isMovie -> {
-                val title = document.selectFirst("div.data h1")?.text()?.trim() ?: return null
-                val poster = fixUrlNull(document.selectFirst("div.playbox img.cover")?.attr("src"))
-                val plot = document.selectFirst("div#info div.wp-content p")?.text()?.trim()
+                isEpisode -> {
+                    val title = document.selectFirst("div#info h2")?.text()?.trim() ?: return null
+                    val poster = fixUrlNull(document.selectFirst("#fakeplayer .playbox img.cover")?.attr("src"))
+                    val plot = document.selectFirst("div#info div.wp-content p")?.text()?.trim()
 
-                newMovieLoadResponse(title, url, TvType.Movie, url) {
-                    this.posterUrl = poster
-                    this.plot = plot
+                    newMovieLoadResponse(title, url, TvType.Movie, url) {
+                        this.posterUrl = poster
+                        this.plot = plot
+                    }
                 }
-            }
-            isEpisode -> {
-                val title = document.selectFirst("div#info h2")?.text()?.trim() ?: return null
-                val poster = fixUrlNull(document.selectFirst("#fakeplayer .playbox img.cover")?.attr("src"))
-                val plot = document.selectFirst("div#info div.wp-content p")?.text()?.trim()
+                else -> {
+                    val title = document.selectFirst("div.data h2")?.text()?.trim() ?: return null
+                    val poster = fixUrlNull(document.selectFirst("meta[property=og:image]")?.attr("content"))
+                    val plot = document.selectFirst("div#info div.wp-content p")?.text()?.trim()
 
-                newMovieLoadResponse(title, url, TvType.Movie, url) {
-                    this.posterUrl = poster
-                    this.plot = plot
-                }
-            }
-            else -> {
-                val title = document.selectFirst("div.data h2")?.text()?.trim() ?: return null
-                val poster = fixUrlNull(document.selectFirst("meta[property=og:image]")?.attr("content"))
-                val plot = document.selectFirst("div#info div.wp-content p")?.text()?.trim()
-
-                newMovieLoadResponse(title, url, TvType.Movie, url) {
-                    this.posterUrl = poster
-                    this.plot = plot
+                    newMovieLoadResponse(title, url, TvType.Movie, url) {
+                        this.posterUrl = poster
+                        this.plot = plot
+                    }
                 }
             }
         }

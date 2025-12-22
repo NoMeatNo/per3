@@ -12,7 +12,7 @@ import org.jsoup.nodes.Element
  * Site 4: IranTamasha (irantamasha.com)
  * Handles TV series from IranTamasha.
  */
-class Site4IranTamasha : SiteHandler {
+class Site4IranTamasha(override val api: MainAPI) : SiteHandler {
     override val siteUrl = "https://www.irantamasha.com"
     override val siteName = "IranTamasha"
     
@@ -27,8 +27,10 @@ class Site4IranTamasha : SiteHandler {
         val href = element.selectFirst("h3.entry-title a")?.attr("href")?.let { fixUrl(it) } ?: return null
         val posterUrl = (element.selectFirst("div.blog-pic img")?.attr("src")?.trim() 
             ?: element.selectFirst("div.blog-pic img")?.attr("data-src")?.trim())?.let { fixUrlNull(it) }
-        return newTvSeriesSearchResponse(title, href, TvType.TvSeries) {
-            this.posterUrl = posterUrl
+        return with(api) {
+            newTvSeriesSearchResponse(title, href, TvType.TvSeries) {
+                this.posterUrl = posterUrl
+            }
         }
     }
     
@@ -50,33 +52,35 @@ class Site4IranTamasha : SiteHandler {
         // Check if it is a series page (list of episodes)
         val episodeElements = document.select("article.post-item")
         
-        return if (episodeElements.isNotEmpty() && !url.contains("-0") && !url.contains("-1")) {
-            // Likely a series page listing episodes
-            val episodes = episodeElements.mapNotNull {
-                val epTitle = it.selectFirst("h3.entry-title a")?.text()?.trim() ?: return@mapNotNull null
-                val epUrl = fixUrl(it.selectFirst("h3.entry-title a")?.attr("href") ?: return@mapNotNull null)
-                val epPoster = fixUrlNull(it.selectFirst("img")?.attr("src"))
-                
-                // Try to extract episode number from title (e.g. "Close Friend – 02")
-                val epNumber = Regex("""\d+$""").find(epTitle)?.value?.toIntOrNull() 
-                    ?: Regex(""" (\d+)""").findAll(epTitle).lastOrNull()?.value?.trim()?.toIntOrNull() ?: 0
+        return with(api) {
+            if (episodeElements.isNotEmpty() && !url.contains("-0") && !url.contains("-1")) {
+                // Likely a series page listing episodes
+                val episodes = episodeElements.mapNotNull {
+                    val epTitle = it.selectFirst("h3.entry-title a")?.text()?.trim() ?: return@mapNotNull null
+                    val epUrl = fixUrl(it.selectFirst("h3.entry-title a")?.attr("href") ?: return@mapNotNull null)
+                    val epPoster = fixUrlNull(it.selectFirst("img")?.attr("src"))
+                    
+                    // Try to extract episode number from title (e.g. "Close Friend – 02")
+                    val epNumber = Regex("""\d+$""").find(epTitle)?.value?.toIntOrNull() 
+                        ?: Regex(""" (\d+)""").findAll(epTitle).lastOrNull()?.value?.trim()?.toIntOrNull() ?: 0
 
-                newEpisode(epUrl) {
-                    name = epTitle
-                    episode = epNumber
-                    posterUrl = epPoster
+                    newEpisode(epUrl) {
+                        name = epTitle
+                        episode = epNumber
+                        posterUrl = epPoster
+                    }
+                }.reversed() // Usually listed newest first
+
+                newTvSeriesLoadResponse(title, url, TvType.TvSeries, episodes) {
+                    this.posterUrl = poster
+                    this.plot = plot
                 }
-            }.reversed() // Usually listed newest first
-
-            newTvSeriesLoadResponse(title, url, TvType.TvSeries, episodes) {
-                this.posterUrl = poster
-                this.plot = plot
-            }
-        } else {
-            // Likely a single episode or movie page
-            newMovieLoadResponse(title, url, TvType.Movie, url) {
-                this.posterUrl = poster
-                this.plot = plot
+            } else {
+                // Likely a single episode or movie page
+                newMovieLoadResponse(title, url, TvType.Movie, url) {
+                    this.posterUrl = poster
+                    this.plot = plot
+                }
             }
         }
     }
