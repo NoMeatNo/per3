@@ -807,7 +807,7 @@ class FarsiFlixMegaProvider : MainAPI() {
             // Look for iframes
             document.select("iframe").forEach { iframe ->
                 val src = iframe.attr("src")
-                if (src.contains("ok.ru") || src.contains("vk.com") || src.contains("closeload") || src.contains("youtube")) {
+                if (src.contains("ok.ru") || src.contains("vk.com") || src.contains("vkvideo.ru") || src.contains("closeload") || src.contains("youtube")) {
                     loadExtractor(src, data, subtitleCallback, callback)
                     foundLinks++
                 }
@@ -824,8 +824,31 @@ class FarsiFlixMegaProvider : MainAPI() {
                          serverDoc.select("iframe").forEach { iframe ->
                             val src = iframe.attr("src")
                             if (src.isNotBlank()) {
-                                loadExtractor(src, data, subtitleCallback, callback)
-                                foundLinks++
+                                // Handle goodstream.one directly
+                                if (src.contains("goodstream.one")) {
+                                    try {
+                                        val embedHtml = app.get(src, headers = mapOf("Referer" to serverUrl)).text
+                                        // Extract file URL from JWPlayer sources: [{file:"https://...m3u8?..."}]
+                                        val fileRegex = Regex("""file\s*:\s*["']([^"']+)["']""")
+                                        fileRegex.find(embedHtml)?.groupValues?.get(1)?.let { m3u8Url ->
+                                            callback.invoke(
+                                                newExtractorLink(
+                                                    source = "GoodStream",
+                                                    name = "GoodStream - HLS",
+                                                    url = m3u8Url
+                                                ).apply {
+                                                    this.quality = Qualities.Unknown.value
+                                                    this.referer = src
+                                                }
+                                            )
+                                            foundLinks++
+                                        }
+                                    } catch (_: Exception) {}
+                                } else {
+                                    // Fallback to CloudStream's built-in extractors
+                                    loadExtractor(src, data, subtitleCallback, callback)
+                                    foundLinks++
+                                }
                             }
                         }
                     } catch (_: Exception) {}
