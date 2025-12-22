@@ -516,30 +516,41 @@ class FarsiFlixMegaProvider : MainAPI() {
             }
         }
         
-        val title = document.selectFirst("h1.entry-title, h1.pciwgas-title, h1.pciw-title, h1")?.text()?.trim() ?: return null
-        val poster = fixUrlNull(document.selectFirst("meta[property=og:image]")?.attr("content") ?: 
-                              document.selectFirst("img.pciwgas-img, img.pciw-img")?.attr("src"))
-        val description = document.selectFirst("div.entry-content p, div.pciwgas-desc p, div.pciw-desc p")?.text()?.trim()
+        // For category pages, title might be in page-title or extracted from category name
+        val title = document.selectFirst("h1.page-title")?.text()?.trim() 
+            ?: document.selectFirst("h1.entry-title, h1.pciwgas-title, h1")?.text()?.trim() 
+            ?: url.substringAfter("/category/").substringBefore("/").replace("-", " ").replaceFirstChar { it.uppercaseChar() }
+        val poster = fixUrlNull(document.selectFirst("meta[property=og:image]")?.attr("content"))
+        val description = document.selectFirst("div.entry-content p, div.pciwgas-desc p")?.text()?.trim()
         
-        // Check if this is a category page (series episodes list)
-        val categoryEpisodes = document.select("article.post-item")
+        // Check if this is a category page (series episodes list) - use both article.post and article.post-item
+        val categoryEpisodes = document.select("article.post-item, article.post")
         if (categoryEpisodes.isNotEmpty()) {
             val episodes = categoryEpisodes.mapNotNull {
-                // Episode link is in the post title
-                val epTitleElement = it.selectFirst(".post-title h2 a, .entry-title a")
+                // Episode link/title is in h2.entry-title a (as shown in user's HTML)
+                val epTitleElement = it.selectFirst("h2.entry-title a") 
+                    ?: it.selectFirst(".post-title h2 a")
+                    ?: it.selectFirst(".image_wrapper a")
                 val epTitle = epTitleElement?.text()?.trim() ?: return@mapNotNull null
                 val epUrl = fixUrl(epTitleElement.attr("href"))
                 val epPoster = fixUrlNull(it.selectFirst(".image_wrapper img")?.attr("src"))
                 
+                // Try to extract episode number from title (e.g., "Hezaro Yek Shab – Episode 3")
+                val epNumber = Regex("""Episode\s*(\d+)""", RegexOption.IGNORE_CASE).find(epTitle)?.groupValues?.get(1)?.toIntOrNull()
+                    ?: Regex("""\d+$""").find(epTitle)?.value?.toIntOrNull()
+                
                 newEpisode(epUrl) {
                     name = epTitle
+                    episode = epNumber
                     posterUrl = epPoster
                 }
             }
             
-            return newTvSeriesLoadResponse(title, url, TvType.TvSeries, episodes) {
-                this.posterUrl = poster
-                this.plot = description
+            if (episodes.isNotEmpty()) {
+                return newTvSeriesLoadResponse(title, url, TvType.TvSeries, episodes) {
+                    this.posterUrl = poster ?: episodes.firstOrNull()?.posterUrl
+                    this.plot = description
+                }
             }
         }
         
