@@ -44,6 +44,9 @@ class FarsiFlixMegaProvider : MainAPI() {
 
         const val SITE4_URL = "https://www.irantamasha.com"
         const val SITE4_NAME = "IranTamasha"
+
+        const val SITE5_URL = "https://persianhive.com"
+        const val SITE5_NAME = "PersianHive"
     }
 
     override val mainPage = mainPageOf(
@@ -60,6 +63,9 @@ class FarsiFlixMegaProvider : MainAPI() {
         "$SITE3_URL/episodes-15/" to "Latest Episodes - $SITE3_NAME",
         // Site 4 - IranTamasha
         "$SITE4_URL/series/" to "Series - $SITE4_NAME",
+        // Site 5 - PersianHive
+        "$SITE5_URL/all-farsi-movies/" to "Movies - $SITE5_NAME",
+        "$SITE5_URL/all-farsi-series/" to "Series - $SITE5_NAME",
     )
 
     override suspend fun getMainPage(
@@ -75,6 +81,10 @@ class FarsiFlixMegaProvider : MainAPI() {
             // Site 4 selectors
             request.data.contains(SITE4_URL) -> {
                  document.select("article.post-item").mapNotNull { it.toSite4SearchResult() }
+            }
+            // Site 5 selectors
+            request.data.contains(SITE5_URL) -> {
+                document.select("div.pciwgas-post-cat-inner").mapNotNull { it.toSite5SearchResult() }
             }
             // Site 2 & 3 selectors (they use similar structure)
             else -> {
@@ -124,6 +134,23 @@ class FarsiFlixMegaProvider : MainAPI() {
         }
     }
 
+    private fun Element.toSite5SearchResult(): SearchResponse? {
+        val title = this.selectFirst("div.pciwgas-title a, div.pciw-title a")?.text()?.trim() ?: return null
+        val href = fixUrl(this.selectFirst("a.pciwgas-hover, a.pciw-hover")?.attr("href") ?: return null)
+        val posterUrl = fixUrlNull(this.selectFirst("img.pciwgas-img, img.pciw-img")?.attr("src"))
+        val type = if (href.contains("movie") || href.contains("film")) TvType.Movie else TvType.TvSeries
+
+        return if (type == TvType.Movie) {
+            newMovieSearchResponse(title, href, TvType.Movie) {
+                this.posterUrl = posterUrl
+            }
+        } else {
+            newTvSeriesSearchResponse(title, href, TvType.TvSeries) {
+                this.posterUrl = posterUrl
+            }
+        }
+    }
+
     override suspend fun search(query: String): List<SearchResponse>? {
         val fixedQuery = query.replace(" ", "+")
         val allResults = mutableListOf<SearchResponse>()
@@ -166,6 +193,16 @@ class FarsiFlixMegaProvider : MainAPI() {
                 } catch (e: Exception) { emptyList() }
             }
             allResults.addAll(site4Deferred.await())
+
+            // Site 5 - PersianHive (behind Cloudflare, might need special handling)
+            val site5Deferred = async {
+                try {
+                    app.get("$SITE5_URL/?s=$fixedQuery")
+                        .document.select("div.pciwgas-post-cat-inner")
+                        .mapNotNull { it.toSite5SearchResult() }
+                } catch (e: Exception) { emptyList() }
+            }
+            allResults.addAll(site5Deferred.await())
         }
 
         return allResults.sortedBy { 
@@ -188,6 +225,8 @@ class FarsiFlixMegaProvider : MainAPI() {
             url.contains(SITE3_URL) -> loadSite3(url, document)
             // Site 4 - IranTamasha
             url.contains(SITE4_URL) -> loadSite4(url, document)
+            // Site 5 - PersianHive
+            url.contains(SITE5_URL) -> loadSite5(url, document)
             else -> null
         }
     }
@@ -406,6 +445,34 @@ class FarsiFlixMegaProvider : MainAPI() {
         }
     }
 
+    private suspend fun loadSite5(url: String, document: Document): LoadResponse? {
+        val title = document.selectFirst("h1.pciwgas-title, h1.pciw-title, h1.entry-title, h1")?.text()?.trim() ?: return null
+        val poster = fixUrlNull(document.selectFirst("img.pciwgas-img, img.pciw-img")?.attr("src") ?: 
+                              document.selectFirst("meta[property=og:image]")?.attr("content"))
+        val description = document.selectFirst("div.pciwgas-desc p, div.pciw-desc p, div.entry-content p")?.text()?.trim()
+        
+        val episodeElements = document.select("article.post-item, div.pciwgas-post-cat-inner")
+        val episodes = episodeElements.mapNotNull {
+             val epTitle = it.selectFirst("a.pciwgas-hover, h2 a, h3 a")?.text() ?: return@mapNotNull null
+             val epUrl = fixUrl(it.selectFirst("a.pciwgas-hover, a")?.attr("href") ?: return@mapNotNull null)
+             newEpisode(epUrl) {
+                 name = epTitle
+             }
+        }
+
+        return if (episodes.isNotEmpty()) {
+            newTvSeriesLoadResponse(title, url, TvType.TvSeries, episodes) {
+                this.posterUrl = poster
+                this.plot = description
+            }
+        } else {
+             newMovieLoadResponse(title, url, TvType.Movie, url) {
+                this.posterUrl = poster
+                this.plot = description
+            }
+        }
+    }
+
     override suspend fun loadLinks(
         data: String,
         isCasting: Boolean,
@@ -427,6 +494,9 @@ class FarsiFlixMegaProvider : MainAPI() {
             }
             data.contains(SITE4_URL) -> {
                 if (loadLinksSite4(data, subtitleCallback, callback)) foundLinks = true
+            }
+            data.contains(SITE5_URL) -> {
+                if (loadLinksSite5(data, subtitleCallback, callback)) foundLinks = true
             }
         }
 
@@ -934,6 +1004,54 @@ class FarsiFlixMegaProvider : MainAPI() {
 
             foundLinks > 0
         } catch (_: Exception) {
+            false
+        }
+    }
+
+    // Site 5 link extraction (PersianHive)
+    private suspend fun loadLinksSite5(
+        data: String,
+        subtitleCallback: (SubtitleFile) -> Unit,
+        callback: (ExtractorLink) -> Unit
+    ): Boolean {
+        return try {
+            val document = app.get(data).document
+            var foundLinks = false
+            
+            // Check for iframes
+            document.select("iframe").forEach { iframe ->
+                val src = iframe.attr("src")
+                if (src.isNotBlank()) {
+                    loadExtractor(src, data, subtitleCallback, callback)
+                    foundLinks = true
+                }
+            }
+
+            // Check for PlayerJS source in scripts
+            document.select("script").forEach { script ->
+                val scriptContent = script.data()
+                if (scriptContent.contains("file:")) {
+                    val fileRegex = Regex("""file\s*:\s*["']([^"']+)["']""")
+                    fileRegex.findAll(scriptContent).forEach { match ->
+                        val videoUrl = match.groupValues[1]
+                        if (videoUrl.endsWith(".m3u8") || videoUrl.endsWith(".mp4")) {
+                            callback.invoke(
+                                newExtractorLink(
+                                    source = SITE5_NAME,
+                                    name = "$SITE5_NAME - Stream",
+                                    url = videoUrl
+                                ).apply {
+                                    this.quality = Qualities.Unknown.value
+                                    this.referer = data
+                                }
+                            )
+                            foundLinks = true
+                        }
+                    }
+                }
+            }
+            foundLinks
+        } catch (e: Exception) {
             false
         }
     }
