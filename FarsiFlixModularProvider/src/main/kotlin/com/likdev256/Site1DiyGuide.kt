@@ -138,16 +138,16 @@ class Site1DiyGuide(override val api: MainAPI) : SiteHandler {
         // Handle Live TV stream extraction
         if (data.contains("/live-tv/")) {
             try {
-                val document = app.get(data).document
+                val pageHtml = app.get(data).text
                 
-                // Extract from video#videojs-video element (HLS stream)
-                val videoSrc = document.selectFirst("video#videojs-video")?.attr("src")
-                if (!videoSrc.isNullOrBlank()) {
+                // 1. Extract from videojs sources array in script: sources: [{src: 'url', type: ''}]
+                val sourcesRegex = Regex("""sources:\s*\[\s*\{\s*src:\s*['"]([^'"]+)['"]""")
+                sourcesRegex.find(pageHtml)?.groupValues?.get(1)?.let { streamUrl ->
                     callback.invoke(
                         newExtractorLink(
                             source = siteName,
                             name = "$siteName - Live",
-                            url = videoSrc
+                            url = streamUrl
                         ).apply {
                             this.quality = Qualities.Unknown.value
                             this.referer = data
@@ -156,27 +156,32 @@ class Site1DiyGuide(override val api: MainAPI) : SiteHandler {
                     foundLinks = true
                 }
                 
-                // Check for alternative HD/HD2/HD3 streams via URL keys
-                document.select(".btn-group a[href*='?key=']").forEach { btn ->
-                    val altUrl = fixUrl(btn.attr("href"))
-                    val label = btn.text().trim()
-                    try {
-                        val altDoc = app.get(altUrl).document
-                        val altVideoSrc = altDoc.selectFirst("video#videojs-video")?.attr("src")
-                        if (!altVideoSrc.isNullOrBlank() && altVideoSrc != videoSrc) {
-                            callback.invoke(
-                                newExtractorLink(
-                                    source = siteName,
-                                    name = "$siteName - $label",
-                                    url = altVideoSrc
-                                ).apply {
-                                    this.quality = Qualities.Unknown.value
-                                    this.referer = altUrl
-                                }
-                            )
-                            foundLinks = true
-                        }
-                    } catch (_: Exception) {}
+                // 2. Fallback: Extract from file: 'url' pattern
+                if (!foundLinks) {
+                    val fileRegex = Regex("""file:\s*['"]([^'"]+\.m3u8[^'"]*|[^'"]+\.mp4[^'"]*)['"]""")
+                    fileRegex.find(pageHtml)?.groupValues?.get(1)?.let { streamUrl ->
+                        callback.invoke(
+                            newExtractorLink(
+                                source = siteName,
+                                name = "$siteName - Live",
+                                url = streamUrl
+                            ).apply {
+                                this.quality = Qualities.Unknown.value
+                                this.referer = data
+                            }
+                        )
+                        foundLinks = true
+                    }
+                }
+                
+                // 3. Check for YouTube embeds
+                val document = app.get(data).document
+                document.select("iframe").forEach { iframe ->
+                    val src = iframe.attr("src")
+                    if (src.contains("youtube.com") || src.contains("youtu.be")) {
+                        loadExtractor(src, data, subtitleCallback, callback)
+                        foundLinks = true
+                    }
                 }
                 
                 return foundLinks

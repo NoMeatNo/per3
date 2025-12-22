@@ -94,17 +94,25 @@ class Site4IranTamasha(override val api: MainAPI) : SiteHandler {
             val document = app.get(data).document
             var foundLinks = 0
 
-            // 1. Extract from current page - Look for iframes
+            // 1. Extract from current page - Look for iframes directly
             document.select("iframe").forEach { iframe ->
                 val src = iframe.attr("src")
-                if (src.contains("ok.ru") || src.contains("vk.com") || src.contains("vkvideo.ru") || 
-                    src.contains("closeload") || src.contains("youtube") || src.contains("dailymotion")) {
-                    loadExtractor(src, data, subtitleCallback, callback)
-                    foundLinks++
+                if (src.isNotBlank()) {
+                    when {
+                        src.contains("ok.ru") || src.contains("vk.com") || src.contains("vkvideo.ru") || 
+                        src.contains("closeload") || src.contains("youtube") || src.contains("dailymotion") -> {
+                            loadExtractor(src, data, subtitleCallback, callback)
+                            foundLinks++
+                        }
+                        src.contains("evp_play") -> {
+                            // Handle evp_play locally
+                            if (extractEvpLinks(src, data, callback)) foundLinks++
+                        }
+                    }
                 }
             }
             
-            // Look for Multi-Links using class "series-item" (Server 1, Link 1, Original Video, etc.)
+            // 2. Look for Multi-Links using class "series-item" (Server 1, Server 2, etc.)
             val serverLinks = document.select("a.series-item")
             
             serverLinks.forEach { link ->
@@ -115,30 +123,35 @@ class Site4IranTamasha(override val api: MainAPI) : SiteHandler {
                         serverDoc.select("iframe").forEach { iframe ->
                             val src = iframe.attr("src")
                             if (src.isNotBlank()) {
-                                // Handle goodstream.one directly
-                                if (src.contains("goodstream.one")) {
-                                    try {
-                                        val embedHtml = app.get(src, headers = mapOf("Referer" to serverUrl)).text
-                                        // Extract file URL from JWPlayer sources: [{file:"https://...m3u8?..."}]
-                                        val fileRegex = Regex("""file\s*:\s*["']([^"']+)["']""")
-                                        fileRegex.find(embedHtml)?.groupValues?.get(1)?.let { m3u8Url ->
-                                            callback.invoke(
-                                                newExtractorLink(
-                                                    source = "GoodStream",
-                                                    name = "GoodStream - HLS",
-                                                    url = m3u8Url
-                                                ).apply {
-                                                    this.quality = Qualities.Unknown.value
-                                                    this.referer = src
-                                                }
-                                            )
-                                            foundLinks++
-                                        }
-                                    } catch (_: Exception) {}
-                                } else {
-                                    // Fallback to CloudStream's built-in extractors
-                                    loadExtractor(src, data, subtitleCallback, callback)
-                                    foundLinks++
+                                when {
+                                    src.contains("goodstream.one") -> {
+                                        try {
+                                            val embedHtml = app.get(src, headers = mapOf("Referer" to serverUrl)).text
+                                            // Extract file URL from JWPlayer sources: [{file:"https://...m3u8?..."}]
+                                            val fileRegex = Regex("""file\s*:\s*["']([^"']+)["']""")
+                                            fileRegex.find(embedHtml)?.groupValues?.get(1)?.let { m3u8Url ->
+                                                callback.invoke(
+                                                    newExtractorLink(
+                                                        source = "GoodStream",
+                                                        name = "GoodStream - HLS",
+                                                        url = m3u8Url
+                                                    ).apply {
+                                                        this.quality = Qualities.Unknown.value
+                                                        this.referer = src
+                                                    }
+                                                )
+                                                foundLinks++
+                                            }
+                                        } catch (_: Exception) {}
+                                    }
+                                    src.contains("evp_play") -> {
+                                        if (extractEvpLinks(src, serverUrl, callback)) foundLinks++
+                                    }
+                                    else -> {
+                                        // Fallback to CloudStream's built-in extractors (handles Dailymotion, VK, etc.)
+                                        loadExtractor(src, data, subtitleCallback, callback)
+                                        foundLinks++
+                                    }
                                 }
                             }
                         }
@@ -146,7 +159,7 @@ class Site4IranTamasha(override val api: MainAPI) : SiteHandler {
                 }
             }
 
-            // Look for video elements or scripts
+            // 3. Look for video elements or scripts
             document.select("video source").forEach { source ->
                 val src = source.attr("src")
                 if (src.isNotBlank()) {
@@ -163,60 +176,69 @@ class Site4IranTamasha(override val api: MainAPI) : SiteHandler {
                 }
             }
 
-            // Look for evp_play iframe (local player)
-            document.select("iframe[src*='evp_play']").forEach { iframe ->
-                val src = iframe.attr("src")
-                val fullIframeUrl = fixUrl(src)
+            foundLinks > 0
+        } catch (_: Exception) {
+            false
+        }
+    }
+    
+    private suspend fun extractEvpLinks(
+        iframeSrc: String,
+        refererUrl: String,
+        callback: (ExtractorLink) -> Unit
+    ): Boolean {
+        val fullIframeUrl = fixUrl(iframeSrc)
+        
+        return try {
+            // 1. Fetch the player page with Referer
+            val playerDoc = app.get(fullIframeUrl, headers = mapOf("Referer" to refererUrl)).document
+            
+            // 2. Extract CONFIG data from script
+            val scriptContent = playerDoc.select("script").find { it.data().contains("const CONFIG =") }?.data()
+            
+            if (scriptContent != null) {
+                val ajaxUrl = Regex("""ajax_url['""]?\s*:\s*['"]([^'"]+)['"]""").find(scriptContent)?.groupValues?.get(1)?.replace("\\/", "/")
+                val encryptedId = Regex("""encrypted_id['""]?\s*:\s*['"]([^'"]+)['"]""").find(scriptContent)?.groupValues?.get(1)
+                val nonce = Regex("""nonce['""]?\s*:\s*['"]([^'"]+)['"]""").find(scriptContent)?.groupValues?.get(1)
                 
-                try {
-                    // 1. Fetch the player page with Referer
-                    val playerDoc = app.get(fullIframeUrl, headers = mapOf("Referer" to data)).document
+                if (ajaxUrl != null && encryptedId != null && nonce != null) {
+                    // 3. Make POST request
+                    val postData = mapOf(
+                        "action" to "evp_get_video_url",
+                        "encrypted_id" to encryptedId,
+                        "nonce" to nonce
+                    )
                     
-                    // 2. Extract CONFIG data
-                    val scriptContent = playerDoc.select("script").find { it.data().contains("const CONFIG =") }?.data()
+                    val jsonResponse = app.post(ajaxUrl, data = postData, headers = mapOf("Referer" to fullIframeUrl)).text
                     
-                    if (scriptContent != null) {
-                        val ajaxUrl = Regex("""ajax_url['""]?\s*:\s*['"]([^'"]+)['"]""").find(scriptContent)?.groupValues?.get(1)?.replace("\\/", "/")
-                        val encryptedId = Regex("""encrypted_id['""]?\s*:\s*['"]([^'"]+)['"]""").find(scriptContent)?.groupValues?.get(1)
-                        val nonce = Regex("""nonce['""]?\s*:\s*['"]([^'"]+)['"]""").find(scriptContent)?.groupValues?.get(1)
-                        
-                        if (ajaxUrl != null && encryptedId != null && nonce != null) {
-                            // 3. Make POST request
-                            val postData = mapOf(
-                                "action" to "evp_get_video_url",
-                                "encrypted_id" to encryptedId,
-                                "nonce" to nonce
-                            )
+                    // 4. Extract URLs from JSON - the API returns {"servers":["url1", "url2", ...]}
+                    val serversBlock = Regex(""""servers"\s*:\s*\[(.*?)\]""").find(jsonResponse)?.groupValues?.get(1)
+                    
+                    if (serversBlock != null) {
+                        var found = false
+                        val urlMatches = Regex(""""([^"]+)"""").findAll(serversBlock)
+                        urlMatches.forEach { match ->
+                            val videoUrl = match.groupValues[1].replace("\\/", "/")
                             
-                            val jsonResponse = app.post(ajaxUrl, data = postData, headers = mapOf("Referer" to fullIframeUrl)).text
-                            
-                            // 4. Extract URLs from JSON
-                            val serversBlock = Regex(""""servers"\s*:\s*\[(.*?)\]""").find(jsonResponse)?.groupValues?.get(1)
-                            
-                            if (serversBlock != null) {
-                                val urlMatches = Regex(""""([^"]+)"""").findAll(serversBlock)
-                                urlMatches.forEach { match ->
-                                    val videoUrl = match.groupValues[1].replace("\\/", "/")
-                                    
-                                    callback.invoke(
-                                        newExtractorLink(
-                                            source = siteName,
-                                            name = "$siteName - EVP",
-                                            url = videoUrl
-                                        ).apply {
-                                            this.quality = Qualities.Unknown.value
-                                            this.referer = fullIframeUrl
-                                        }
-                                    )
-                                    foundLinks++
-                                }
+                            if (videoUrl.isNotBlank() && (videoUrl.startsWith("http") || videoUrl.contains(".m3u8") || videoUrl.contains(".mp4") || videoUrl.contains(".txt"))) {
+                                callback.invoke(
+                                    newExtractorLink(
+                                        source = siteName,
+                                        name = "$siteName - EVP",
+                                        url = videoUrl
+                                    ).apply {
+                                        this.quality = Qualities.Unknown.value
+                                        this.referer = fullIframeUrl
+                                    }
+                                )
+                                found = true
                             }
                         }
+                        return found
                     }
-                } catch (_: Exception) {}
+                }
             }
-
-            foundLinks > 0
+            false
         } catch (_: Exception) {
             false
         }
