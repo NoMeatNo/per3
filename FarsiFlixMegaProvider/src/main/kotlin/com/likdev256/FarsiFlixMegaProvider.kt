@@ -98,10 +98,15 @@ class FarsiFlixMegaProvider : MainAPI() {
                 // Different selectors for different pages
                 when {
                     request.data.contains("live-tv") -> {
-                        // Live TV page - parse channel buttons
-                        document.select("div.pciwgas-ep-count").mapNotNull { it.toSite5LiveResult() }
+                        // Live TV page - parse channel icons
+                        document.select("div.icon-container").mapNotNull { it.toSite5LiveResult() }
+                    }
+                    request.data.contains("movies") -> {
+                        // Movies page uses article.post-item
+                        document.select("article.post-item").mapNotNull { it.toSite5MovieResult() }
                     }
                     else -> {
+                        // Series page uses pciwgas containers
                         document.select("div.pciwgas-post-cat-inner").mapNotNull { it.toSite5SearchResult() }
                     }
                 }
@@ -155,28 +160,42 @@ class FarsiFlixMegaProvider : MainAPI() {
     }
 
     private fun Element.toSite5SearchResult(): SearchResponse? {
-        val title = this.selectFirst("div.pciwgas-title a, div.pciw-title a")?.text()?.trim() ?: return null
-        val href = fixUrl(this.selectFirst("a.pciwgas-hover, a.pciw-hover")?.attr("href") ?: return null)
+        // Series page - link is in the title, NOT in pciwgas-hover (which only wraps image)
+        val titleElement = this.selectFirst("div.pciwgas-title a, div.pciw-title a")
+        val title = titleElement?.text()?.trim() ?: return null
+        // The link is in the TITLE element, not the image wrapper
+        val href = fixUrl(titleElement.attr("href"))
         val posterUrl = fixUrlNull(this.selectFirst("img.pciwgas-img, img.pciw-img")?.attr("src"))
-        val type = if (href.contains("movie") || href.contains("film")) TvType.Movie else TvType.TvSeries
+        
+        return newTvSeriesSearchResponse(title, href, TvType.TvSeries) {
+            this.posterUrl = posterUrl
+        }
+    }
 
-        return if (type == TvType.Movie) {
-            newMovieSearchResponse(title, href, TvType.Movie) {
-                this.posterUrl = posterUrl
-            }
-        } else {
-            newTvSeriesSearchResponse(title, href, TvType.TvSeries) {
-                this.posterUrl = posterUrl
-            }
+    private fun Element.toSite5MovieResult(): SearchResponse? {
+        // Movies page uses article.post-item structure
+        val titleElement = this.selectFirst(".post-title h2 a, .entry-title a")
+        val title = titleElement?.text()?.trim() ?: return null
+        val href = fixUrl(titleElement.attr("href"))
+        val posterUrl = fixUrlNull(this.selectFirst(".image_wrapper img, .image_frame img")?.attr("src"))
+        
+        return newMovieSearchResponse(title, href, TvType.Movie) {
+            this.posterUrl = posterUrl
         }
     }
 
     private fun Element.toSite5LiveResult(): SearchResponse? {
-        // Live TV parsing - for now return the live-tv page itself as it loads channels dynamically
-        val title = this.text()?.trim() ?: "Live TV"
-        val href = "$SITE5_URL/live-tv/"
+        // Live TV page - icon-container with data-video-id
+        val textElement = this.selectFirst(".icon-text")
+        val title = textElement?.text()?.trim() ?: return null
+        val videoId = this.attr("data-video-id")
+        val posterUrl = fixUrlNull(this.selectFirst("img")?.attr("src"))
+        
+        // Store video-id in URL for later extraction
+        val href = "$SITE5_URL/live-tv/?channel=$videoId"
+        
         return newMovieSearchResponse(title, href, TvType.Live) {
-            this.posterUrl = null
+            this.posterUrl = posterUrl
         }
     }
 
@@ -480,30 +499,46 @@ class FarsiFlixMegaProvider : MainAPI() {
     }
 
     private suspend fun loadSite5(url: String, document: Document): LoadResponse? {
-        val title = document.selectFirst("h1.pciwgas-title, h1.pciw-title, h1.entry-title, h1")?.text()?.trim() ?: return null
-        val poster = fixUrlNull(document.selectFirst("img.pciwgas-img, img.pciw-img")?.attr("src") ?: 
-                              document.selectFirst("meta[property=og:image]")?.attr("content"))
-        val description = document.selectFirst("div.pciwgas-desc p, div.pciw-desc p, div.entry-content p")?.text()?.trim()
-        
-        val episodeElements = document.select("article.post-item, div.pciwgas-post-cat-inner")
-        val episodes = episodeElements.mapNotNull {
-             val epTitle = it.selectFirst("a.pciwgas-hover, h2 a, h3 a")?.text() ?: return@mapNotNull null
-             val epUrl = fixUrl(it.selectFirst("a.pciwgas-hover, a")?.attr("href") ?: return@mapNotNull null)
-             newEpisode(epUrl) {
-                 name = epTitle
-             }
+        // Handle Live TV channel with video ID
+        if (url.contains("live-tv") && url.contains("channel=")) {
+            val channelId = url.substringAfter("channel=").substringBefore("&")
+            val channelName = "Live Channel"
+            return newMovieLoadResponse(channelName, url, TvType.Live, url) {
+                this.posterUrl = null
+            }
         }
-
-        return if (episodes.isNotEmpty()) {
-            newTvSeriesLoadResponse(title, url, TvType.TvSeries, episodes) {
+        
+        val title = document.selectFirst("h1.entry-title, h1.pciwgas-title, h1.pciw-title, h1")?.text()?.trim() ?: return null
+        val poster = fixUrlNull(document.selectFirst("meta[property=og:image]")?.attr("content") ?: 
+                              document.selectFirst("img.pciwgas-img, img.pciw-img")?.attr("src"))
+        val description = document.selectFirst("div.entry-content p, div.pciwgas-desc p, div.pciw-desc p")?.text()?.trim()
+        
+        // Check if this is a category page (series episodes list)
+        val categoryEpisodes = document.select("article.post-item")
+        if (categoryEpisodes.isNotEmpty()) {
+            val episodes = categoryEpisodes.mapNotNull {
+                // Episode link is in the post title
+                val epTitleElement = it.selectFirst(".post-title h2 a, .entry-title a")
+                val epTitle = epTitleElement?.text()?.trim() ?: return@mapNotNull null
+                val epUrl = fixUrl(epTitleElement.attr("href"))
+                val epPoster = fixUrlNull(it.selectFirst(".image_wrapper img")?.attr("src"))
+                
+                newEpisode(epUrl) {
+                    name = epTitle
+                    posterUrl = epPoster
+                }
+            }
+            
+            return newTvSeriesLoadResponse(title, url, TvType.TvSeries, episodes) {
                 this.posterUrl = poster
                 this.plot = description
             }
-        } else {
-             newMovieLoadResponse(title, url, TvType.Movie, url) {
-                this.posterUrl = poster
-                this.plot = description
-            }
+        }
+        
+        // Single movie/episode page
+        return newMovieLoadResponse(title, url, TvType.Movie, url) {
+            this.posterUrl = poster
+            this.plot = description
         }
     }
 
@@ -1049,9 +1084,52 @@ class FarsiFlixMegaProvider : MainAPI() {
         callback: (ExtractorLink) -> Unit
     ): Boolean {
         return try {
-            // Use Cloudflare bypass interceptor
-            val document = app.get(data, interceptor = cfKiller).document
             var foundLinks = false
+            
+            // Handle Live TV channels via AJAX
+            if (data.contains("live-tv") && data.contains("channel=")) {
+                val channelId = data.substringAfter("channel=").substringBefore("&")
+                if (channelId.isNotBlank()) {
+                    // Fetch the live-tv page to get the nonce
+                    val liveTvDoc = app.get("$SITE5_URL/live-tv/", interceptor = cfKiller).document
+                    val nonce = liveTvDoc.selectFirst("div.custom-icon-grid")?.attr("data-nonce") ?: ""
+                    
+                    if (nonce.isNotBlank()) {
+                        // Make AJAX POST request to get video URL
+                        val ajaxResponse = app.post(
+                            "$SITE5_URL/wp-admin/admin-ajax.php",
+                            data = mapOf(
+                                "action" to "custom_icon_grid_get_video_url",
+                                "video_id" to channelId,
+                                "nonce" to nonce
+                            ),
+                            headers = mapOf("Referer" to "$SITE5_URL/live-tv/"),
+                            interceptor = cfKiller
+                        ).text
+                        
+                        // Extract URL from JSON response
+                        val urlRegex = Regex(""""url"\s*:\s*"([^"]+)"""")
+                        urlRegex.find(ajaxResponse)?.groupValues?.get(1)?.let { videoUrl ->
+                            val cleanUrl = videoUrl.replace("\\/", "/")
+                            callback.invoke(
+                                newExtractorLink(
+                                    source = SITE5_NAME,
+                                    name = "$SITE5_NAME - Live",
+                                    url = cleanUrl
+                                ).apply {
+                                    this.quality = Qualities.Unknown.value
+                                    this.referer = "$SITE5_URL/live-tv/"
+                                }
+                            )
+                            foundLinks = true
+                        }
+                    }
+                }
+                return foundLinks
+            }
+            
+            // Use Cloudflare bypass interceptor for regular pages
+            val document = app.get(data, interceptor = cfKiller).document
             
             // Check for iframes
             document.select("iframe").forEach { iframe ->
@@ -1069,7 +1147,7 @@ class FarsiFlixMegaProvider : MainAPI() {
                     val fileRegex = Regex("""file\s*:\s*["']([^"']+)["']""")
                     fileRegex.findAll(scriptContent).forEach { match ->
                         val videoUrl = match.groupValues[1]
-                        if (videoUrl.endsWith(".m3u8") || videoUrl.endsWith(".mp4")) {
+                        if (videoUrl.endsWith(".m3u8") || videoUrl.endsWith(".mp4") || videoUrl.contains("playlist")) {
                             callback.invoke(
                                 newExtractorLink(
                                     source = SITE5_NAME,
