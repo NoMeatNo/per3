@@ -95,31 +95,8 @@ class Site4IranTamasha(override val api: MainAPI) : SiteHandler {
             val document = app.get(data).document
             var foundLinks = 0
 
-            // 1. Extract from current page - Look for iframes directly
-            document.select("iframe").forEach { iframe ->
-                val src = iframe.attr("src")
-                if (src.isNotBlank()) {
-                    when {
-                        src.contains("ok.ru") || src.contains("vk.com") || src.contains("vkvideo.ru") || 
-                        src.contains("closeload") || src.contains("youtube") || src.contains("dailymotion") -> {
-                            // Convert vkvideo.ru to vk.com for better extractor compatibility
-                            val extractorUrl = if (src.contains("vkvideo.ru")) {
-                                src.replace("vkvideo.ru", "vk.com")
-                            } else {
-                                src
-                            }
-                            loadExtractor(extractorUrl, data, subtitleCallback, callback)
-                            foundLinks++
-                        }
-                        src.contains("evp_play") -> {
-                            // Handle evp_play locally
-                            if (extractEvpLinks(src, data, callback)) foundLinks++
-                        }
-                    }
-                }
-            }
-            
-            // 2. Look for Multi-Links using class "series-item" (Server 1, Server 2, etc.)
+            // 1. FIRST: Look for Multi-Links using class "series-item" (Server 1, Server 2, etc.)
+            // Process these first to prioritize alternative sources like Dailymotion
             val serverLinks = document.select("a.series-item")
             
             serverLinks.forEach { link ->
@@ -156,13 +133,43 @@ class Site4IranTamasha(override val api: MainAPI) : SiteHandler {
                                     }
                                     else -> {
                                         // Fallback to CloudStream's built-in extractors (handles Dailymotion, VK, etc.)
-                                        loadExtractor(src, data, subtitleCallback, callback)
-                                        foundLinks++
+                                        try {
+                                            loadExtractor(src, data, subtitleCallback, callback)
+                                            foundLinks++
+                                        } catch (_: Exception) {}
                                     }
                                 }
                             }
                         }
                     } catch (_: Exception) {}
+                }
+            }
+
+            // 2. THEN: Extract from current page - Look for iframes directly
+            document.select("iframe").forEach { iframe ->
+                val src = iframe.attr("src")
+                if (src.isNotBlank()) {
+                    when {
+                        src.contains("ok.ru") || src.contains("vk.com") || src.contains("vkvideo.ru") || 
+                        src.contains("closeload") || src.contains("youtube") || src.contains("dailymotion") -> {
+                            try {
+                                // Convert vkvideo.ru to vk.com for better extractor compatibility
+                                val extractorUrl = if (src.contains("vkvideo.ru")) {
+                                    src.replace("vkvideo.ru", "vk.com")
+                                } else {
+                                    src
+                                }
+                                loadExtractor(extractorUrl, data, subtitleCallback, callback)
+                                foundLinks++
+                            } catch (_: Exception) {
+                                // VK/other extractor failed - continue to try other sources
+                            }
+                        }
+                        src.contains("evp_play") -> {
+                            // Handle evp_play locally
+                            if (extractEvpLinks(src, data, callback)) foundLinks++
+                        }
+                    }
                 }
             }
 
