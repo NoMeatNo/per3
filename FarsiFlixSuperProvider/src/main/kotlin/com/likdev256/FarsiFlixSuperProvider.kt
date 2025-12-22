@@ -330,12 +330,10 @@ class FarsiFlixSuperProvider : MainAPI() {
         // Merge duplicates
         val mergedContent = mergeContentByTitle(allContent)
         
-        // Convert to SearchResponse with encoded source data
+        // Convert to SearchResponse - use FIRST source URL as the main URL
         val home = mergedContent.map { content ->
-            // Encode sources as: "siteName::url|siteName::url|TITLE::title"
-            val combinedData = content.sources.joinToString("|") { "${it.first}::${it.second}" } + 
-                "|TITLE::${content.title}"
-            newMovieSearchResponse(content.title, combinedData, content.type) {
+            val firstSource = content.sources.first()
+            newMovieSearchResponse(content.title, firstSource.second, content.type) {
                 this.posterUrl = content.posterUrl
             }
         }
@@ -420,10 +418,10 @@ class FarsiFlixSuperProvider : MainAPI() {
         // Merge duplicates
         val mergedContent = mergeContentByTitle(allContent)
         
+        // Use FIRST source URL as the main URL
         return mergedContent.map { content ->
-            val combinedData = content.sources.joinToString("|") { "${it.first}::${it.second}" } +
-                "|TITLE::${content.title}"
-            newMovieSearchResponse(content.title, combinedData, content.type) {
+            val firstSource = content.sources.first()
+            newMovieSearchResponse(content.title, firstSource.second, content.type) {
                 this.posterUrl = content.posterUrl
             }
         }.sortedBy { 
@@ -435,42 +433,24 @@ class FarsiFlixSuperProvider : MainAPI() {
     }
 
     override suspend fun load(url: String): LoadResponse? {
-        // Parse encoded data: "siteName::url|siteName::url|TITLE::title"
-        val parts = url.split("|")
-        var title: String? = null
-        val sources = mutableListOf<Pair<String, String>>()
-        
-        for (part in parts) {
-            val split = part.split("::", limit = 2)
-            if (split.size == 2) {
-                when (split[0]) {
-                    "TITLE" -> title = split[1]
-                    else -> sources.add(split[0] to split[1])
-                }
-            }
-        }
-        
-        if (sources.isEmpty()) return null
-        
-        // Use the first source to load details
-        val (siteName, sourceUrl) = sources.first()
-        val handler = siteHandlers.find { it.siteName == siteName } ?: return null
+        // URL is now a real URL - detect which site it's from
+        val handler = siteHandlers.find { it.handles(url) } ?: return null
         
         val document = if (handler is Site5PersianHive) {
-            app.get(sourceUrl, interceptor = site5.cfKiller).document
+            app.get(url, interceptor = site5.cfKiller).document
         } else {
-            app.get(sourceUrl).document
+            app.get(url).document
         }
         
-        val loadResponse = handler.load(sourceUrl, document) ?: return null
+        val loadResponse = handler.load(url, document) ?: return null
         
-        // Re-encode data with all sources + title + slug for cross-site search
-        val slug = extractSlugKeywords(sourceUrl)
-        val enhancedData = sources.joinToString("|") { "${it.first}::${it.second}" } +
-            "|TITLE::${title ?: loadResponse.name}" +
-            "|SLUG::$slug"
+        // Extract title and slug for cross-site search during loadLinks
+        val title = loadResponse.name
+        val slug = extractSlugKeywords(url)
         
-        // Modify the load response to use our enhanced data
+        // Encode data for loadLinks: "siteName::url|TITLE::title|SLUG::slug"
+        val enhancedData = "${handler.siteName}::$url|TITLE::$title|SLUG::$slug"
+        
         return when (loadResponse) {
             is MovieLoadResponse -> {
                 newMovieLoadResponse(loadResponse.name, url, loadResponse.type, enhancedData) {
@@ -479,10 +459,10 @@ class FarsiFlixSuperProvider : MainAPI() {
                 }
             }
             is TvSeriesLoadResponse -> {
-                // For series, we need to enhance each episode's data
+                // For series, enhance each episode's data with cross-site search info
                 val enhancedEpisodes = loadResponse.episodes.map { ep ->
                     val epSlug = extractSlugKeywords(ep.data)
-                    val epData = "$siteName::${ep.data}|TITLE::${title ?: loadResponse.name}|SLUG::$epSlug|SEASON::${ep.season}|EPISODE::${ep.episode}"
+                    val epData = "${handler.siteName}::${ep.data}|TITLE::$title|SLUG::$epSlug|SEASON::${ep.season}|EPISODE::${ep.episode}"
                     newEpisode(epData) {
                         this.name = ep.name
                         this.season = ep.season
