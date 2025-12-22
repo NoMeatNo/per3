@@ -103,44 +103,53 @@ class Site5PersianHive(override val api: MainAPI) : SiteHandler {
             }
         }
         
-        val title = document.selectFirst("h1.page-title")?.text()?.trim() 
-            ?: document.selectFirst("h1.entry-title, h1.pciwgas-title, h1")?.text()?.trim() 
-            ?: url.substringAfter("/category/").substringBefore("/").replace("-", " ").replaceFirstChar { it.uppercaseChar() }
         val poster = fixUrlNull(document.selectFirst("meta[property=og:image]")?.attr("content"))
         val description = document.selectFirst("div.entry-content p, div.pciwgas-desc p")?.text()?.trim()
         
-        // Check if this is a category page (series episodes list)
-        val categoryEpisodes = document.select("article.post-item, article.post")
-        
-        return with(api) {
+        // ONLY treat as series if URL contains /category/ - this is the episode list page
+        if (url.contains("/category/")) {
+            // For category pages, title might be in page-title or extracted from category name
+            val title = document.selectFirst("h1.page-title")?.text()?.trim() 
+                ?: document.selectFirst("h1.entry-title, h1")?.text()?.trim() 
+                ?: url.substringAfter("/category/").substringBefore("/").replace("-", " ").replaceFirstChar { it.uppercaseChar() }
+            
+            // Check for episodes in category page
+            val categoryEpisodes = document.select("article.post-item, article.post")
             if (categoryEpisodes.isNotEmpty()) {
-                val episodes = categoryEpisodes.mapNotNull {
-                    val epTitleElement = it.selectFirst("h2.entry-title a") 
-                        ?: it.selectFirst(".post-title h2 a")
-                        ?: it.selectFirst(".image_wrapper a")
-                    val epTitle = epTitleElement?.text()?.trim() ?: return@mapNotNull null
-                    val epUrl = fixUrl(epTitleElement.attr("href"))
-                    val epPoster = fixUrlNull(it.selectFirst(".image_wrapper img")?.attr("src"))
-                    
-                    val epNumber = Regex("""Episode\s*(\d+)""", RegexOption.IGNORE_CASE).find(epTitle)?.groupValues?.get(1)?.toIntOrNull()
-                        ?: Regex("""\d+$""").find(epTitle)?.value?.toIntOrNull()
-                    
-                    newEpisode(epUrl) {
-                        name = epTitle
-                        episode = epNumber
-                        posterUrl = epPoster
+                return with(api) {
+                    val episodes = categoryEpisodes.mapNotNull {
+                        // Episode link/title is in h2.entry-title a
+                        val epTitleElement = it.selectFirst("h2.entry-title a") 
+                            ?: it.selectFirst(".post-title h2 a")
+                            ?: it.selectFirst(".image_wrapper a")
+                        val epTitle = epTitleElement?.text()?.trim() ?: return@mapNotNull null
+                        val epUrl = fixUrl(epTitleElement.attr("href"))
+                        val epPoster = fixUrlNull(it.selectFirst(".image_wrapper img")?.attr("src"))
+                        
+                        // Try to extract episode number from title
+                        val epNumber = Regex("""Episode\s*(\d+)""", RegexOption.IGNORE_CASE).find(epTitle)?.groupValues?.get(1)?.toIntOrNull()
+                            ?: Regex("""\d+$""").find(epTitle)?.value?.toIntOrNull()
+                        
+                        newEpisode(epUrl) {
+                            name = epTitle
+                            episode = epNumber
+                            posterUrl = epPoster
+                        }
                     }
-                }
-                
-                if (episodes.isNotEmpty()) {
-                    return newTvSeriesLoadResponse(title, url, TvType.TvSeries, episodes) {
-                        this.posterUrl = poster ?: episodes.firstOrNull()?.posterUrl
-                        this.plot = description
-                    }
+                    
+                    if (episodes.isNotEmpty()) {
+                        newTvSeriesLoadResponse(title, url, TvType.TvSeries, episodes) {
+                            this.posterUrl = poster ?: episodes.firstOrNull()?.posterUrl
+                            this.plot = description
+                        }
+                    } else null
                 }
             }
-            
-            // Single movie/episode page
+        }
+        
+        // Single movie/episode page - get title from h1
+        val title = document.selectFirst("h1.entry-title, h1")?.text()?.trim() ?: return null
+        return with(api) {
             newMovieLoadResponse(title, url, TvType.Movie, url) {
                 this.posterUrl = poster
                 this.plot = description
