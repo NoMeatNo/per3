@@ -1,6 +1,7 @@
 package com.likdev256
 
 import com.lagradost.cloudstream3.*
+import com.lagradost.cloudstream3.network.CloudflareKiller
 import com.lagradost.cloudstream3.utils.ExtractorLink
 import com.lagradost.cloudstream3.utils.Qualities
 import com.lagradost.cloudstream3.utils.newExtractorLink
@@ -10,10 +11,14 @@ import org.jsoup.nodes.Element
 /**
  * Site 1: NostalgikTV (nostalgiktv.org)
  * Handles old/nostalgic Persian content: series, movies, cartoons, documentaries, teletheatre.
+ * Uses Cloudflare bypass.
  */
 class Site1NostalgikTV(override val api: MainAPI) : SiteHandler {
     override val siteUrl = "https://nostalgiktv.org"
     override val siteName = "NostalgikTV"
+    
+    // Cloudflare bypass interceptor
+    val cfKiller by lazy { CloudflareKiller() }
     
     override val mainPages = listOf(
         "$siteUrl/serial-irani" to "🇮🇷 Iranian Series - $siteName",
@@ -25,13 +30,24 @@ class Site1NostalgikTV(override val api: MainAPI) : SiteHandler {
         "$siteUrl/teletheatre" to "🎭 Teletheatre - $siteName",
     )
     
-    override fun getHomeSelector(url: String): String = "article.item, div.item"
+    override fun getHomeSelector(url: String): String = "article.item"
     
     override fun parseHomeItem(element: Element): SearchResponse? {
-        val titleElement = element.selectFirst("h2 a, h3 a, .title a")
-        val title = titleElement?.text()?.trim() ?: return null
-        val href = titleElement.attr("href")?.let { fixUrl(it) } ?: return null
-        val posterUrl = element.selectFirst("img")?.attr("src")?.let { fixUrlNull(it) }
+        // Title from span.title inside a.details, or from title attribute of a.i
+        val titleElement = element.selectFirst("a.details span.title")
+        val title = titleElement?.text()?.trim() 
+            ?: element.selectFirst("a.i")?.attr("title")?.trim()
+            ?: element.selectFirst("a.details")?.attr("title")?.trim()
+            ?: return null
+        
+        // Link from a.details or a.i href
+        val href = element.selectFirst("a.details")?.attr("href")?.let { fixUrl(it) }
+            ?: element.selectFirst("a.i")?.attr("href")?.let { fixUrl(it) }
+            ?: return null
+        
+        // Poster from img inside a.i .image
+        val posterUrl = element.selectFirst("a.i .image img")?.attr("src")?.let { fixUrlNull(it) }
+            ?: element.selectFirst("img")?.attr("src")?.let { fixUrlNull(it) }
         
         // Determine type based on URL
         val type = when {
@@ -49,7 +65,7 @@ class Site1NostalgikTV(override val api: MainAPI) : SiteHandler {
     
     override suspend fun search(query: String): List<SearchResponse> {
         return try {
-            app.get("$siteUrl/?s=${query.replace(" ", "+")}")
+            app.get("$siteUrl/?s=${query.replace(" ", "+")}", interceptor = cfKiller)
                 .document.select("article.item, div.result-item, div.search-item")
                 .mapNotNull { parseSearchItem(it) }
         } catch (e: Exception) { emptyList() }
@@ -164,7 +180,7 @@ class Site1NostalgikTV(override val api: MainAPI) : SiteHandler {
         callback: (ExtractorLink) -> Unit
     ): Boolean {
         return try {
-            val document = app.get(data).document
+            val document = app.get(data, interceptor = cfKiller).document
             var foundAny = false
             
             // Method 1: Extract from JW Player setup script

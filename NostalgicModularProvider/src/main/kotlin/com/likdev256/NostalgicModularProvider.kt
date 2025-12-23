@@ -33,6 +33,9 @@ class NostalgicModularProvider : MainAPI() {
         )
     }
 
+    // Reference to Site1 for Cloudflare interceptor
+    private val site1 by lazy { siteHandlers.filterIsInstance<Site1NostalgikTV>().first() }
+
     // Build main page from all site handlers
     override val mainPage by lazy {
         mainPageOf(*siteHandlers.flatMap { handler ->
@@ -49,7 +52,14 @@ class NostalgicModularProvider : MainAPI() {
         
         // Wrap in try-catch so one failing site doesn't break the whole home page
         val home = try {
-            val document = app.get(request.data).document
+            // Use Cloudflare bypass for NostalgikTV with timeout to prevent long blocking
+            val document = if (handler is Site1NostalgikTV) {
+                kotlinx.coroutines.withTimeoutOrNull(15000L) {
+                    app.get(request.data, interceptor = site1.cfKiller).document
+                } ?: return newHomePageResponse(request.name, emptyList()) // Timeout - return empty
+            } else {
+                app.get(request.data).document
+            }
             
             if (handler != null) {
                 val selector = handler.getHomeSelector(request.data)
@@ -95,7 +105,14 @@ class NostalgicModularProvider : MainAPI() {
     override suspend fun load(url: String): LoadResponse? {
         // Find the handler for this URL
         val handler = siteHandlers.find { it.handles(url) }
-        val document = app.get(url).document
+        
+        // Use Cloudflare bypass for NostalgikTV
+        val document = if (handler is Site1NostalgikTV) {
+            app.get(url, interceptor = site1.cfKiller).document
+        } else {
+            app.get(url).document
+        }
+        
         return handler?.load(url, document)
     }
 
