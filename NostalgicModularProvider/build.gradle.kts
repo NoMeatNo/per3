@@ -21,5 +21,5 @@ cloudstream {
         "Movie",
     )
 
-    iconUrl = "https://raw.githubusercontent.com/NoMeatNo/per3/master/logos/favicon.png"
+    iconUrl = "https://raw.githubusercontent.com/NoMeatNo/per3/master/logos/nostalgic_icon.png"
 }

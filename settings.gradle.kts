@@ -2,9 +2,10 @@ rootProject.name = "CloudstreamPlugins"
 
 // This file sets what projects are included. All new projects should get automatically included unless specified in "disabled" variable.
 
-// Only build FarsiFlixModularProvider and FarsiFlixSuperProvider for now
+// Only build the active providers
 include("FarsiFlixModularProvider")
 include("FarsiFlixSuperProvider")
+include("NostalgicModularProvider")
 
 // Comment out the auto-include to disable all other providers:
 // val disabled = listOf<String>(
