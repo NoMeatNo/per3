@@ -20,8 +20,8 @@ class FarsiFlixModularProvider : MainAPI() {
     override val hasMainPage = true
     override var lang = "fa"
     override val hasDownloadSupport = true
-    override var sequentialMainPage = true
-    override var sequentialMainPageDelay: Long = 100
+    override var sequentialMainPage = false
+    override var sequentialMainPageDelay: Long = 0
     override val supportedTypes = setOf(
         TvType.Movie, TvType.TvSeries, TvType.Live
     )
@@ -59,7 +59,7 @@ class FarsiFlixModularProvider : MainAPI() {
         val home = try {
             // Use Cloudflare bypass for PersianHive with timeout to prevent long blocking
             val document = if (handler is Site5PersianHive) {
-                kotlinx.coroutines.withTimeoutOrNull(15000L) {
+                kotlinx.coroutines.withTimeoutOrNull(5000L) {
                     app.get(request.data, interceptor = site5.cfKiller).document
                 } ?: return newHomePageResponse(request.name, emptyList()) // Timeout - return empty
             } else {
