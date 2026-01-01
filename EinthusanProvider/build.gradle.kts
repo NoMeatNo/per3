@@ -7,7 +7,7 @@ cloudstream {
 
     description = "Iranian/Persian Provider #1"
     language = "fa"
-    authors = listOf("N4S3R")
+    authors = listOf("NoMeatNo")
 
     /**
     * Status int as the following:
