@@ -1,0 +1,102 @@
+[
+    {
+        "iconUrl": "https://raw.githubusercontent.com/NoMeatNo/per3/master/logos/modular_icon.png",
+        "apiVersion": 1,
+        "repositoryUrl": "https://github.com/NoMeatNo/per3",
+        "fileSize": 70160,
+        "status": 1,
+        "language": "fa",
+        "authors": [
+            "NoMeatNo"
+        ],
+        "tvTypes": [
+            "TvSeries",
+            "Movie",
+            "Live"
+        ],
+        "version": 1,
+        "internalName": "FarsiFlixModularProvider",
+        "description": "FarsiFlix Modular - All Persian Sources (Modular Architecture)",
+        "url": "https://raw.githubusercontent.com/NoMeatNo/per3/builds/FarsiFlixModularProvider.cs3",
+        "name": "FarsiFlixModularProvider"
+    },
+    {
+        "iconUrl": "https://raw.githubusercontent.com/NoMeatNo/per3/master/logos/favicon.png",
+        "apiVersion": 1,
+        "repositoryUrl": "https://github.com/NoMeatNo/per3",
+        "fileSize": 77802,
+        "status": 3,
+        "language": "fa",
+        "authors": [
+            "NoMeatNo"
+        ],
+        "tvTypes": [
+            "TvSeries",
+            "Movie",
+            "Live"
+        ],
+        "version": 1,
+        "internalName": "FarsiFlixSuperProvider",
+        "description": "FarsiFlix Super - Unified Persian Streaming (Cross-Site Source Aggregation)",
+        "url": "https://raw.githubusercontent.com/NoMeatNo/per3/builds/FarsiFlixSuperProvider.cs3",
+        "name": "FarsiFlixSuperProvider"
+    },
+    {
+        "iconUrl": "https://raw.githubusercontent.com/NoMeatNo/per3/refs/heads/master/logos/tvlogo.png",
+        "apiVersion": 1,
+        "repositoryUrl": "https://github.com/NoMeatNo/per3",
+        "fileSize": 37675,
+        "status": 1,
+        "language": "fa",
+        "authors": [
+            "NoMeatNo"
+        ],
+        "tvTypes": [
+            "Live"
+        ],
+        "version": 1,
+        "internalName": "IranWizPlusProvider",
+        "description": "IranWiz Plus - Persian Live TV + Other News",
+        "url": "https://raw.githubusercontent.com/NoMeatNo/per3/builds/IranWizPlusProvider.cs3",
+        "name": "IranWizPlusProvider"
+    },
+    {
+        "iconUrl": "https://www.glwiz.com/favicon.ico",
+        "apiVersion": 1,
+        "repositoryUrl": "https://github.com/NoMeatNo/per3",
+        "fileSize": 18890,
+        "status": 1,
+        "language": "fa",
+        "authors": [
+            "NoMeatNo"
+        ],
+        "tvTypes": [
+            "Live"
+        ],
+        "version": 11,
+        "internalName": "IranWizProvider",
+        "description": "IranWiz - Persian Live TV (GLWiz)",
+        "url": "https://raw.githubusercontent.com/NoMeatNo/per3/builds/IranWizProvider.cs3",
+        "name": "IranWizProvider"
+    },
+    {
+        "iconUrl": "https://raw.githubusercontent.com/NoMeatNo/per3/master/logos/nostalgic_icon.png",
+        "apiVersion": 1,
+        "repositoryUrl": "https://github.com/NoMeatNo/per3",
+        "fileSize": 30454,
+        "status": 1,
+        "language": "fa",
+        "authors": [
+            "NoMeatNo"
+        ],
+        "tvTypes": [
+            "TvSeries",
+            "Movie"
+        ],
+        "version": 1,
+        "internalName": "NostalgicModularProvider",
+        "description": "Nostalgic Persian Content - Old Series, Movies, Cartoons, Documentaries",
+        "url": "https://raw.githubusercontent.com/NoMeatNo/per3/builds/NostalgicModularProvider.cs3",
+        "name": "NostalgicModularProvider"
+    }
+]
