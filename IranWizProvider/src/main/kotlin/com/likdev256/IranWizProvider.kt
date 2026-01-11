@@ -34,7 +34,7 @@ class IranWizProvider : MainAPI() {
         val id: Int,               // For logo URL
         val genreId: Int           // For category filtering
     ) {
-        val logoUrl: String get() = "${logoBaseUrl}${id}.png"
+        val logoUrl: String get() = "https://hd200.glwiz.com/menu/epg/imagesNew/cim_${id}.png"
     }
     
     // Complete channel list (from GLWiz localStorage dump)
