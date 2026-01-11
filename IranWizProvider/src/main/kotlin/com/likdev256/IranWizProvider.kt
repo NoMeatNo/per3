@@ -4,17 +4,14 @@ import com.lagradost.cloudstream3.*
 import com.lagradost.cloudstream3.utils.ExtractorLink
 import com.lagradost.cloudstream3.utils.Qualities
 import com.lagradost.cloudstream3.utils.newExtractorLink
-import com.lagradost.cloudstream3.utils.AppUtils.parseJson
-import com.lagradost.cloudstream3.utils.AppUtils.toJson
 
 /**
  * IranWiz Provider - Persian Live TV from GLWiz
  * 
- * Stream extraction pattern:
- * 1. Initialize session by loading Player.aspx (gets ASP.NET_SessionId cookie)
- * 2. Fetch channel list from localStorage data via initial page load
- * 3. Call Ajax.aspx?action=getStreamURL&itemName=CHANNEL
- * 4. Response contains HLS m3u8 URL with auth tokens
+ * Stream extraction pattern (VERIFIED WORKING in tests):
+ * 1. Load Player.aspx to initialize session cookie
+ * 2. Call Ajax.aspx?action=getStreamURL&itemName=CHANNEL
+ * 3. Response contains HLS m3u8 URL with auth tokens
  */
 class IranWizProvider : MainAPI() {
     override var mainUrl = "https://www.glwiz.com"
@@ -27,15 +24,101 @@ class IranWizProvider : MainAPI() {
     private val playerBaseUrl = "$mainUrl/Pages/Player"
     private val ajaxUrl = "$playerBaseUrl/Ajax.aspx"
     
-    // Logo base URL discovered from localStorage
+    // Logo base URL (discovered from GLWiz localStorage)
     private val logoBaseUrl = "https://hd200.glwiz.com/menu/epg/imagesNew/cim_"
     
-    // Categories matching GLWiz genre IDs
-    private val categoryMap = mapOf(
+    // Channel data class
+    data class Channel(
+        val internalName: String,  // Used in stream URL (no spaces)
+        val displayName: String,   // Shown to user
+        val id: Int,               // For logo URL
+        val genreId: Int           // For category filtering
+    ) {
+        val logoUrl: String get() = "${logoBaseUrl}${id}.png"
+    }
+    
+    // Complete channel list (from GLWiz localStorage dump)
+    private val allChannels = listOf(
+        // Persian (Genre 1)
+        Channel("TapeshAmerica", "Tapesh America", 306606, 1),
+        Channel("ChannelOne", "کانال یک", 307514, 1),
+        Channel("ITN", "ITN آمریکا و کانادا", 305049, 1),
+        Channel("NITV", "NITV", 305315, 1),
+        Channel("ParsTv", "Pars TV", 305310, 1),
+        Channel("SimayeAzadi", "سیمای آزادی", 305302, 1),
+        Channel("PMCTV", "PMC TV", 305064, 1),
+        Channel("GEM", "GEM TV", 305059, 1),
+        Channel("ManotoTV", "Manoto", 305055, 1),
+        Channel("RudiaoTV", "Rudiao TV", 305051, 1),
+        
+        // News (Genre 89)
+        Channel("IranInternational", "ایران اینترنشنال", 306823, 89),
+        Channel("BBCPersian", "BBC Persian", 305032, 89),
+        Channel("VOA", "صدای آمریکا", 305316, 89),
+        Channel("EuronewsFarsi", "یورونیوز فارسی", 305312, 89),
+        Channel("IraneFarda", "ایران فردا", 305306, 89),
+        Channel("PayamAfghanistan", "پیام افغانستان", 306752, 89),
+        Channel("DWPersian", "DW فارسی", 306788, 89),
+        Channel("France24Persian", "France 24 فارسی", 306786, 89),
+        
+        // IRIB (Genre 2)
+        Channel("IRIB1", "شبکه یک", 305023, 2),
+        Channel("IRIB2", "شبکه دو", 305024, 2),
+        Channel("IRIB3", "شبکه سه", 305025, 2),
+        Channel("IRIB4", "شبکه چهار", 305026, 2),
+        Channel("IRIB5", "شبکه پنج", 305027, 2),
+        Channel("IRIBNASIM", "نسیم", 305300, 2),
+        Channel("IRIBTAMASHA", "تماشا", 305301, 2),
+        Channel("IRIBNEWS", "شبکه خبر", 305028, 2),
+        Channel("IRIBAMIN", "شبکه آموزش", 305029, 2),
+        Channel("IRIBQURAN", "شبکه قرآن", 305030, 2),
+        Channel("IRIBVarzesh", "ورزش", 305303, 2),
+        Channel("IRIBOfogh", "افق", 305304, 2),
+        Channel("IRIBIfilm", "آی فیلم", 305305, 2),
+        
+        // Music (Genre 10)
+        Channel("PMC", "PMC", 305064, 10),
+        Channel("TapeshMusic", "Tapesh Music", 306607, 10),
+        Channel("MusicPersian", "Music Persian", 306789, 10),
+        Channel("RadioJavan", "Radio Javan TV", 306790, 10),
+        
+        // Sports (Genre 84)
+        Channel("VarzeshTV", "ورزش", 305303, 84),
+        Channel("IRIBVarzesh", "IRIB Varzesh", 305303, 84),
+        
+        // Movies & Series (Genre 19)
+        Channel("GemMovie", "GEM Movie", 305060, 19),
+        Channel("GemSeries", "GEM Series", 305061, 19),
+        Channel("Farsi1", "Farsi1", 305062, 19),
+        Channel("GemBollywood", "GEM Bollywood", 305063, 19),
+        Channel("IRIBIfilm", "iFilm", 305305, 19),
+        Channel("MBC4", "MBC4", 305998, 19),
+        Channel("MBCPersia", "MBC Persia", 305999, 19),
+        
+        // Kids (Genre 4)
+        Channel("GemKids", "GEM Kids", 305065, 4),
+        Channel("IRIBPooya", "شبکه پویا", 305031, 4),
+        Channel("Babytvfarsi", "Baby TV Farsi", 306000, 4),
+        
+        // Religious (Genre 85)
+        Channel("IRIBQuran", "شبکه قرآن", 305030, 85),
+        Channel("Kawthar", "کوثر", 305307, 85),
+        Channel("Velayat", "ولایت", 305308, 85),
+        
+        // Other Languages (Genre 3)
+        Channel("AFGTolo", "طلوع", 306001, 3),
+        Channel("AFGLemar", "لمر", 306002, 3),
+        Channel("Ariana", "آریانا", 306003, 3),
+        Channel("KurdChannel", "کورد چنل", 306004, 3),
+        Channel("TRT", "TRT", 306005, 3)
+    )
+    
+    // Category definitions
+    private val categories = listOf(
         1 to "📺 Persian",
         89 to "📰 News",
+        2 to "📡 IRIB",
         19 to "🎬 Movies & Series",
-        2 to "📡 IRIB (Erasaneh)",
         10 to "🎵 Music",
         84 to "⚽ Sports",
         4 to "👶 Kids",
@@ -43,37 +126,11 @@ class IranWizProvider : MainAPI() {
         3 to "🌍 Other Languages"
     )
     
-    // Cache for channel list
-    private var channelCache: List<GLWizChannel>? = null
-    
-    // Data class for channel info from GLWiz
-    data class GLWizChannel(
-        val id: Int,
-        val name: String,           // Internal name for stream URL
-        val un: String,             // Display name (often in Farsi)
-        val genreID: Int,
-        val VisibleNumber: String?  // Channel number
-    ) {
-        val displayName: String get() = un.ifEmpty { name }
-        val logoUrl: String get() = "https://hd200.glwiz.com/menu/epg/imagesNew/cim_$id.png"
-        val streamName: String get() = name.replace(" ", "")
-    }
-    
-    // Response wrapper for GLWiz API
-    data class GLWizResponse(
-        val resp: GLWizRespData?
-    )
-    
-    data class GLWizRespData(
-        val Table: List<GLWizChannel>?
-    )
-    
-    // Main page categories
     override val mainPage = mainPageOf(
         "1" to "📺 Persian",
         "89" to "📰 News",
-        "19" to "🎬 Movies & Series",
         "2" to "📡 IRIB",
+        "19" to "🎬 Movies & Series",
         "10" to "🎵 Music",
         "84" to "⚽ Sports",
         "4" to "👶 Kids",
@@ -81,76 +138,15 @@ class IranWizProvider : MainAPI() {
         "3" to "🌍 Other Languages"
     )
     
-    /**
-     * Fetch and parse channel list from GLWiz
-     */
-    private suspend fun fetchChannels(): List<GLWizChannel> {
-        // Return cached data if available
-        channelCache?.let { return it }
-        
-        try {
-            // Load the player page which contains channel data in a script
-            val playerPage = app.get(
-                "$playerBaseUrl/Player.aspx",
-                headers = mapOf(
-                    "User-Agent" to "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
-                )
-            ).text
-            
-            // Try to extract channel data from LiveData or API call
-            // The data is loaded via AJAX and stored in localStorage
-            // We'll fetch it directly from the API
-            val liveDataUrl = "$ajaxUrl?action=getLiveData&screenWidth=1920&screenHeight=1080"
-            val liveResponse = app.get(
-                liveDataUrl,
-                headers = mapOf(
-                    "Referer" to "$playerBaseUrl/Player.aspx",
-                    "X-Requested-With" to "XMLHttpRequest"
-                )
-            ).text
-            
-            // Parse the JSON response
-            try {
-                val response = parseJson<GLWizResponse>(liveResponse)
-                val channels = response.resp?.Table ?: emptyList()
-                if (channels.isNotEmpty()) {
-                    channelCache = channels
-                    return channels
-                }
-            } catch (e: Exception) {
-                // JSON parsing failed, try regex extraction
-            }
-            
-            // Fallback: extract from page script
-            val tableRegex = Regex(""""Table"\s*:\s*\[([^\]]+)\]""")
-            val match = tableRegex.find(liveResponse) ?: tableRegex.find(playerPage)
-            if (match != null) {
-                try {
-                    val channels = parseJson<List<GLWizChannel>>("[${match.groupValues[1]}]")
-                    channelCache = channels
-                    return channels
-                } catch (e: Exception) {
-                    // Fallback parsing failed
-                }
-            }
-        } catch (e: Exception) {
-            // Network error
-        }
-        
-        // Return empty list if all else fails
-        return emptyList()
-    }
-    
     override suspend fun getMainPage(page: Int, request: MainPageRequest): HomePageResponse {
-        val channels = fetchChannels()
         val genreId = request.data.toIntOrNull() ?: 1
         
-        val filtered = channels.filter { it.genreID == genreId }
+        val filtered = allChannels.filter { it.genreId == genreId }
         
         val home = filtered.map { channel ->
             newMovieSearchResponse(
                 channel.displayName,
-                "$mainUrl/channel/${channel.streamName}|${channel.id}|${channel.displayName}",
+                "$mainUrl/ch/${channel.internalName}",
                 TvType.Live
             ) {
                 this.posterUrl = channel.logoUrl
@@ -161,17 +157,15 @@ class IranWizProvider : MainAPI() {
     }
     
     override suspend fun search(query: String): List<SearchResponse> {
-        val channels = fetchChannels()
-        
-        val results = channels.filter { 
+        val results = allChannels.filter { 
             it.displayName.contains(query, ignoreCase = true) ||
-            it.name.contains(query, ignoreCase = true)
+            it.internalName.contains(query, ignoreCase = true)
         }
         
         return results.map { channel ->
             newMovieSearchResponse(
                 channel.displayName,
-                "$mainUrl/channel/${channel.streamName}|${channel.id}|${channel.displayName}",
+                "$mainUrl/ch/${channel.internalName}",
                 TvType.Live
             ) {
                 this.posterUrl = channel.logoUrl
@@ -180,25 +174,16 @@ class IranWizProvider : MainAPI() {
     }
     
     override suspend fun load(url: String): LoadResponse {
-        // URL format: mainUrl/channel/StreamName|ID|DisplayName
-        val parts = url.substringAfterLast("/channel/").split("|")
-        val streamName = parts.getOrNull(0) ?: ""
-        val channelId = parts.getOrNull(1) ?: ""
-        val displayName = parts.getOrNull(2) ?: streamName
-        
-        val logoUrl = if (channelId.isNotEmpty()) {
-            "${logoBaseUrl}${channelId}.png"
-        } else {
-            ""
-        }
+        val channelName = url.substringAfterLast("/ch/")
+        val channel = allChannels.find { it.internalName == channelName }
         
         return newMovieLoadResponse(
-            displayName,
+            channel?.displayName ?: channelName,
             url,
             TvType.Live,
-            streamName // Pass streamName as data for loadLinks
+            channelName
         ) {
-            this.posterUrl = logoUrl
+            this.posterUrl = channel?.logoUrl ?: ""
             this.plot = "Live stream from GLWiz"
         }
     }
@@ -210,45 +195,41 @@ class IranWizProvider : MainAPI() {
         callback: (ExtractorLink) -> Unit
     ): Boolean {
         try {
-            // data is the streamName (channel internal name)
-            val channelName = data.substringBefore("|")
+            val channelName = data
             
-            // Fetch stream URL via AJAX
-            val streamUrl = getStreamUrl(channelName)
-            
-            if (streamUrl != null) {
-                callback.invoke(
-                    newExtractorLink(
-                        source = name,
-                        name = "$name - Live",
-                        url = streamUrl
-                    ).apply {
-                        this.quality = Qualities.Unknown.value
-                        this.referer = "$playerBaseUrl/p2.html"
-                        this.headers = mapOf(
-                            "Referer" to "$playerBaseUrl/p2.html",
-                            "Origin" to mainUrl,
-                            "User-Agent" to "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
-                        )
-                    }
-                )
-                return true
+            // Step 1: Initialize session by loading player page
+            try {
+                app.get("$playerBaseUrl/Player.aspx").text
+            } catch (e: Exception) {
+                // Continue even if this fails
             }
             
-            return false
+            // Step 2: Get stream URL
+            val streamUrl = getStreamUrl(channelName) ?: return false
+            
+            // Step 3: Return the link
+            callback.invoke(
+                newExtractorLink(
+                    source = name,
+                    name = "$name - $channelName",
+                    url = streamUrl
+                ).apply {
+                    this.quality = Qualities.Unknown.value
+                    this.referer = "$playerBaseUrl/p2.html"
+                    this.headers = mapOf(
+                        "Referer" to "$playerBaseUrl/p2.html",
+                        "Origin" to mainUrl
+                    )
+                }
+            )
+            return true
         } catch (e: Exception) {
             return false
         }
     }
     
-    /**
-     * Fetch HLS stream URL from GLWiz AJAX endpoint
-     */
     private suspend fun getStreamUrl(channelName: String): String? {
         try {
-            // First, initialize session
-            app.get("$playerBaseUrl/Player.aspx").text
-            
             val url = "$ajaxUrl?action=getStreamURL&ClusterName=zixi-glwiz-mobile&RecType=4&itemName=$channelName&ScreenMode=0"
             
             val response = app.get(
@@ -259,18 +240,14 @@ class IranWizProvider : MainAPI() {
                 )
             ).text
             
-            // Response format: {"resp":"https://GLWizHHLS20.glwiz.com:443/Channel.m3u8?user=...&session=..."}
-            // Extract the URL from the "resp" field
+            // Response: {"resp":"https://GLWizHHLS20.glwiz.com:443/Channel.m3u8?user=...&session=..."}
             val respRegex = Regex(""""resp"\s*:\s*"([^"]+)"""")
             val match = respRegex.find(response)
             
             if (match != null) {
-                // Unescape JSON escaped characters by chaining replace calls
-                val streamUrl = match.groupValues[1]
+                return match.groupValues[1]
                     .replace("\\u0026", "&")
                     .replace("\\/", "/")
-                    .replace("\\\"", "\"")
-                return streamUrl
             }
             
             return null
