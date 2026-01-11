@@ -166,7 +166,7 @@ class IranWizProvider : MainAPI() {
             // Extract channel name from data URL
             val channelName = data.substringAfterLast("/channel/").substringBefore("?")
             
-            // Initialize session
+            // Initialize session to get cookies
             initSession()
             
             // Fetch stream URL via AJAX
@@ -181,6 +181,12 @@ class IranWizProvider : MainAPI() {
                     ).apply {
                         this.quality = Qualities.Unknown.value
                         this.referer = "$playerBaseUrl/p2.html"
+                        this.headers = mapOf(
+                            "Referer" to "$playerBaseUrl/p2.html",
+                            "Origin" to mainUrl,
+                            "User-Agent" to "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
+                        )
+                        this.isM3u8 = true
                     }
                 )
                 return true
@@ -207,14 +213,19 @@ class IranWizProvider : MainAPI() {
                 )
             ).text
             
-            // Extract m3u8 URL from response
             // Response format: {"resp":"https://GLWizHHLS20.glwiz.com:443/Channel.m3u8?user=...&session=..."}
-            val m3u8Regex = Regex("(https?://[^\"'\\s]+\\.m3u8[^\"'\\s]*)")
-            val match = m3u8Regex.find(response)
+            // Extract the URL from the "resp" field
+            val respRegex = Regex(""""resp"\s*:\s*"([^"]+)"""")
+            val match = respRegex.find(response)
             
             if (match != null) {
-                // Unescape any escaped characters
-                return match.groupValues[1].replace("\\u0026", "&")
+                var streamUrl = match.groupValues[1]
+                // Unescape JSON escaped characters
+                streamUrl = streamUrl
+                    .replace("\\u0026", "&")
+                    .replace("\\/", "/")
+                    .replace("\\\"", "\"")
+                return streamUrl
             }
             
             return null
