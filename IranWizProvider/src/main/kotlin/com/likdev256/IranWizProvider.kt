@@ -186,7 +186,6 @@ class IranWizProvider : MainAPI() {
                             "Origin" to mainUrl,
                             "User-Agent" to "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
                         )
-                        this.isM3u8 = true
                     }
                 )
                 return true
@@ -219,9 +218,8 @@ class IranWizProvider : MainAPI() {
             val match = respRegex.find(response)
             
             if (match != null) {
-                var streamUrl = match.groupValues[1]
-                // Unescape JSON escaped characters
-                streamUrl = streamUrl
+                // Unescape JSON escaped characters by chaining replace calls
+                val streamUrl = match.groupValues[1]
                     .replace("\\u0026", "&")
                     .replace("\\/", "/")
                     .replace("\\\"", "\"")
@@ -234,3 +232,4 @@ class IranWizProvider : MainAPI() {
         }
     }
 }
+
