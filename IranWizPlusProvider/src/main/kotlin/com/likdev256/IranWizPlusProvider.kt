@@ -354,10 +354,11 @@ class IranWizPlusProvider : MainAPI() {
                         newExtractorLink(
                             source = name,
                             name = "$name - $streamName",
-                            url = streamUrl,
-                            referer = "https://www.newslive.com/",
-                            quality = Qualities.Unknown.value
-                        )
+                            url = streamUrl
+                        ).apply {
+                            this.referer = "https://www.newslive.com/"
+                            this.quality = Qualities.Unknown.value
+                        }
                     )
                     return true
                 }
