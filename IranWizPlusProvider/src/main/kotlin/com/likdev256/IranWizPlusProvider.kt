@@ -24,10 +24,17 @@ class IranWizPlusProvider : MainAPI() {
     
     // Additional New Channels Source
     private val otherNewsUrls = mapOf(
-        "FoxNews" to "https://www.newslive.com/american/fox-news.html",
-        "CNN" to "https://www.newslive.com/american/cnn-stream.html",
-        "MSNBC" to "https://www.newslive.com/american/msnbc-news-live.html",
-        "CNBC" to "https://www.newslive.com/business/cnbc-live-free.html"
+        "FoxNews" to listOf("https://www.newslive.com/american/fox-news.html"),
+        "CNN" to listOf("https://www.newslive.com/american/cnn-stream.html"),
+        "MSNBC" to listOf(
+            "https://www.newslive.com/american/msnbc-news-live.html",
+            "https://iptv-web.app/US/MSNBC.us/"
+        ),
+        "CNBC" to listOf("https://www.newslive.com/business/cnbc-live-free.html"),
+        "ABCNews" to listOf("https://iptv-web.app/US/ABCNewsLive.us/"),
+        "InfoWars" to listOf("https://iptv-web.app/US/InfoWars.us/"),
+        "NBCNews" to listOf("https://iptv-web.app/US/NBCNewsNOW.us/"),
+        "WAGA" to listOf("https://iptv-web.app/US/WAGADT1.us/")
     )
 
     private val playerBaseUrl = "$mainUrl/Pages/Player"
@@ -83,6 +90,10 @@ class IranWizPlusProvider : MainAPI() {
         Channel("CNN", "CNN", 0, GENRE_OTHER_NEWS),
         Channel("MSNBC", "MSNBC", 0, GENRE_OTHER_NEWS),
         Channel("CNBC", "CNBC", 0, GENRE_OTHER_NEWS),
+        Channel("ABCNews", "ABC News Live", 0, GENRE_OTHER_NEWS),
+        Channel("InfoWars", "InfoWars", 0, GENRE_OTHER_NEWS),
+        Channel("NBCNews", "NBC News NOW", 0, GENRE_OTHER_NEWS),
+        Channel("WAGA", "WAGA Fox 5", 0, GENRE_OTHER_NEWS),
         
         // ===== News (Genre 89) =====
         Channel("IranInternational", "ایران اینترنشنال", 306823, GENRE_NEWS),
@@ -341,28 +352,42 @@ class IranWizPlusProvider : MainAPI() {
             
             // CHECK IF THIS IS AN "OTHER NEWS" CHANNEL
             if (otherNewsUrls.containsKey(streamName)) {
-                val url = otherNewsUrls[streamName]!!
-                // We use standard app.get() for these sites
-                val response = app.get(url).text
-                // Find .m3u8 link (it works for both static and dynamic with tokens)
-                val m3u8Regex = Regex("""https?://[^"']+\.m3u8[^"']*""")
-                val match = m3u8Regex.find(response)
+                val urls = otherNewsUrls[streamName]!!
+                var foundAny = false
                 
-                if (match != null) {
-                    val streamUrl = match.value
-                    callback.invoke(
-                        newExtractorLink(
-                            source = name,
-                            name = "$name - $streamName",
-                            url = streamUrl
-                        ).apply {
-                            this.referer = "https://www.newslive.com/"
-                            this.quality = Qualities.Unknown.value
+                urls.forEach { url ->
+                    try {
+                        // We use standard app.get() for these sites
+                        val response = app.get(url).text
+                        // Find .m3u8 link (it works for both static and dynamic with tokens)
+                        // This regex will find ALL m3u8 links in the page source
+                        val m3u8Regex = Regex("""https?://[^"']+\.m3u8[^"']*""")
+                        val matches = m3u8Regex.findAll(response)
+                        
+                        matches.forEach { match ->
+                            var streamUrl = match.value
+                            streamUrl = streamUrl.substringBefore("&quot;")
+                                .replace("\\/", "/")
+                                .replace("&amp;", "&")
+
+                            // Basic deduplication is handled by CloudStream usually, but we send all valid ones
+                            callback.invoke(
+                                newExtractorLink(
+                                    source = name,
+                                    name = "$name - $streamName (${if(url.contains("newslive")) "NewsLive" else "IPTVWeb"})",
+                                    url = streamUrl
+                                ).apply {
+                                    this.referer = if (url.contains("iptv-web")) "https://iptv-web.app/" else "https://www.newslive.com/"
+                                    this.quality = Qualities.Unknown.value
+                                }
+                            )
+                            foundAny = true
                         }
-                    )
-                    return true
+                    } catch (e: Exception) {
+                        e.printStackTrace()
+                    }
                 }
-                return false
+                return foundAny
             }
 
             // STANDARD GLWIZ LOGIC
