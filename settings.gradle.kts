@@ -7,6 +7,7 @@ include("FarsiFlixModularProvider")
 include("FarsiFlixSuperProvider")
 include("NostalgicModularProvider")
 include("IranWizProvider")
+include("IranWizPlusProvider")
 
 // Comment out the auto-include to disable all other providers:
 // val disabled = listOf<String>(
