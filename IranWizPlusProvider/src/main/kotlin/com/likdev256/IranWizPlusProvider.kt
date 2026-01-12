@@ -34,7 +34,25 @@ class IranWizPlusProvider : MainAPI() {
         "ABCNews" to listOf("https://iptv-web.app/US/ABCNewsLive.us/"),
         "InfoWars" to listOf("https://iptv-web.app/US/InfoWars.us/"),
         "NBCNews" to listOf("https://iptv-web.app/US/NBCNewsNOW.us/"),
-        "WAGA" to listOf("https://iptv-web.app/US/WAGADT1.us/")
+        "WAGA" to listOf("https://iptv-web.app/US/WAGADT1.us/"),
+        // Cooking
+        "AmericasTestKitchen" to listOf("https://iptv-web.app/US/AmericasTestKitchen.us/"),
+        "bonappetit" to listOf("https://iptv-web.app/US/bonappetit.us/"),
+        "GordonRamsaysHellsKitchen" to listOf("https://iptv-web.app/US/GordonRamsaysHellsKitchen.us/"),
+        "Tastemade" to listOf("https://iptv-web.app/US/Tastemade.us/"),
+        // Documentary
+        "CourtTV" to listOf("https://iptv-web.app/US/CourtTV.us/"),
+        "Dateline247" to listOf("https://iptv-web.app/US/Dateline247.us/"),
+        "ForensicFiles" to listOf("https://iptv-web.app/US/ForensicFiles.us/"),
+        "History" to listOf("https://iptv-web.app/US/History.us/"),
+        "InkMaster" to listOf("https://iptv-web.app/US/InkMaster.us/"),
+        "LawCrime" to listOf("https://iptv-web.app/US/LawCrime.us/"),
+        "MilitaryHistory" to listOf("https://iptv-web.app/US/MilitaryHistory.us/"),
+        "NationalGeographic" to listOf("https://iptv-web.app/US/NationalGeographic.us/"),
+        "NationalGeographicWild" to listOf("https://iptv-web.app/US/NationalGeographicWild.us/"),
+        "PlutoTVCrime" to listOf("https://iptv-web.app/US/PlutoTVCrime.us/"),
+        "PlutoTVHistory" to listOf("https://iptv-web.app/US/PlutoTVHistory.us/"),
+        "PlutoTVInvestigation" to listOf("https://iptv-web.app/US/PlutoTVInvestigation.us/")
     )
 
     private val playerBaseUrl = "$mainUrl/Pages/Player"
@@ -72,6 +90,8 @@ class IranWizPlusProvider : MainAPI() {
         const val GENRE_KIDS = 4
         const val GENRE_RELIGIOUS = 85
         const val GENRE_OTHER_NEWS = 100
+        const val GENRE_COOKING = 101
+        const val GENRE_DOCUMENTARY = 102
     }
     
     data class Channel(
@@ -94,6 +114,26 @@ class IranWizPlusProvider : MainAPI() {
         Channel("InfoWars", "InfoWars", 0, GENRE_OTHER_NEWS),
         Channel("NBCNews", "NBC News NOW", 0, GENRE_OTHER_NEWS),
         Channel("WAGA", "WAGA Fox 5", 0, GENRE_OTHER_NEWS),
+        
+        // ===== Cooking (Genre 101) =====
+        Channel("GordonRamsaysHellsKitchen", "Hell's Kitchen", 0, GENRE_COOKING),
+        Channel("bonappetit", "Bon Appétit", 0, GENRE_COOKING),
+        Channel("AmericasTestKitchen", "America's Test Kitchen", 0, GENRE_COOKING),
+        Channel("Tastemade", "Tastemade", 0, GENRE_COOKING),
+        
+        // ===== Documentary (Genre 102) =====
+        Channel("NationalGeographic", "National Geographic", 0, GENRE_DOCUMENTARY),
+        Channel("NationalGeographicWild", "Nat Geo Wild", 0, GENRE_DOCUMENTARY),
+        Channel("History", "History Channel", 0, GENRE_DOCUMENTARY),
+        Channel("MilitaryHistory", "Military History", 0, GENRE_DOCUMENTARY),
+        Channel("ForensicFiles", "Forensic Files", 0, GENRE_DOCUMENTARY),
+        Channel("Dateline247", "Dateline 24/7", 0, GENRE_DOCUMENTARY),
+        Channel("CourtTV", "Court TV", 0, GENRE_DOCUMENTARY),
+        Channel("LawCrime", "Law & Crime", 0, GENRE_DOCUMENTARY),
+        Channel("InkMaster", "Ink Master", 0, GENRE_DOCUMENTARY),
+        Channel("PlutoTVHistory", "Pluto TV History", 0, GENRE_DOCUMENTARY),
+        Channel("PlutoTVCrime", "Pluto TV Crime", 0, GENRE_DOCUMENTARY),
+        Channel("PlutoTVInvestigation", "Pluto TV Investigation", 0, GENRE_DOCUMENTARY),
         
         // ===== News (Genre 89) =====
         Channel("IranInternational", "ایران اینترنشنال", 306823, GENRE_NEWS),
@@ -243,7 +283,9 @@ class IranWizPlusProvider : MainAPI() {
         "${GENRE_MUSIC}" to "🎵 Music",
         "${GENRE_SPORTS}" to "⚽ Sports",
         "${GENRE_KIDS}" to "👶 Kids",
-        "${GENRE_RELIGIOUS}" to "🕌 Religious"
+        "${GENRE_RELIGIOUS}" to "🕌 Religious",
+        "${GENRE_COOKING}" to "🍳 Cooking",
+        "${GENRE_DOCUMENTARY}" to "🦁 Documentary"
     )
     
     // Get genre name for display
@@ -257,6 +299,9 @@ class IranWizPlusProvider : MainAPI() {
         GENRE_SPORTS -> "⚽ Sports"
         GENRE_KIDS -> "👶 Kids"
         GENRE_RELIGIOUS -> "🕌 Religious"
+        GENRE_RELIGIOUS -> "🕌 Religious"
+        GENRE_COOKING -> "🍳 Cooking"
+        GENRE_DOCUMENTARY -> "🦁 Documentary"
         else -> "📺 Other"
     }
     
@@ -360,15 +405,25 @@ class IranWizPlusProvider : MainAPI() {
                         // We use standard app.get() for these sites
                         val response = app.get(url).text
                         // Find .m3u8 link (it works for both static and dynamic with tokens)
-                        // This regex will find ALL m3u8 links in the page source
+                        // 1. Find standard .m3u8 links
                         val m3u8Regex = Regex("""https?://[^"']+\.m3u8[^"']*""")
-                        val matches = m3u8Regex.findAll(response)
-                        
-                        matches.forEach { match ->
-                            var streamUrl = match.value
-                            streamUrl = streamUrl.substringBefore("&quot;")
+                        val m3u8Matches = m3u8Regex.findAll(response).map { 
+                            it.value.substringBefore("&quot;")
                                 .replace("\\/", "/")
                                 .replace("&amp;", "&")
+                        }
+
+                        // 2. Find links hidden in Astro/JSON props (e.g. [0,&quot;https://...&quot;])
+                        val jsonRegex = Regex("""\[0,&quot;(https?://[^&]+)&quot;\]""")
+                        val jsonMatches = jsonRegex.findAll(response).map {
+                             it.groupValues[1]
+                                .replace("\\/", "/")
+                        }
+
+                        // Combine and deduplicate
+                        val matches = (m3u8Matches + jsonMatches).distinct()
+                        
+                        matches.forEach { streamUrl ->
 
                             // Basic deduplication is handled by CloudStream usually, but we send all valid ones
                             callback.invoke(
