@@ -229,8 +229,6 @@ class IranWizPlusProvider : MainAPI() {
         const val GENRE_OTHER_NEWS = 100
         const val GENRE_COOKING = 101
         const val GENRE_DOCUMENTARY = 102
-        const val GENRE_COOKING = 101
-        const val GENRE_DOCUMENTARY = 102
         const val GENRE_ENTERTAINMENT = 103
         const val GENRE_CLASSICS = 104
         const val GENRE_MOVIES_US = 105
@@ -559,7 +557,6 @@ class IranWizPlusProvider : MainAPI() {
         "${GENRE_KIDS}" to "👶 Kids",
         "${GENRE_RELIGIOUS}" to "🕌 Religious",
         "${GENRE_COOKING}" to "🍳 Cooking",
-        "${GENRE_COOKING}" to "🍳 Cooking",
         "${GENRE_DOCUMENTARY}" to "🦁 Documentary",
         "${GENRE_ENTERTAINMENT}" to "🎭 Entertainment",
         "${GENRE_CLASSICS}" to "🏛 Classics",
@@ -581,8 +578,6 @@ class IranWizPlusProvider : MainAPI() {
         GENRE_SPORTS -> "⚽ Sports"
         GENRE_KIDS -> "👶 Kids"
         GENRE_RELIGIOUS -> "🕌 Religious"
-        GENRE_RELIGIOUS -> "🕌 Religious"
-        GENRE_COOKING -> "🍳 Cooking"
         GENRE_COOKING -> "🍳 Cooking"
         GENRE_DOCUMENTARY -> "🦁 Documentary"
         GENRE_ENTERTAINMENT -> "🎭 Entertainment"
