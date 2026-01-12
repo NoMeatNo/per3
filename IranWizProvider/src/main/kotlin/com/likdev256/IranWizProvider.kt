@@ -317,6 +317,7 @@ class IranWizProvider : MainAPI() {
                 val streamUrl = match.groupValues[1]
                     .replace("\\u0026", "&")
                     .replace("\\/", "/")
+                    .replace(" ", "%20")  // Encode spaces in URL path
                 
                 if (!streamUrl.contains("GlwizPromo")) {
                     callback.invoke(
