@@ -19,8 +19,8 @@ class NostalgicModularProvider : MainAPI() {
     override val hasMainPage = true
     override var lang = "fa"
     override val hasDownloadSupport = true
-    override var sequentialMainPage = true
-    override var sequentialMainPageDelay: Long = 100
+    override var sequentialMainPage = false
+    override var sequentialMainPageDelay: Long = 0
     override val supportedTypes = setOf(
         TvType.Movie, TvType.TvSeries
     )
@@ -54,7 +54,7 @@ class NostalgicModularProvider : MainAPI() {
         val home = try {
             // Use Cloudflare bypass for NostalgikTV with timeout to prevent long blocking
             val document = if (handler is Site1NostalgikTV) {
-                kotlinx.coroutines.withTimeoutOrNull(15000L) {
+                kotlinx.coroutines.withTimeoutOrNull(5000L) {
                     app.get(request.data, interceptor = site1.cfKiller).document
                 } ?: return newHomePageResponse(request.name, emptyList()) // Timeout - return empty
             } else {
