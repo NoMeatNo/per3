@@ -177,6 +177,7 @@ class IranWizPlusProvider : MainAPI() {
         
         // Batch 8: UK Channels
         // Note: UK channels are under /UK/ path
+        "BBCOne" to listOf("https://iptv-web.app/UK/BBCOne.uk/"),
         "BBCTwo" to listOf("https://iptv-web.app/UK/BBCTwo.uk/"),
         "Channel4" to listOf("https://iptv-web.app/UK/Channel4.uk/"),
         "Channel5" to listOf("https://iptv-web.app/UK/Channel5.uk/"),
@@ -393,6 +394,7 @@ class IranWizPlusProvider : MainAPI() {
         Channel("YesNetwork", "YES Network", 0, GENRE_SPORTS_US),
         
         // ===== UK TV (Genre 109) =====
+        Channel("BBCOne", "BBC One", 0, GENRE_UK),
         Channel("BBCTwo", "BBC Two", 0, GENRE_UK),
         Channel("Channel4", "Channel 4", 0, GENRE_UK),
         Channel("Channel5", "Channel 5", 0, GENRE_UK),
