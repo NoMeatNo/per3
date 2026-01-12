@@ -24,7 +24,10 @@ class IranWizPlusProvider : MainAPI() {
     
     // Additional New Channels Source
     private val otherNewsUrls = mapOf(
-        "FoxNews" to listOf("https://www.newslive.com/american/fox-news.html"),
+        "FoxNews" to listOf(
+            "https://www.newslive.com/american/fox-news.html",
+            "https://iptv-web.app/US/FoxNewsChannel.us/"
+        ),
         "CNN" to listOf("https://www.newslive.com/american/cnn-stream.html"),
         "MSNBC" to listOf(
             "https://www.newslive.com/american/msnbc-news-live.html",
@@ -32,9 +35,37 @@ class IranWizPlusProvider : MainAPI() {
         ),
         "CNBC" to listOf("https://www.newslive.com/business/cnbc-live-free.html"),
         "ABCNews" to listOf("https://iptv-web.app/US/ABCNewsLive.us/"),
-        "InfoWars" to listOf("https://iptv-web.app/US/InfoWars.us/"),
+        "BloombergQuicktake" to listOf("https://iptv-web.app/US/BloombergQuicktake.us/"),
+        "ABCNews" to listOf("https://iptv-web.app/US/ABCNewsLive.us/"),
+        "BloombergQuicktake" to listOf("https://iptv-web.app/US/BloombergQuicktake.us/"),
         "NBCNews" to listOf("https://iptv-web.app/US/NBCNewsNOW.us/"),
-        "WAGA" to listOf("https://iptv-web.app/US/WAGADT1.us/"),
+        "NewsNation" to listOf("https://iptv-web.app/US/NewsNation.us/"),
+        "CBSNews247" to listOf("https://iptv-web.app/US/CBSNews247.us/"),
+        "ReutersTV" to listOf("https://iptv-web.app/US/ReutersTV.us/"),
+        "CheddarNews" to listOf("https://iptv-web.app/US/CheddarNews.us/"),
+        "ScrippsNews" to listOf("https://iptv-web.app/US/ScrippsNews.us/"),
+        "WABCDT1247News" to listOf("https://iptv-web.app/US/WABCDT1247News.us/"),
+        "KABCDT1247News" to listOf("https://iptv-web.app/US/KABCDT1247News.us/"),
+        "CBSNewsNewYork" to listOf("https://iptv-web.app/US/CBSNewsNewYork.us/"),
+        "CBSNewsLosAngeles" to listOf("https://iptv-web.app/US/CBSNewsLosAngeles.us/"),
+        "NewsmaxTV" to listOf("https://iptv-web.app/US/NewsmaxTV.us/"),
+        "TheYoungTurks" to listOf("https://iptv-web.app/US/TheYoungTurks.us/"),
+         // Local Networks
+        "KABCDT1" to listOf("https://iptv-web.app/US/KABCDT1.us/"),
+        "KCBSDT1" to listOf("https://iptv-web.app/US/KCBSDT1.us/"),
+        "KDFWDT1" to listOf("https://iptv-web.app/US/KDFWDT1.us/"),
+        "KIRODT1" to listOf("https://iptv-web.app/US/KIRODT1.us/"),
+        "KMBCDT1" to listOf("https://iptv-web.app/US/KMBCDT1.us/"),
+        "KIRODT1" to listOf("https://iptv-web.app/US/KIRODT1.us/"),
+        "KMBCDT1" to listOf("https://iptv-web.app/US/KMBCDT1.us/"),
+        "KMEXDT1" to listOf("https://iptv-web.app/US/KMEXDT1.us/"),
+        "KNBCDT1" to listOf("https://iptv-web.app/US/KNBCDT1.us/"),
+        "KNTVDT1" to listOf("https://iptv-web.app/US/KNTVDT1.us/"),
+        "KXASDT1" to listOf("https://iptv-web.app/US/KXASDT1.us/"),
+        "KTTVDT1" to listOf("https://iptv-web.app/US/KTTVDT1.us/"),
+        "KTVUDT1" to listOf("https://iptv-web.app/US/KTVUDT1.us/"),
+        "KYWDT1" to listOf("https://iptv-web.app/US/KYWDT1.us/"),
+        "WCVBDT1" to listOf("https://iptv-web.app/US/WCVBDT1.us/"),
         // Cooking
         "AmericasTestKitchen" to listOf("https://iptv-web.app/US/AmericasTestKitchen.us/"),
         "bonappetit" to listOf("https://iptv-web.app/US/bonappetit.us/"),
@@ -51,8 +82,115 @@ class IranWizPlusProvider : MainAPI() {
         "NationalGeographic" to listOf("https://iptv-web.app/US/NationalGeographic.us/"),
         "NationalGeographicWild" to listOf("https://iptv-web.app/US/NationalGeographicWild.us/"),
         "PlutoTVCrime" to listOf("https://iptv-web.app/US/PlutoTVCrime.us/"),
+        "Reelz" to listOf("https://iptv-web.app/US/Reelz.us/"),
         "PlutoTVHistory" to listOf("https://iptv-web.app/US/PlutoTVHistory.us/"),
-        "PlutoTVInvestigation" to listOf("https://iptv-web.app/US/PlutoTVInvestigation.us/")
+        "PlutoTVInvestigation" to listOf("https://iptv-web.app/US/PlutoTVInvestigation.us/"),
+        // Entertainment
+        "AE" to listOf("https://iptv-web.app/US/AE.us/"),
+        "StoriesbyAMC" to listOf("https://iptv-web.app/US/StoriesbyAMC.us/"),
+        "BBCAmerica" to listOf("https://iptv-web.app/US/BBCAmerica.us/"),
+        "BETHer" to listOf("https://iptv-web.app/US/BETHer.us/"),
+        "BETPlutoTV" to listOf("https://iptv-web.app/US/BETPlutoTV.us/"),
+        "E" to listOf("https://iptv-web.app/US/E.us/"),
+        "FX" to listOf("https://iptv-web.app/US/FX.us/"),
+        "FXX" to listOf("https://iptv-web.app/US/FXX.us/"),
+        "Lifetime" to listOf("https://iptv-web.app/US/Lifetime.us/"),
+        "MTV" to listOf("https://iptv-web.app/US/MTV.us/"),
+        "MTV2" to listOf("https://iptv-web.app/US/MTV2.us/"),
+        "MTVenEspanol" to listOf("https://iptv-web.app/US/MTVenEspanol.us/"),
+        "MTVPlutoTV" to listOf("https://iptv-web.app/US/MTVPlutoTV.us/"),
+        "MTVRidiculousness" to listOf("https://iptv-web.app/US/MTVRidiculousness.us/"),
+        "Oxygen" to listOf("https://iptv-web.app/US/Oxygen.us/"),
+        // Classics
+        "AntennaTV" to listOf("https://iptv-web.app/US/AntennaTV.us/"),
+        "CoziTV" to listOf("https://iptv-web.app/US/CoziTV.us/"),
+        "Comet" to listOf("https://iptv-web.app/US/Comet.us/"),
+        "Grit" to listOf("https://iptv-web.app/US/Grit.us/"),
+        "GritXtra" to listOf("https://iptv-web.app/US/GritXtra.us/"),
+        "IONTV" to listOf("https://iptv-web.app/US/IONTV.us/"),
+        "IONPlus" to listOf("https://iptv-web.app/US/IONPlus.us/"),
+        "MeTV" to listOf("https://iptv-web.app/US/MeTV.us/"),
+        "Buzzr" to listOf("https://iptv-web.app/US/Buzzr.us/"),
+        "GameShowNetwork" to listOf("https://iptv-web.app/US/GameShowNetwork.us/"),
+        "GameShowNetwork" to listOf("https://iptv-web.app/US/GameShowNetwork.us/"),
+        "ThePriceIsRightTheBarkerEra" to listOf("https://iptv-web.app/US/ThePriceIsRightTheBarkerEra.us/"),
+        
+        // Music (US)
+        "MTVLive" to listOf("https://iptv-web.app/US/MTVLive.us/"),
+        "CMT" to listOf("https://iptv-web.app/US/CMT.us/"),
+        "AXSTV" to listOf("https://iptv-web.app/US/AXSTV.us/"),
+        "VevoPop" to listOf("https://iptv-web.app/US/VevoPop.us/"),
+        "Vevo80s" to listOf("https://iptv-web.app/US/Vevo80s.us/"),
+        "Vevo90s" to listOf("https://iptv-web.app/US/Vevo90s.us/"),
+        
+        // Movies (US)
+        "AMC" to listOf("https://iptv-web.app/US/AMC.us/"),
+        "ParamountNetwork" to listOf("https://iptv-web.app/US/ParamountNetwork.us/"),
+        "MGMPlus" to listOf("https://iptv-web.app/US/MGMPlus.us/"),
+        "FXM" to listOf("https://iptv-web.app/US/FXM.us/"),
+        "SundanceTV" to listOf("https://iptv-web.app/US/SundanceTV.us/"),
+        "IFC" to listOf("https://iptv-web.app/US/IFC.us/"),
+        "HallmarkMoviesMysteries" to listOf("https://iptv-web.app/US/HallmarkMoviesMysteries.us/"),
+        "Movies" to listOf("https://iptv-web.app/US/Movies.us/"),
+        "Charge" to listOf("https://iptv-web.app/US/Charge.us/"),
+        
+        // Series (US)
+        "StarTrek" to listOf("https://iptv-web.app/US/StarTrek.us/"),
+        "TheWalkingDeadUniverse" to listOf("https://iptv-web.app/US/TheWalkingDeadUniverse.us/"),
+        "CSI" to listOf("https://iptv-web.app/US/CSI.us/"),
+        "DoctorWhoClassic" to listOf("https://iptv-web.app/US/DoctorWhoClassic.us/"),
+        "HellsKitchen" to listOf("https://iptv-web.app/US/HellsKitchen.us/"),
+        "BarRescue" to listOf("https://iptv-web.app/US/BarRescue.us/"),
+        "Cheers" to listOf("https://iptv-web.app/US/Cheers.us/"),
+        "Frasier" to listOf("https://iptv-web.app/US/Frasier.us/"),
+        "WalkerTexasRanger" to listOf("https://iptv-web.app/US/WalkerTexasRanger.us/"),
+        "UnsolvedMysteries" to listOf("https://iptv-web.app/US/UnsolvedMysteries.us/"),
+        "Cops" to listOf("https://iptv-web.app/US/Cops.us/"),
+        "TheBobRossChannel" to listOf("https://iptv-web.app/US/TheBobRossChannel.us/"),
+        "ThisOldHouse" to listOf("https://iptv-web.app/US/ThisOldHouse.us/"),
+        
+        // Sports (US)
+        "NFLRedZone" to listOf("https://iptv-web.app/US/NFLRedZone.us/"),
+        "NBATV" to listOf("https://iptv-web.app/US/NBATV.us/"),
+        "MLBNetwork" to listOf("https://iptv-web.app/US/MLBNetwork.us/"),
+        "NHLNetwork" to listOf("https://iptv-web.app/US/NHLNetwork.us/"),
+        "CBSSportsNetworkUSA" to listOf("https://iptv-web.app/US/CBSSportsNetworkUSA.us/"),
+        "GolfChannel" to listOf("https://iptv-web.app/US/GolfChannel.us/"),
+        "TennisChannel" to listOf("https://iptv-web.app/US/TennisChannel.us/"),
+        "ESPNU" to listOf("https://iptv-web.app/US/ESPNU.us/"),
+        "CBSSportsGolazoNetwork" to listOf("https://iptv-web.app/US/CBSSportsGolazoNetwork.us/"),
+        
+        // Batch 7: Others
+        "Showtime" to listOf("https://iptv-web.app/US/Showtime.us/"),
+        "Starz" to listOf("https://iptv-web.app/US/Starz.us/"),
+        "USANetwork" to listOf("https://iptv-web.app/US/USANetwork.us/"),
+        "Syfy" to listOf("https://iptv-web.app/US/Syfy.us/"),
+        "Bravo" to listOf("https://iptv-web.app/US/Bravo.us/"),
+        "BigTenNetwork" to listOf("https://iptv-web.app/US/BigTenNetwork.us/"),
+        "SECNetwork" to listOf("https://iptv-web.app/US/SECNetwork.us/"),
+        "YesNetwork" to listOf("https://iptv-web.app/US/YesNetwork.us/"),
+        "WABCDT1" to listOf("https://iptv-web.app/US/WABCDT1.us/"),
+        "WCBSDT1" to listOf("https://iptv-web.app/US/WCBSDT1.us/"),
+        "WNBCDT1" to listOf("https://iptv-web.app/US/WNBCDT1.us/"),
+        "WNYWDT1" to listOf("https://iptv-web.app/US/WNYWDT1.us/"),
+        "WGNDT1" to listOf("https://iptv-web.app/US/WGNDT1.us/"),
+        
+        // Batch 8: UK Channels
+        // Note: UK channels are under /UK/ path
+        "BBCOne" to listOf("https://iptv-web.app/UK/BBCOne.uk/"),
+        "BBCTwo" to listOf("https://iptv-web.app/UK/BBCTwo.uk/"),
+        "Channel4" to listOf("https://iptv-web.app/UK/Channel4.uk/"),
+        "Channel5" to listOf("https://iptv-web.app/UK/Channel5.uk/"),
+        "ITV2" to listOf("https://iptv-web.app/UK/ITV2.uk/"),
+        "ITV3" to listOf("https://iptv-web.app/UK/ITV3.uk/"),
+        "ITV4" to listOf("https://iptv-web.app/UK/ITV4.uk/"),
+        "BBCNews" to listOf("https://iptv-web.app/UK/BBCNews.uk/"),
+        "GBNews" to listOf("https://iptv-web.app/UK/GBNews.uk/"),
+        "BBCEarth" to listOf("https://iptv-web.app/UK/BBCEarth.uk/"),
+        "BBCFour" to listOf("https://iptv-web.app/UK/BBCFour.uk/"),
+        "TalkTV" to listOf("https://iptv-web.app/UK/TalkTV.uk/"),
+        "S4C" to listOf("https://iptv-web.app/UK/S4C.uk/"),
+        "WildEarth" to listOf("https://iptv-web.app/UK/WildEarth.uk/")
     )
 
     private val playerBaseUrl = "$mainUrl/Pages/Player"
@@ -92,6 +230,15 @@ class IranWizPlusProvider : MainAPI() {
         const val GENRE_OTHER_NEWS = 100
         const val GENRE_COOKING = 101
         const val GENRE_DOCUMENTARY = 102
+        const val GENRE_COOKING = 101
+        const val GENRE_DOCUMENTARY = 102
+        const val GENRE_ENTERTAINMENT = 103
+        const val GENRE_CLASSICS = 104
+        const val GENRE_MOVIES_US = 105
+        const val GENRE_MUSIC_US = 106
+        const val GENRE_SERIES_US = 107
+        const val GENRE_SPORTS_US = 108
+        const val GENRE_UK = 109
     }
     
     data class Channel(
@@ -111,9 +258,38 @@ class IranWizPlusProvider : MainAPI() {
         Channel("MSNBC", "MSNBC", 0, GENRE_OTHER_NEWS),
         Channel("CNBC", "CNBC", 0, GENRE_OTHER_NEWS),
         Channel("ABCNews", "ABC News Live", 0, GENRE_OTHER_NEWS),
+        Channel("BloombergQuicktake", "Bloomberg Quicktake", 0, GENRE_OTHER_NEWS),
         Channel("InfoWars", "InfoWars", 0, GENRE_OTHER_NEWS),
         Channel("NBCNews", "NBC News NOW", 0, GENRE_OTHER_NEWS),
+        Channel("NewsNation", "NewsNation", 0, GENRE_OTHER_NEWS),
+        Channel("CBSNews247", "CBS News 24/7", 0, GENRE_OTHER_NEWS),
+        Channel("ReutersTV", "Reuters TV", 0, GENRE_OTHER_NEWS),
+        Channel("CheddarNews", "Cheddar News", 0, GENRE_OTHER_NEWS),
+        Channel("ScrippsNews", "Scripps News", 0, GENRE_OTHER_NEWS),
+        Channel("WABCDT1247News", "ABC 7 NY 24/7", 0, GENRE_OTHER_NEWS),
+        Channel("KABCDT1247News", "ABC 7 LA 24/7", 0, GENRE_OTHER_NEWS),
+        Channel("CBSNewsNewYork", "CBS News New York", 0, GENRE_OTHER_NEWS),
+        Channel("CBSNewsLosAngeles", "CBS News Los Angeles", 0, GENRE_OTHER_NEWS),
+        Channel("NewsmaxTV", "Newsmax", 0, GENRE_OTHER_NEWS),
+        Channel("TheYoungTurks", "The Young Turks", 0, GENRE_OTHER_NEWS),
         Channel("WAGA", "WAGA Fox 5", 0, GENRE_OTHER_NEWS),
+        
+        // ===== Local Networks (Genre 100) =====
+        Channel("KABCDT1", "KABC Los Angeles (ABC)", 0, GENRE_OTHER_NEWS),
+        Channel("WABCDT1", "WABC New York (ABC)", 0, GENRE_OTHER_NEWS),
+        Channel("WCVBDT1", "WCVB Boston (ABC)", 0, GENRE_OTHER_NEWS),
+        Channel("KMBCDT1", "KMBC Kansas City (ABC)", 0, GENRE_OTHER_NEWS),
+        Channel("KCBSDT1", "KCBS Los Angeles (CBS)", 0, GENRE_OTHER_NEWS),
+        Channel("WCBSDT1", "WCBS New York (CBS)", 0, GENRE_OTHER_NEWS),
+        Channel("KYWDT1", "KYW Philadelphia (CBS)", 0, GENRE_OTHER_NEWS),
+        Channel("KIRODT1", "KIRO Seattle (CBS)", 0, GENRE_OTHER_NEWS),
+        Channel("KNBCDT1", "KNBC Los Angeles (NBC)", 0, GENRE_OTHER_NEWS),
+        Channel("WNBCDT1", "WNBC New York (NBC)", 0, GENRE_OTHER_NEWS),
+        Channel("KTTVDT1", "KTTV Los Angeles (FOX)", 0, GENRE_OTHER_NEWS),
+        Channel("KDFWDT1", "KDFW Dallas (FOX)", 0, GENRE_OTHER_NEWS),
+        Channel("KTVUDT1", "KTVU San Francisco (FOX)", 0, GENRE_OTHER_NEWS),
+        Channel("WNYWDT1", "WNYW New York (FOX)", 0, GENRE_OTHER_NEWS),
+        Channel("WGNDT1", "WGN Chicago (Ind)", 0, GENRE_OTHER_NEWS),
         
         // ===== Cooking (Genre 101) =====
         Channel("GordonRamsaysHellsKitchen", "Hell's Kitchen", 0, GENRE_COOKING),
@@ -134,6 +310,106 @@ class IranWizPlusProvider : MainAPI() {
         Channel("PlutoTVHistory", "Pluto TV History", 0, GENRE_DOCUMENTARY),
         Channel("PlutoTVCrime", "Pluto TV Crime", 0, GENRE_DOCUMENTARY),
         Channel("PlutoTVInvestigation", "Pluto TV Investigation", 0, GENRE_DOCUMENTARY),
+        
+        // ===== Entertainment (Genre 103) =====
+        Channel("AE", "A&E", 0, GENRE_ENTERTAINMENT),
+        Channel("StoriesbyAMC", "AMC Stories", 0, GENRE_ENTERTAINMENT),
+        Channel("BBCAmerica", "BBC America", 0, GENRE_ENTERTAINMENT),
+        Channel("BETHer", "BET Her", 0, GENRE_ENTERTAINMENT),
+        Channel("BETPlutoTV", "BET Pluto TV", 0, GENRE_ENTERTAINMENT),
+        Channel("E", "E! Entertainment", 0, GENRE_ENTERTAINMENT),
+        Channel("FX", "FX", 0, GENRE_ENTERTAINMENT),
+        Channel("FXX", "FXX", 0, GENRE_ENTERTAINMENT),
+        Channel("Lifetime", "Lifetime", 0, GENRE_ENTERTAINMENT),
+        Channel("MTV", "MTV", 0, GENRE_ENTERTAINMENT),
+        Channel("MTV2", "MTV 2", 0, GENRE_ENTERTAINMENT),
+        Channel("MTVenEspanol", "MTV en Espanol", 0, GENRE_ENTERTAINMENT),
+        Channel("MTVPlutoTV", "MTV Pluto TV", 0, GENRE_ENTERTAINMENT),
+        Channel("MTVRidiculousness", "MTV Ridiculousness", 0, GENRE_ENTERTAINMENT),
+        Channel("Oxygen", "Oxygen", 0, GENRE_ENTERTAINMENT),
+        Channel("USANetwork", "USA Network", 0, GENRE_ENTERTAINMENT),
+        Channel("Syfy", "Syfy", 0, GENRE_ENTERTAINMENT),
+        Channel("Bravo", "Bravo", 0, GENRE_ENTERTAINMENT),
+        
+        // ===== Classics (Genre 104) =====
+        Channel("AntennaTV", "Antenna TV", 0, GENRE_CLASSICS),
+        Channel("CoziTV", "Cozi TV", 0, GENRE_CLASSICS),
+        Channel("Comet", "Comet", 0, GENRE_CLASSICS),
+        Channel("Grit", "Grit", 0, GENRE_CLASSICS),
+        Channel("GritXtra", "Grit Xtra", 0, GENRE_CLASSICS),
+        Channel("IONTV", "ION TV", 0, GENRE_CLASSICS),
+        Channel("IONPlus", "ION Plus", 0, GENRE_CLASSICS),
+        Channel("MeTV", "MeTV", 0, GENRE_CLASSICS),
+        Channel("Reelz", "Reelz", 0, GENRE_CLASSICS),
+        Channel("Buzzr", "Buzzr", 0, GENRE_CLASSICS),
+        Channel("GameShowNetwork", "Game Show Network", 0, GENRE_CLASSICS),
+        Channel("ThePriceIsRightTheBarkerEra", "Price Is Right (Barker)", 0, GENRE_CLASSICS),
+        
+        // ===== Music US (Genre 106) =====
+        Channel("MTVLive", "MTV Live", 0, GENRE_MUSIC_US),
+        Channel("CMT", "CMT", 0, GENRE_MUSIC_US),
+        Channel("AXSTV", "AXS TV", 0, GENRE_MUSIC_US),
+        Channel("VevoPop", "Vevo Pop", 0, GENRE_MUSIC_US),
+        Channel("Vevo80s", "Vevo 80s", 0, GENRE_MUSIC_US),
+        Channel("Vevo90s", "Vevo 90s", 0, GENRE_MUSIC_US),
+        
+        // ===== Movies US (Genre 105) =====
+        Channel("AMC", "AMC", 0, GENRE_MOVIES_US),
+        Channel("ParamountNetwork", "Paramount Network", 0, GENRE_MOVIES_US),
+        Channel("MGMPlus", "MGM+", 0, GENRE_MOVIES_US),
+        Channel("FXM", "FXM", 0, GENRE_MOVIES_US),
+        Channel("SundanceTV", "Sundance TV", 0, GENRE_MOVIES_US),
+        Channel("IFC", "IFC", 0, GENRE_MOVIES_US),
+        Channel("HallmarkMoviesMysteries", "Hallmark Movies & Mysteries", 0, GENRE_MOVIES_US),
+        Channel("Movies", "Movies!", 0, GENRE_MOVIES_US),
+        Channel("Charge", "Charge!", 0, GENRE_MOVIES_US),
+        Channel("Showtime", "Showtime", 0, GENRE_MOVIES_US),
+        Channel("Starz", "Starz", 0, GENRE_MOVIES_US),
+        
+        // ===== Series US (Genre 107) =====
+        Channel("StarTrek", "Star Trek", 0, GENRE_SERIES_US),
+        Channel("TheWalkingDeadUniverse", "Walking Dead Universe", 0, GENRE_SERIES_US),
+        Channel("CSI", "CSI", 0, GENRE_SERIES_US),
+        Channel("DoctorWhoClassic", "Doctor Who Classic", 0, GENRE_SERIES_US),
+        Channel("HellsKitchen", "Hell's Kitchen", 0, GENRE_SERIES_US),
+        Channel("BarRescue", "Bar Rescue", 0, GENRE_SERIES_US),
+        Channel("Cheers", "Cheers", 0, GENRE_SERIES_US),
+        Channel("Frasier", "Frasier", 0, GENRE_SERIES_US),
+        Channel("WalkerTexasRanger", "Walker, Texas Ranger", 0, GENRE_SERIES_US),
+        Channel("UnsolvedMysteries", "Unsolved Mysteries", 0, GENRE_SERIES_US),
+        Channel("Cops", "Cops", 0, GENRE_SERIES_US),
+        Channel("TheBobRossChannel", "The Bob Ross Channel", 0, GENRE_SERIES_US),
+        Channel("ThisOldHouse", "This Old House", 0, GENRE_SERIES_US),
+        
+        // ===== Sports US (Genre 108) =====
+        Channel("NFLRedZone", "NFL RedZone", 0, GENRE_SPORTS_US),
+        Channel("NBATV", "NBA TV", 0, GENRE_SPORTS_US),
+        Channel("MLBNetwork", "MLB Network", 0, GENRE_SPORTS_US),
+        Channel("NHLNetwork", "NHL Network", 0, GENRE_SPORTS_US),
+        Channel("CBSSportsNetworkUSA", "CBS Sports Network", 0, GENRE_SPORTS_US),
+        Channel("GolfChannel", "Golf Channel", 0, GENRE_SPORTS_US),
+        Channel("TennisChannel", "Tennis Channel", 0, GENRE_SPORTS_US),
+        Channel("ESPNU", "ESPN U", 0, GENRE_SPORTS_US),
+        Channel("CBSSportsGolazoNetwork", "CBS Sports Golazo", 0, GENRE_SPORTS_US),
+        Channel("BigTenNetwork", "Big Ten Network", 0, GENRE_SPORTS_US),
+        Channel("SECNetwork", "SEC Network", 0, GENRE_SPORTS_US),
+        Channel("YesNetwork", "YES Network", 0, GENRE_SPORTS_US),
+        
+        // ===== UK TV (Genre 109) =====
+        Channel("BBCOne", "BBC One", 0, GENRE_UK),
+        Channel("BBCTwo", "BBC Two", 0, GENRE_UK),
+        Channel("Channel4", "Channel 4", 0, GENRE_UK),
+        Channel("Channel5", "Channel 5", 0, GENRE_UK),
+        Channel("ITV2", "ITV 2", 0, GENRE_UK),
+        Channel("ITV3", "ITV 3", 0, GENRE_UK),
+        Channel("ITV4", "ITV 4", 0, GENRE_UK),
+        Channel("BBCNews", "BBC News (UK)", 0, GENRE_UK),
+        Channel("GBNews", "GB News", 0, GENRE_UK),
+        Channel("BBCEarth", "BBC Earth", 0, GENRE_UK),
+        Channel("BBCFour", "BBC Four", 0, GENRE_UK),
+        Channel("TalkTV", "TalkTV", 0, GENRE_UK),
+        Channel("S4C", "S4C", 0, GENRE_UK),
+        Channel("WildEarth", "WildEarth", 0, GENRE_UK),
         
         // ===== News (Genre 89) =====
         Channel("IranInternational", "ایران اینترنشنال", 306823, GENRE_NEWS),
@@ -285,7 +561,15 @@ class IranWizPlusProvider : MainAPI() {
         "${GENRE_KIDS}" to "👶 Kids",
         "${GENRE_RELIGIOUS}" to "🕌 Religious",
         "${GENRE_COOKING}" to "🍳 Cooking",
-        "${GENRE_DOCUMENTARY}" to "🦁 Documentary"
+        "${GENRE_COOKING}" to "🍳 Cooking",
+        "${GENRE_DOCUMENTARY}" to "🦁 Documentary",
+        "${GENRE_ENTERTAINMENT}" to "🎭 Entertainment",
+        "${GENRE_CLASSICS}" to "🏛 Classics",
+        "${GENRE_MOVIES_US}" to "🎥 Movies (US)",
+        "${GENRE_MUSIC_US}" to "🎸 Music (US)",
+        "${GENRE_SERIES_US}" to "📺 Series (US)",
+        "${GENRE_SPORTS_US}" to "🏈 Sports (US)",
+        "${GENRE_UK}" to "🇬🇧 United Kingdom"
     )
     
     // Get genre name for display
@@ -301,7 +585,15 @@ class IranWizPlusProvider : MainAPI() {
         GENRE_RELIGIOUS -> "🕌 Religious"
         GENRE_RELIGIOUS -> "🕌 Religious"
         GENRE_COOKING -> "🍳 Cooking"
+        GENRE_COOKING -> "🍳 Cooking"
         GENRE_DOCUMENTARY -> "🦁 Documentary"
+        GENRE_ENTERTAINMENT -> "🎭 Entertainment"
+        GENRE_CLASSICS -> "🏛 Classics"
+        GENRE_MOVIES_US -> "🎥 Movies (US)"
+        GENRE_MUSIC_US -> "🎸 Music (US)"
+        GENRE_SERIES_US -> "📺 Series (US)"
+        GENRE_SPORTS_US -> "🏈 Sports (US)"
+        GENRE_UK -> "🇬🇧 United Kingdom"
         else -> "📺 Other"
     }
     
