@@ -15,7 +15,6 @@ import java.util.concurrent.TimeUnit
  * IranWiz Provider - Persian Live TV from GLWiz
  * 
  * IMPORTANT: Channel names are CASE SENSITIVE and must have NO SPACES!
- * Example: "VoA" works, "VOA" doesn't. "iFilmFarsi" works, "iFilm Farsi" doesn't.
  */
 class IranWizProvider : MainAPI() {
     override var mainUrl = "https://www.glwiz.com"
@@ -36,9 +35,7 @@ class IranWizProvider : MainAPI() {
                 override fun saveFromResponse(url: HttpUrl, cookies: List<Cookie>) {
                     val host = url.host
                     cookieStore.getOrPut(host) { mutableListOf() }.apply {
-                        cookies.forEach { newCookie ->
-                            removeAll { it.name == newCookie.name }
-                        }
+                        cookies.forEach { newCookie -> removeAll { it.name == newCookie.name } }
                         addAll(cookies)
                     }
                 }
@@ -51,180 +48,191 @@ class IranWizProvider : MainAPI() {
             .build()
     }
     
-    // Channel data class
-    // streamName = EXACT case-sensitive name for API (no spaces!)
+    // Genre IDs for categories
+    companion object {
+        const val GENRE_NEWS = 89
+        const val GENRE_PERSIAN = 1
+        const val GENRE_IRIB = 2
+        const val GENRE_MOVIES = 19
+        const val GENRE_MUSIC = 10
+        const val GENRE_SPORTS = 84
+        const val GENRE_KIDS = 4
+        const val GENRE_RELIGIOUS = 85
+    }
+    
     data class Channel(
-        val streamName: String,     // Exact name for API call (case sensitive, no spaces)
-        val displayName: String,    // Display name for UI
-        val id: Int,                // For logo URL
-        val genreId: Int            // For category filtering
+        val streamName: String,
+        val displayName: String,
+        val id: Int,
+        val genreId: Int
     ) {
         val logoUrl: String get() = "https://hd200.glwiz.com/menu/epg/imagesNew/cim_${id}.png"
     }
     
-    // Channel list with EXACT streaming names (verified working)
+    // Channel list with EXACT streaming names
     private val allChannels = listOf(
-        // ===== News & Persian (Genre 1) - VERIFIED WORKING =====
-        Channel("IranInternational", "ایران اینترنشنال", 306823, 1),
-        Channel("BBCPersian", "بی بی سی فارسی", 301133, 1),
-        Channel("VoA", "صدای آمریکا", 300480, 1),
-        Channel("EuroNewsFarsi", "یورونیوز فارسی", 301404, 1),
-        Channel("IraneFarda", "ایران فردا", 302551, 1),
-        Channel("AfghanistanInternational", "افغانستان اینترنشنال", 307415, 1),
-        Channel("TapeshAmerica", "Tapesh America", 306606, 1),
-        Channel("ChannelOne", "کانال یک", 307514, 1),
-        Channel("ITN", "ITN آمریکا", 305049, 1),
-        Channel("ParsTV", "تلویزیون پارس", 300454, 1),
-        Channel("TAPESH", "تپش", 300447, 1),
-        Channel("MBCPersia", "MBC Persia", 300513, 1),
-        Channel("RJTV", "RJ TV", 306141, 1),
-        Channel("TasvirEIran", "تصویر ایران", 300457, 1),
-        Channel("OmidEIran", "امید ایران", 300462, 1),
-        Channel("MihanTV", "میهن", 300902, 1),
-        Channel("ITC", "ITC", 300465, 1),
-        Channel("AyenehTV", "آینه", 300326, 1),
-        Channel("T2International", "T2 International", 307381, 1),
-        Channel("T2America", "T2 America", 307261, 1),
-        Channel("IraneAryaee", "ایران آریایی", 302136, 1),
-        Channel("RadioFarda", "رادیوفردا", 306419, 1),
-        Channel("SimayAzadi", "سیمای آزادی", 307555, 1),
-        Channel("YourTimeTV", "یورتایم", 307230, 1),
-        Channel("EkranMovies", "Ekran Movies", 306747, 1),
-        Channel("EkranKids", "Ekran Kids", 306831, 1),
-        Channel("Film1", "Film 1", 303523, 1),
-        Channel("ClassicTV", "Classic TV", 302082, 1),
-        Channel("Today", "Today", 303003, 1),
-        Channel("Mohabat", "محبت", 300931, 1),
-        Channel("Salaam", "سلام", 301178, 1),
-        Channel("AsreEmrooz", "عصر امروز", 301196, 1),
-        Channel("NahadeAzadi", "Nahade Azadi", 307573, 1),
-        Channel("TMTV", "TM TV", 301163, 1),
-        Channel("PTV1", "PTV1", 300463, 1),
-        Channel("AFN", "AFN", 300594, 1),
-        Channel("Didgah", "دیدگاه", 305207, 1),
-        Channel("Payvand", "پیوند", 305183, 1),
-        Channel("ITNEurope", "ITN ایران", 305190, 1),
-        Channel("RoyalTimeTV", "Royal Time", 305269, 1),
-        Channel("Shabakeh7", "شبکه‌۷", 305654, 1),
-        Channel("ICnet1", "ICnet 1", 305143, 1),
-        Channel("ICnet3", "ICnet 3", 300448, 1),
-        Channel("ICC", "سینمایی ایرانیان", 302078, 1),
-        Channel("KhaneHonarmandan", "خانه‌هنرمندان", 306578, 1),
-        Channel("GanjEHozour", "گنج حضور", 301192, 1),
-        Channel("ErfanHalgheh", "عرفان حلقه", 300936, 1),
-        Channel("PayameAramesh", "پیام آرامش", 303657, 1),
-        Channel("WomanTV", "زن زندگی‌آزادی", 307008, 1),
-        Channel("PJTV", "پیام جوان", 303012, 1),
-        Channel("RVTV", "Radio Vanak TV", 302604, 1),
-        Channel("IsraelParsTV", "إسرائيل پارس", 307103, 1),
+        // ===== News (Genre 89) =====
+        Channel("IranInternational", "ایران اینترنشنال", 306823, GENRE_NEWS),
+        Channel("BBCPersian", "بی بی سی فارسی", 301133, GENRE_NEWS),
+        Channel("VoA", "صدای آمریکا", 300480, GENRE_NEWS),
+        Channel("EuroNewsFarsi", "یورونیوز فارسی", 301404, GENRE_NEWS),
+        Channel("IraneFarda", "ایران فردا", 302551, GENRE_NEWS),
+        Channel("AfghanistanInternational", "افغانستان اینترنشنال", 307415, GENRE_NEWS),
+        Channel("IRINN", "شبکه خبر IRINN", 300486, GENRE_NEWS),
+        Channel("RadioFarda", "رادیوفردا", 306419, GENRE_NEWS),
+        Channel("IranOneNews", "Iran One News", 307625, GENRE_NEWS),
         
-        // Persiana Network
-        Channel("PersianaFamily", "پرشیانا فمیلی", 306882, 1),
-        Channel("PersianaCinema", "پرشیانا سینما", 306892, 1),
-        Channel("PersianaComedy", "Persiana Comedy", 307313, 1),
-        Channel("PersianaKorea", "Persiana Korea", 307341, 1),
-        Channel("PersianaIranian", "پرشیانا ایرانیان", 307273, 1),
-        Channel("PersianaSeries", "Persiana Series", 307301, 1),
-        Channel("PersianaPlus", "Persiana Plus", 307361, 1),
-        Channel("PersianaDocs", "Persiana Docs", 307478, 1),
-        Channel("PersianaReality", "Persiana Reality", 307491, 1),
-        Channel("PersianaJunior", "پرشیانا جونیور", 307183, 1),
-        Channel("PersianaTurkiye", "Persiana Turkiye", 307275, 1),
+        // ===== Movies & Series (Genre 19) =====
+        Channel("EkranMovies", "Ekran Movies", 306747, GENRE_MOVIES),
+        Channel("Film1", "Film 1", 303523, GENRE_MOVIES),
+        Channel("PersianaCinema", "پرشیانا سینما", 306892, GENRE_MOVIES),
+        Channel("PersianaSeries", "Persiana Series", 307301, GENRE_MOVIES),
+        Channel("PersianaComedy", "Persiana Comedy", 307313, GENRE_MOVIES),
+        Channel("PersianaKorea", "Persiana Korea", 307341, GENRE_MOVIES),
+        Channel("AVASeries", "AVA Series", 307252, GENRE_MOVIES),
+        Channel("AVAFamily", "AVA Family", 307042, GENRE_MOVIES),
+        Channel("GrandCinema", "Grand Cinema", 307227, GENRE_MOVIES),
+        Channel("iFilmFarsi", "آی فیلم", 304079, GENRE_MOVIES),
+        Channel("IRIBNamayesh", "نمایش", 304081, GENRE_MOVIES),
+        Channel("T2Movies", "T2 Movies", 307377, GENRE_MOVIES),
+        Channel("IranProudSeriesPlus", "Iran Proud Series Plus", 307357, GENRE_MOVIES),
+        Channel("ClassicTV", "Classic TV", 302082, GENRE_MOVIES),
+        Channel("ICC", "سینمایی ایرانیان", 302078, GENRE_MOVIES),
         
-        // AVA Network
-        Channel("AVAFamily", "AVA Family", 307042, 1),
-        Channel("AVASeries", "AVA Series", 307252, 1),
+        // ===== Persian General (Genre 1) =====
+        Channel("TapeshAmerica", "Tapesh America", 306606, GENRE_PERSIAN),
+        Channel("ChannelOne", "کانال یک", 307514, GENRE_PERSIAN),
+        Channel("ITN", "ITN آمریکا", 305049, GENRE_PERSIAN),
+        Channel("ParsTV", "تلویزیون پارس", 300454, GENRE_PERSIAN),
+        Channel("TAPESH", "تپش", 300447, GENRE_PERSIAN),
+        Channel("MBCPersia", "MBC Persia", 300513, GENRE_PERSIAN),
+        Channel("RJTV", "RJ TV", 306141, GENRE_PERSIAN),
+        Channel("TasvirEIran", "تصویر ایران", 300457, GENRE_PERSIAN),
+        Channel("OmidEIran", "امید ایران", 300462, GENRE_PERSIAN),
+        Channel("MihanTV", "میهن", 300902, GENRE_PERSIAN),
+        Channel("AyenehTV", "آینه", 300326, GENRE_PERSIAN),
+        Channel("T2International", "T2 International", 307381, GENRE_PERSIAN),
+        Channel("T2America", "T2 America", 307261, GENRE_PERSIAN),
+        Channel("IraneAryaee", "ایران آریایی", 302136, GENRE_PERSIAN),
+        Channel("SimayAzadi", "سیمای آزادی", 307555, GENRE_PERSIAN),
+        Channel("YourTimeTV", "یورتایم", 307230, GENRE_PERSIAN),
+        Channel("Today", "Today", 303003, GENRE_PERSIAN),
+        Channel("AsreEmrooz", "عصر امروز", 301196, GENRE_PERSIAN),
+        Channel("Didgah", "دیدگاه", 305207, GENRE_PERSIAN),
+        Channel("Payvand", "پیوند", 305183, GENRE_PERSIAN),
+        Channel("ITNEurope", "ITN ایران", 305190, GENRE_PERSIAN),
+        Channel("Shabakeh7", "شبکه‌۷", 305654, GENRE_PERSIAN),
+        Channel("WomanTV", "زن زندگی‌آزادی", 307008, GENRE_PERSIAN),
+        Channel("PJTV", "پیام جوان", 303012, GENRE_PERSIAN),
+        Channel("PersianaFamily", "پرشیانا فمیلی", 306882, GENRE_PERSIAN),
+        Channel("PersianaIranian", "پرشیانا ایرانیان", 307273, GENRE_PERSIAN),
+        Channel("PersianaPlus", "Persiana Plus", 307361, GENRE_PERSIAN),
+        Channel("PersianaDocs", "Persiana Docs", 307478, GENRE_PERSIAN),
+        Channel("PersianaReality", "Persiana Reality", 307491, GENRE_PERSIAN),
+        Channel("PersianaTurkiye", "Persiana Turkiye", 307275, GENRE_PERSIAN),
+        Channel("AzStarTV", "Az Star TV", 306657, GENRE_PERSIAN),
+        Channel("Hambastegi", "Hambastegi", 307483, GENRE_PERSIAN),
+        Channel("4UTV", "4U TV", 306743, GENRE_PERSIAN),
+        Channel("4uFamily", "4u Family", 307168, GENRE_PERSIAN),
+        Channel("FXTV", "FX TV", 307384, GENRE_PERSIAN),
+        Channel("NetTV", "Net TV", 307305, GENRE_PERSIAN),
+        Channel("MTC", "MTC", 307309, GENRE_PERSIAN),
+        Channel("InfinityTV", "Infinity TV", 307335, GENRE_PERSIAN),
+        Channel("MaahTV", "Maah TV", 307315, GENRE_PERSIAN),
+        Channel("KhaterehTV", "خاطره", 307561, GENRE_PERSIAN),
+        Channel("FarsiTV", "Farsi TV HD", 307454, GENRE_PERSIAN),
+        Channel("IRTV", "IRTV ایرانیان", 307563, GENRE_PERSIAN),
+        Channel("HomePlus", "Home Plus", 307565, GENRE_PERSIAN),
+        Channel("DidanihaTV", "دیدنیها", 307591, GENRE_PERSIAN),
         
-        // Other Persian
-        Channel("AzStarTV", "Az Star TV", 306657, 1),
-        Channel("Hambastegi", "Hambastegi", 307483, 1),
-        Channel("4UTV", "4U TV", 306743, 1),
-        Channel("4uFamily", "4u Family", 307168, 1),
-        Channel("FXTV", "FX TV", 307384, 1),
-        Channel("FX22", "FX 22", 307450, 1),
-        Channel("NetTV", "Net TV", 307305, 1),
-        Channel("MTC", "MTC", 307309, 1),
-        Channel("InfinityTV", "Infinity TV", 307335, 1),
-        Channel("CafeTradeTV", "Cafe Trade TV", 307410, 1),
-        Channel("GrandCinema", "Grand Cinema", 307227, 1),
-        Channel("Oxir", "Oxir", 307182, 1),
-        Channel("IranProudSeriesPlus", "Iran Proud Series Plus", 307357, 1),
-        Channel("MaahTV", "Maah TV", 307315, 1),
-        Channel("KhaterehTV", "خاطره", 307561, 1),
-        Channel("FarsiTV", "Farsi TV HD", 307454, 1),
-        Channel("IRTV", "IRTV ایرانیان", 307563, 1),
-        Channel("HomePlus", "Home Plus", 307565, 1),
-        Channel("DidanihaTV", "دیدنیها", 307591, 1),
-        Channel("NimaTV", "Nima TV", 307597, 1),
+        // ===== IRIB (Genre 2) =====
+        Channel("IRIBChannel1", "شبکه یک", 300488, GENRE_IRIB),
+        Channel("IRIBChannel2", "شبکه دو", 300489, GENRE_IRIB),
+        Channel("IRIBChannel3", "شبکه سه", 300490, GENRE_IRIB),
+        Channel("IRIBChannel4", "شبکه چهار", 300491, GENRE_IRIB),
+        Channel("IRIBChannel5", "شبکه پنج", 300492, GENRE_IRIB),
+        Channel("IRIBAmoozesh", "شبکه آموزش", 301104, GENRE_IRIB),
+        Channel("IRIBOfogh", "افق", 300483, GENRE_IRIB),
+        Channel("IRIBVarzesh", "ورزش", 304077, GENRE_IRIB),
+        Channel("IRIBNasim", "نسیم", 306206, GENRE_IRIB),
+        Channel("IRIBSalamat", "سلامت", 304109, GENRE_IRIB),
+        Channel("IRIBMostanad", "مستند", 304104, GENRE_IRIB),
+        Channel("IRIBOmid", "شبکه امید", 306858, GENRE_IRIB),
+        Channel("Tamasha", "تماشا", 305052, GENRE_IRIB),
         
-        // Religious
-        Channel("NejatTV", "Nejat TV", 307425, 1),
-        Channel("RaheNejat", "Rahe Nejat", 307511, 1),
-        Channel("ImanBeMasih", "Iman Be Masih", 307373, 1),
-        Channel("DerakhteZendegi", "Derakhte Zendegi", 307363, 1),
-        Channel("OmideJavedan", "امید جاودان", 306672, 1),
-        Channel("AeinJadeed", "Aein Jadeed", 306980, 1),
-        Channel("KanalJadid", "Kanal Jadid", 303987, 1),
-        Channel("JewishTV", "Jewish TV", 307317, 1),
-        Channel("TahourTV", "Tahour TV", 307466, 1),
-        Channel("ImamHusseinTV1", "امام حسین ۱", 306954, 1),
-        
-        // ===== IRIB - Erasaneh (Genre 2) - VERIFIED WORKING =====
-        Channel("IRIBChannel1", "شبکه یک", 300488, 2),
-        Channel("IRIBChannel2", "شبکه دو", 300489, 2),
-        Channel("IRIBChannel3", "شبکه سه", 300490, 2),
-        Channel("IRIBChannel4", "شبکه چهار", 300491, 2),
-        Channel("IRIBChannel5", "شبکه پنج", 300492, 2),
-        Channel("IRINN", "شبکه خبر", 300486, 2),
-        Channel("IRIBAmoozesh", "شبکه آموزش", 301104, 2),
-        Channel("IRIBOfogh", "افق", 300483, 2),
-        Channel("IRIBVarzesh", "ورزش", 304077, 2),
-        Channel("IRIBNamayesh", "نمایش", 304081, 2),
-        Channel("IRIBNasim", "نسیم", 306206, 2),
-        Channel("IRIBPooya", "پویا", 304112, 2),
-        Channel("IRIBSalamat", "سلامت", 304109, 2),
-        Channel("IRIBMostanad", "مستند", 304104, 2),
-        Channel("IRIBOmid", "شبکه امید", 306858, 2),
-        Channel("Tamasha", "تماشا", 305052, 2),
-        Channel("iFilmFarsi", "آی فیلم", 304079, 2),
-        
-        // ===== Music (Genre 10) - VERIFIED WORKING =====
-        Channel("PMCMusic", "PMC Music", 303569, 10),
-        Channel("RJTV", "RJ TV", 306141, 10),
-        Channel("Navahang", "نواهنگ", 307617, 10),
-        Channel("SunMusic", "Sun Music", 307213, 10),
-        Channel("AvaFilm", "آوا فیلم", 300450, 10),
-        Channel("Avang", "Avang", 307196, 10),
-        Channel("SonatiMusic", "موسیقی سنتی", 302661, 10),
-        Channel("Music1", "Music 1", 306898, 10),
-        Channel("MeTV", "Me TV", 306959, 10),
-        Channel("KMC", "KMC", 307627, 10),
-        Channel("PersianaRap", "Persiana Rap", 307474, 10),
-        Channel("PersianaNostalgia", "پرشیانا نوستالژی", 307299, 10),
-        Channel("PersianaMusic", "پرشیانا موسیقی", 307519, 10),
-        Channel("PersianaFolk", "Persiana Folk", 307353, 10),
-        Channel("PMCRoyale", "PMC Royale", 307388, 10),
-        Channel("Romantico", "Romantico", 307238, 10),
-        Channel("AyazTV", "AyazTV", 307553, 10),
-        Channel("iTVPersianMusic", "iTV Persian Music", 307343, 10),
+        // ===== Music (Genre 10) =====
+        Channel("PMCMusic", "PMC Music", 303569, GENRE_MUSIC),
+        Channel("Navahang", "نواهنگ", 307617, GENRE_MUSIC),
+        Channel("SunMusic", "Sun Music", 307213, GENRE_MUSIC),
+        Channel("AvaFilm", "آوا فیلم", 300450, GENRE_MUSIC),
+        Channel("Avang", "Avang", 307196, GENRE_MUSIC),
+        Channel("SonatiMusic", "موسیقی سنتی", 302661, GENRE_MUSIC),
+        Channel("Music1", "Music 1", 306898, GENRE_MUSIC),
+        Channel("MeTV", "Me TV", 306959, GENRE_MUSIC),
+        Channel("KMC", "KMC", 307627, GENRE_MUSIC),
+        Channel("PersianaRap", "Persiana Rap", 307474, GENRE_MUSIC),
+        Channel("PersianaNostalgia", "پرشیانا نوستالژی", 307299, GENRE_MUSIC),
+        Channel("PersianaMusic", "پرشیانا موسیقی", 307519, GENRE_MUSIC),
+        Channel("PersianaFolk", "Persiana Folk", 307353, GENRE_MUSIC),
+        Channel("PMCRoyale", "PMC Royale", 307388, GENRE_MUSIC),
+        Channel("Romantico", "Romantico", 307238, GENRE_MUSIC),
+        Channel("AyazTV", "AyazTV", 307553, GENRE_MUSIC),
+        Channel("iTVPersianMusic", "iTV Persian Music", 307343, GENRE_MUSIC),
         
         // ===== Sports (Genre 84) =====
-        Channel("IRIBVarzesh", "ورزش", 304077, 84),
-        Channel("PersianaSports1", "Persiana Sport", 307480, 84),
-        Channel("PersianaSports2", "Persiana Sports 2", 307548, 84),
-        Channel("PersianaSports3", "Persiana Sports 3", 307599, 84),
-        Channel("PersianaSports4", "Persiana Sports 4", 307516, 84),
-        Channel("PersianaFight", "Persiana Fight", 307569, 84),
-        Channel("ProSportInternational", "Pro Sport International", 307621, 84),
-        Channel("GEMSPORT", "GEM Sport", 307575, 84)
+        Channel("PersianaSports1", "Persiana Sport", 307480, GENRE_SPORTS),
+        Channel("PersianaSports2", "Persiana Sports 2", 307548, GENRE_SPORTS),
+        Channel("PersianaSports3", "Persiana Sports 3", 307599, GENRE_SPORTS),
+        Channel("PersianaSports4", "Persiana Sports 4", 307516, GENRE_SPORTS),
+        Channel("PersianaFight", "Persiana Fight", 307569, GENRE_SPORTS),
+        Channel("ProSportInternational", "Pro Sport International", 307621, GENRE_SPORTS),
+        Channel("GEMSPORT", "GEM Sport", 307575, GENRE_SPORTS),
+        
+        // ===== Kids (Genre 4) =====
+        Channel("EkranKids", "Ekran Kids", 306831, GENRE_KIDS),
+        Channel("PersianaJunior", "پرشیانا جونیور", 307183, GENRE_KIDS),
+        Channel("IRIBPooya", "پویا", 304112, GENRE_KIDS),
+        
+        // ===== Religious (Genre 85) =====
+        Channel("NejatTV", "Nejat TV", 307425, GENRE_RELIGIOUS),
+        Channel("RaheNejat", "Rahe Nejat", 307511, GENRE_RELIGIOUS),
+        Channel("ImanBeMasih", "Iman Be Masih", 307373, GENRE_RELIGIOUS),
+        Channel("DerakhteZendegi", "Derakhte Zendegi", 307363, GENRE_RELIGIOUS),
+        Channel("OmideJavedan", "امید جاودان", 306672, GENRE_RELIGIOUS),
+        Channel("Mohabat", "محبت", 300931, GENRE_RELIGIOUS),
+        Channel("KanalJadid", "Kanal Jadid", 303987, GENRE_RELIGIOUS),
+        Channel("JewishTV", "Jewish TV", 307317, GENRE_RELIGIOUS),
+        Channel("TahourTV", "Tahour TV", 307466, GENRE_RELIGIOUS),
+        Channel("ImamHusseinTV1", "امام حسین ۱", 306954, GENRE_RELIGIOUS),
+        Channel("PayameAramesh", "پیام آرامش", 303657, GENRE_RELIGIOUS),
+        Channel("GanjEHozour", "گنج حضور", 301192, GENRE_RELIGIOUS),
+        Channel("IsraelParsTV", "إسرائيل پارس", 307103, GENRE_RELIGIOUS)
     )
     
+    // Categories for main page
     override val mainPage = mainPageOf(
-        "1" to "📺 Persian & News",
-        "2" to "📡 IRIB (Erasaneh)",
-        "10" to "🎵 Music",
-        "84" to "⚽ Sports"
+        "${GENRE_NEWS}" to "📰 News",
+        "${GENRE_MOVIES}" to "🎬 Movies & Series",
+        "${GENRE_PERSIAN}" to "📺 Persian",
+        "${GENRE_IRIB}" to "📡 IRIB",
+        "${GENRE_MUSIC}" to "🎵 Music",
+        "${GENRE_SPORTS}" to "⚽ Sports",
+        "${GENRE_KIDS}" to "👶 Kids",
+        "${GENRE_RELIGIOUS}" to "🕌 Religious"
     )
+    
+    // Get genre name for display
+    private fun getGenreName(genreId: Int): String = when(genreId) {
+        GENRE_NEWS -> "📰 News"
+        GENRE_MOVIES -> "🎬 Movies & Series"
+        GENRE_PERSIAN -> "📺 Persian"
+        GENRE_IRIB -> "📡 IRIB"
+        GENRE_MUSIC -> "🎵 Music"
+        GENRE_SPORTS -> "⚽ Sports"
+        GENRE_KIDS -> "👶 Kids"
+        GENRE_RELIGIOUS -> "🕌 Religious"
+        else -> "📺 Other"
+    }
     
     private fun httpGet(url: String, headers: Map<String, String> = emptyMap()): String {
         val requestBuilder = Request.Builder()
@@ -238,13 +246,13 @@ class IranWizProvider : MainAPI() {
     }
     
     override suspend fun getMainPage(page: Int, request: MainPageRequest): HomePageResponse {
-        val genreId = request.data.toIntOrNull() ?: 1
+        val genreId = request.data.toIntOrNull() ?: GENRE_NEWS
         val filtered = allChannels.filter { it.genreId == genreId }.distinctBy { it.streamName }
         
         val home = filtered.map { channel ->
             newMovieSearchResponse(
                 channel.displayName,
-                "$mainUrl/ch/${channel.streamName}",
+                "$mainUrl/ch/${channel.streamName}|${channel.genreId}",
                 TvType.Live
             ) {
                 this.posterUrl = channel.logoUrl
@@ -263,7 +271,7 @@ class IranWizProvider : MainAPI() {
         return results.map { channel ->
             newMovieSearchResponse(
                 channel.displayName,
-                "$mainUrl/ch/${channel.streamName}",
+                "$mainUrl/ch/${channel.streamName}|${channel.genreId}",
                 TvType.Live
             ) {
                 this.posterUrl = channel.logoUrl
@@ -272,17 +280,38 @@ class IranWizProvider : MainAPI() {
     }
     
     override suspend fun load(url: String): LoadResponse {
-        val streamName = url.substringAfterLast("/ch/")
+        // URL format: mainUrl/ch/StreamName|GenreId
+        val parts = url.substringAfterLast("/ch/").split("|")
+        val streamName = parts.getOrNull(0) ?: ""
+        val genreId = parts.getOrNull(1)?.toIntOrNull() ?: GENRE_PERSIAN
+        
         val channel = allChannels.find { it.streamName == streamName }
+        
+        // Get related channels from same genre (excluding current)
+        val relatedChannels = allChannels
+            .filter { it.genreId == genreId && it.streamName != streamName }
+            .shuffled()
+            .take(12)
+        
+        val recommendations = relatedChannels.map { ch ->
+            newMovieSearchResponse(
+                ch.displayName,
+                "$mainUrl/ch/${ch.streamName}|${ch.genreId}",
+                TvType.Live
+            ) {
+                this.posterUrl = ch.logoUrl
+            }
+        }
         
         return newMovieLoadResponse(
             channel?.displayName ?: streamName,
             url,
             TvType.Live,
-            streamName  // Pass exact streamName for loadLinks
+            streamName
         ) {
             this.posterUrl = channel?.logoUrl ?: ""
-            this.plot = "📺 Live: ${channel?.displayName ?: streamName}"
+            this.plot = "📺 ${channel?.displayName ?: streamName}\n\n${getGenreName(genreId)}"
+            this.recommendations = recommendations
         }
     }
     
@@ -293,23 +322,17 @@ class IranWizProvider : MainAPI() {
         callback: (ExtractorLink) -> Unit
     ): Boolean {
         return try {
-            // data is already the exact streamName (no spaces, correct case)
             val streamName = data
             
-            // Clear old cookies and get fresh session
             cookieStore.clear()
-            
-            // Step 1: Initialize session
             httpGet("$playerBaseUrl/Player.aspx")
             
-            // Step 2: Get stream URL - use streamName directly (already correct format)
             val requestUrl = "$ajaxUrl?action=getStreamURL&ClusterName=zixi-glwiz-mobile&RecType=4&itemName=$streamName&ScreenMode=0"
             val response = httpGet(requestUrl, mapOf(
                 "Referer" to "$playerBaseUrl/p2.html",
                 "X-Requested-With" to "XMLHttpRequest"
             ))
             
-            // Extract stream URL - only unescape JSON encoding
             val respRegex = Regex(""""resp"\s*:\s*"([^"]+)"""")
             val match = respRegex.find(response)
             
