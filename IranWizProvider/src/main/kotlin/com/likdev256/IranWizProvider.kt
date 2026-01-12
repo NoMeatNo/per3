@@ -301,15 +301,15 @@ class IranWizProvider : MainAPI() {
             // Step 1: Initialize session
             httpGet("$playerBaseUrl/Player.aspx")
             
-            // Step 2: Get stream URL - URL encode channel name for the request
-            val encodedName = java.net.URLEncoder.encode(channelName, "UTF-8")
-            val requestUrl = "$ajaxUrl?action=getStreamURL&ClusterName=zixi-glwiz-mobile&RecType=4&itemName=$encodedName&ScreenMode=0"
+            // Step 2: Get stream URL - REMOVE SPACES from channel name (API needs no-space names)
+            val apiChannelName = channelName.replace(" ", "")
+            val requestUrl = "$ajaxUrl?action=getStreamURL&ClusterName=zixi-glwiz-mobile&RecType=4&itemName=$apiChannelName&ScreenMode=0"
             val response = httpGet(requestUrl, mapOf(
                 "Referer" to "$playerBaseUrl/p2.html",
                 "X-Requested-With" to "XMLHttpRequest"
             ))
             
-            // Extract stream URL
+            // Extract stream URL - only unescape JSON encoding, no other manipulation
             val respRegex = Regex(""""resp"\s*:\s*"([^"]+)"""")
             val match = respRegex.find(response)
             
@@ -317,7 +317,6 @@ class IranWizProvider : MainAPI() {
                 val streamUrl = match.groupValues[1]
                     .replace("\\u0026", "&")
                     .replace("\\/", "/")
-                    .replace(" ", "%20")  // Encode spaces in URL path
                 
                 if (!streamUrl.contains("GlwizPromo")) {
                     callback.invoke(
