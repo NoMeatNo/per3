@@ -24,17 +24,27 @@ class IranWizPlusProvider : MainAPI() {
     
     // Additional New Channels Source
     private val otherNewsUrls = mapOf(
+        "IranInternational" to listOf(
+            "https://dev-live.livetvstream.co.uk/LS-63503-4/chunklist_b1196000.m3u8", // Direct
+            "https://www.youtube.com/watch?v=A92pqZQAsm8" // YouTube
+        ),
+        "BBCPersian" to listOf(
+            "https://vs-cmaf-pushb-ww.live.cf.md.bbci.co.uk/x=4/i=urn:bbc:pips:service:bbc_persian_tv/pc_hd_abr_v2.fmp4.m3u8", // Direct 1
+            "https://vs-cmaf-pushb-ww-live.akamaized.net/x=4/i=urn:bbc:pips:service:bbc_persian_tv/pc_hd_abr_v2.fmp4.m3u8", // Direct 2
+            "https://www.youtube.com/watch?v=5qN1dRjatv8" // YouTube
+        ),
         "FoxNews" to listOf(
             "https://www.newslive.com/american/fox-news.html",
             "https://iptv-web.app/US/FoxNewsChannel.us/"
         ),
         "CNN" to listOf(
-            "https://www.newslive.com/american/cnn-stream.html",
+
             "https://turnerlive.warnermediacdn.com/hls/live/586495/cnngo/cnn_slate/VIDEO_0_3564000.m3u8",
             "https://turnerlive.warnermediacdn.com/hls/live/586495/cnngo/cnn_slate/VIDEO_2_1964000.m3u8",
             "https://turnerlive.warnermediacdn.com/hls/live/586495/cnngo/cnn_slate/VIDEO_3_1464000.m3u8",
             "https://turnerlive.warnermediacdn.com/hls/live/586495/cnngo/cnn_slate/VIDEO_4_1064000.m3u8",
-            "https://turnerlive.warnermediacdn.com/hls/live/586497/cnngo/cnni/VIDEO_0_3564000.m3u8"
+            "https://turnerlive.warnermediacdn.com/hls/live/586497/cnngo/cnni/VIDEO_0_3564000.m3u8",
+            "https://www.newslive.com/american/cnn-stream.html"
         ),
         "CNNGB" to listOf("https://d2anxhed2mfixb.cloudfront.net/v1/master/3722c60a815c199d9c0ef36c5b73da68a62b09d1/cc-wqc602hxepp0q/CNNFAST_GB.m3u8"),
         "MSNBC" to listOf(
@@ -638,6 +648,7 @@ class IranWizPlusProvider : MainAPI() {
     }
     
     override suspend fun getMainPage(page: Int, request: MainPageRequest): HomePageResponse {
+        if (page > 1) return newHomePageResponse(request.name, emptyList())
         val genreId = request.data.toIntOrNull() ?: GENRE_NEWS
         val filtered = allChannels.filter { it.genreId == genreId }.distinctBy { it.streamName }
         
@@ -723,6 +734,13 @@ class IranWizPlusProvider : MainAPI() {
                 
                 urls.forEach { url ->
                     try {
+                        // Handle YouTube links
+                        if (url.contains("youtube.com") || url.contains("youtu.be")) {
+                            loadExtractor(url, subtitleCallback, callback)
+                            foundAny = true
+                            return@forEach
+                        }
+
                         // Handle direct m3u8 links (user provided)
                         if (url.endsWith(".m3u8")) {
                              callback.invoke(
