@@ -198,7 +198,18 @@ class IranWizPlusProvider : MainAPI() {
         "BBCFour" to listOf("https://iptv-web.app/UK/BBCFour.uk/"),
         "TalkTV" to listOf("https://iptv-web.app/UK/TalkTV.uk/"),
         "S4C" to listOf("https://iptv-web.app/UK/S4C.uk/"),
-        "WildEarth" to listOf("https://iptv-web.app/UK/WildEarth.uk/")
+        "WildEarth" to listOf("https://iptv-web.app/UK/WildEarth.uk/"),
+        
+        // Batch 10: Italy (Direct M3U8s)
+        "Rai1" to listOf("https://mediapolis.rai.it/relinker/relinkerServlet.htm?cont=2606803&output=16"),
+        "Rai2" to listOf("https://mediapolis.rai.it/relinker/relinkerServlet.htm?cont=308718&output=16"),
+        "Rai3" to listOf("https://mediapolis.rai.it/relinker/relinkerServlet.htm?cont=308709&output=16"),
+        "RealTime" to listOf("https://d3562mgijzx0zq.cloudfront.net/v1/master/3722c60a815c199d9c0ef36c5b73da68a62b09d1/cc-kizqtzpvvl3i8/Realtime_IT.m3u8"),
+        "DMAX" to listOf("https://d2j2nqgg7bzth.cloudfront.net/v1/master/3722c60a815c199d9c0ef36c5b73da68a62b09d1/cc-02k1gv1j0ufwn/DMAX_IT.m3u8"),
+        "RaiNews24" to listOf("https://mediapolis.rai.it/relinker/relinkerServlet.htm?cont=1&output=16"),
+        "RaiSport" to listOf("https://mediapolis.rai.it/relinker/relinkerServlet.htm?cont=358025&output=16"),
+        "SportItalia" to listOf("https://tinyurl.com/p7yv8stc"),
+        "SuperTennis" to listOf("https://live-embed.supertennix.hiway.media/restreamer/supertennix_client/gpu-a-c0-16/restreamer/outgest/aa3673f1-e178-44a9-a947-ef41db73211a/manifest.m3u8")
     )
 
     private val playerBaseUrl = "$mainUrl/Pages/Player"
@@ -245,6 +256,7 @@ class IranWizPlusProvider : MainAPI() {
         const val GENRE_SERIES_US = 107
         const val GENRE_SPORTS_US = 108
         const val GENRE_UK = 109
+        const val GENRE_ITALY = 110
     }
     
     data class Channel(
@@ -261,12 +273,11 @@ class IranWizPlusProvider : MainAPI() {
          // ===== Other News (Genre 100) =====
         Channel("FoxNews", "Fox News", 0, GENRE_OTHER_NEWS),
         Channel("CNN", "CNN", 0, GENRE_OTHER_NEWS),
-        Channel("CNNGB", "CNN International (GB)", 0, GENRE_OTHER_NEWS),
+        Channel("CNNGB", "CNN Fast", 0, GENRE_OTHER_NEWS),
         Channel("MSNBC", "MSNBC", 0, GENRE_OTHER_NEWS),
         Channel("CNBC", "CNBC", 0, GENRE_OTHER_NEWS),
         Channel("ABCNews", "ABC News Live", 0, GENRE_OTHER_NEWS),
         Channel("BloombergQuicktake", "Bloomberg Quicktake", 0, GENRE_OTHER_NEWS),
-        Channel("InfoWars", "InfoWars", 0, GENRE_OTHER_NEWS),
         Channel("NBCNews", "NBC News NOW", 0, GENRE_OTHER_NEWS),
         Channel("NewsNation", "NewsNation", 0, GENRE_OTHER_NEWS),
         Channel("CBSNews247", "CBS News 24/7", 0, GENRE_OTHER_NEWS),
@@ -417,6 +428,17 @@ class IranWizPlusProvider : MainAPI() {
         Channel("TalkTV", "TalkTV", 0, GENRE_UK),
         Channel("S4C", "S4C", 0, GENRE_UK),
         Channel("WildEarth", "WildEarth", 0, GENRE_UK),
+        
+        // ===== Italy (Genre 110) =====
+        Channel("Rai1", "Rai 1", 0, GENRE_ITALY),
+        Channel("Rai2", "Rai 2", 0, GENRE_ITALY),
+        Channel("Rai3", "Rai 3", 0, GENRE_ITALY),
+        Channel("RaiNews24", "Rai News 24", 0, GENRE_ITALY),
+        Channel("RealTime", "Real Time", 0, GENRE_ITALY),
+        Channel("DMAX", "DMAX", 0, GENRE_ITALY),
+        Channel("RaiSport", "Rai Sport", 0, GENRE_ITALY),
+        Channel("SportItalia", "SportItalia", 0, GENRE_ITALY),
+        Channel("SuperTennis", "SuperTennis", 0, GENRE_ITALY),
         
         // ===== News (Genre 89) =====
         Channel("IranInternational", "ایران اینترنشنال", 306823, GENRE_NEWS),
@@ -575,7 +597,9 @@ class IranWizPlusProvider : MainAPI() {
         "${GENRE_MUSIC_US}" to "🎸 Music (US)",
         "${GENRE_SERIES_US}" to "📺 Series (US)",
         "${GENRE_SPORTS_US}" to "🏈 Sports (US)",
-        "${GENRE_UK}" to "🇬🇧 United Kingdom"
+        "${GENRE_SPORTS_US}" to "🏈 Sports (US)",
+        "${GENRE_UK}" to "🇬🇧 United Kingdom",
+        "${GENRE_ITALY}" to "🇮🇹 Italy"
     )
     
     // Get genre name for display
@@ -598,6 +622,7 @@ class IranWizPlusProvider : MainAPI() {
         GENRE_SERIES_US -> "📺 Series (US)"
         GENRE_SPORTS_US -> "🏈 Sports (US)"
         GENRE_UK -> "🇬🇧 United Kingdom"
+        GENRE_ITALY -> "🇮🇹 Italy"
         else -> "📺 Other"
     }
     
