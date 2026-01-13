@@ -28,7 +28,15 @@ class IranWizPlusProvider : MainAPI() {
             "https://www.newslive.com/american/fox-news.html",
             "https://iptv-web.app/US/FoxNewsChannel.us/"
         ),
-        "CNN" to listOf("https://www.newslive.com/american/cnn-stream.html"),
+        "CNN" to listOf(
+            "https://www.newslive.com/american/cnn-stream.html",
+            "https://turnerlive.warnermediacdn.com/hls/live/586495/cnngo/cnn_slate/VIDEO_0_3564000.m3u8",
+            "https://turnerlive.warnermediacdn.com/hls/live/586495/cnngo/cnn_slate/VIDEO_2_1964000.m3u8",
+            "https://turnerlive.warnermediacdn.com/hls/live/586495/cnngo/cnn_slate/VIDEO_3_1464000.m3u8",
+            "https://turnerlive.warnermediacdn.com/hls/live/586495/cnngo/cnn_slate/VIDEO_4_1064000.m3u8",
+            "https://turnerlive.warnermediacdn.com/hls/live/586497/cnngo/cnni/VIDEO_0_3564000.m3u8"
+        ),
+        "CNNGB" to listOf("https://d2anxhed2mfixb.cloudfront.net/v1/master/3722c60a815c199d9c0ef36c5b73da68a62b09d1/cc-wqc602hxepp0q/CNNFAST_GB.m3u8"),
         "MSNBC" to listOf(
             "https://www.newslive.com/american/msnbc-news-live.html",
             "https://iptv-web.app/US/MSNBC.us/"
@@ -253,6 +261,7 @@ class IranWizPlusProvider : MainAPI() {
          // ===== Other News (Genre 100) =====
         Channel("FoxNews", "Fox News", 0, GENRE_OTHER_NEWS),
         Channel("CNN", "CNN", 0, GENRE_OTHER_NEWS),
+        Channel("CNNGB", "CNN International (GB)", 0, GENRE_OTHER_NEWS),
         Channel("MSNBC", "MSNBC", 0, GENRE_OTHER_NEWS),
         Channel("CNBC", "CNBC", 0, GENRE_OTHER_NEWS),
         Channel("ABCNews", "ABC News Live", 0, GENRE_OTHER_NEWS),
@@ -689,6 +698,22 @@ class IranWizPlusProvider : MainAPI() {
                 
                 urls.forEach { url ->
                     try {
+                        // Handle direct m3u8 links (user provided)
+                        if (url.endsWith(".m3u8")) {
+                             callback.invoke(
+                                newExtractorLink(
+                                    source = name,
+                                    name = "$name - $streamName (Direct)",
+                                    url = url
+                                ).apply {
+                                    this.referer = "https://iptv-web.app/"
+                                    this.quality = Qualities.Unknown.value
+                                }
+                            )
+                            foundAny = true
+                            return@forEach
+                        }
+                        
                         // We use standard app.get() for these sites
                         val response = app.get(url).text
                         // Find .m3u8 link (it works for both static and dynamic with tokens)
