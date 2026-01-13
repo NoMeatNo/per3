@@ -4,6 +4,7 @@ import com.lagradost.cloudstream3.*
 import com.lagradost.cloudstream3.utils.ExtractorLink
 import com.lagradost.cloudstream3.utils.Qualities
 import com.lagradost.cloudstream3.utils.newExtractorLink
+import com.lagradost.cloudstream3.utils.loadExtractor
 import okhttp3.Cookie
 import okhttp3.CookieJar
 import okhttp3.HttpUrl
@@ -736,7 +737,7 @@ class IranWizPlusProvider : MainAPI() {
                     try {
                         // Handle YouTube links
                         if (url.contains("youtube.com") || url.contains("youtu.be")) {
-                            loadExtractor(url, subtitleCallback, callback)
+                            loadExtractor(url, mainUrl, subtitleCallback, callback)
                             foundAny = true
                             return@forEach
                         }
