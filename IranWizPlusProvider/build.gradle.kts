@@ -6,5 +6,5 @@ cloudstream {
     authors = listOf("NoMeatNo")
     status = 1
     tvTypes = listOf("Live")
-    // iconUrl = "https://www.glwiz.com/favicon.ico" // Using local icon.png from resources
+    iconUrl = "https://raw.githubusercontent.com/NoMeatNo/per3/refs/heads/master/logos/tvlogo.png"
 }
