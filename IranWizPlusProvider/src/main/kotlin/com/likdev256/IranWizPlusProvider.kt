@@ -761,44 +761,54 @@ class IranWizPlusProvider : MainAPI() {
                         // We use standard app.get() for these sites
                         val response = app.get(url).text
                         // Find .m3u8 link (it works for both static and dynamic with tokens)
+                        // Collect all found streams with their specific required Referer
+                        val allMatches = mutableListOf<Pair<String, String>>()
+                        
+                        // Default referer for this source page
+                        val defaultReferer = if (url.contains("iptv-web")) "https://iptv-web.app/" else "https://www.newslive.com/"
+
                         // 1. Find standard .m3u8 links
                         val m3u8Regex = Regex("""https?://[^"']+\.m3u8[^"']*""")
-                        val m3u8Matches = m3u8Regex.findAll(response).map { 
-                            it.value.substringBefore("&quot;")
+                        m3u8Regex.findAll(response).forEach { 
+                            val link = it.value.substringBefore("&quot;")
                                 .replace("\\/", "/")
                                 .replace("&amp;", "&")
+                            allMatches.add(link to defaultReferer)
                         }
 
-                        // 2. Find links hidden in Astro/JSON props (e.g. [0,&quot;https://...&quot;])
+                        // 2. Find links hidden in Astro/JSON props
                         val jsonRegex = Regex("""\[0,&quot;(https?://[^&]+)&quot;\]""")
-                        val jsonMatches = jsonRegex.findAll(response).map {
-                             it.groupValues[1]
-                                .replace("\\/", "/")
+                        jsonRegex.findAll(response).forEach {
+                             val link = it.groupValues[1].replace("\\/", "/")
+                             allMatches.add(link to defaultReferer)
                         }
 
                         // 3. Find tvpass.org links (redirect to m3u8)
-                        val tvpassRegex = Regex("""https?://tvpass\.org/live/[^"'\s]+""")
-                        val tvpassMatches = tvpassRegex.findAll(response).toList().map { match ->
+                        val tvpassRegex = Regex("""https?://tvpass\.org/live/[a-zA-Z0-9_\-/]+""")
+                        tvpassRegex.findAll(response).toList().forEach { match ->
                             try {
                                 // Resolve the redirect
                                 val redirectUrl = app.get(match.value).url
-                                if (redirectUrl.contains(".m3u8")) redirectUrl else match.value
+                                if (redirectUrl.contains(".m3u8")) {
+                                    // TVPass/TheTVApp streams usually require their own domain as referer
+                                    allMatches.add(redirectUrl to "https://thetvapp.to/") 
+                                }
                             } catch (e: Exception) {
-                                match.value
+                                // Ignore failures
                             }
                         }
 
-                        // Combine and deduplicate
-                        val matches = (m3u8Matches + jsonMatches + tvpassMatches).distinct()
+                        // Deduplicate by URL
+                        val uniqueMatches = allMatches.distinctBy { it.first }
                         
-                        matches.forEach { streamUrl ->
+                        uniqueMatches.forEach { (streamUrl, streamReferer) ->
                             callback.invoke(
                                 newExtractorLink(
                                     source = name,
                                     name = "$name - $streamName (${if(url.contains("newslive")) "NewsLive" else "IPTVWeb"})",
                                     url = streamUrl
                                 ).apply {
-                                    this.referer = if (url.contains("iptv-web")) "https://iptv-web.app/" else "https://www.newslive.com/"
+                                    this.referer = streamReferer
                                     this.quality = Qualities.Unknown.value
                                 }
                             )
