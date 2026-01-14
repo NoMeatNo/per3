@@ -51,14 +51,15 @@ class IranWizPlusProvider : MainAPI() {
         ),
         "CNNGB" to listOf("https://d2anxhed2mfixb.cloudfront.net/v1/master/3722c60a815c199d9c0ef36c5b73da68a62b09d1/cc-wqc602hxepp0q/CNNFAST_GB.m3u8"),
         "MSNBC" to listOf(
-            "https://www.newslive.com/american/msnbc-news-live.html",
-            "https://iptv-web.app/US/MSNBC.us/"
+            "https://iptv-web.app/US/MSNBC.us/",
+            "https://www.newslive.com/american/msnbc-news-live.html"
         ),
-        "CNBC" to listOf("https://www.newslive.com/business/cnbc-live-free.html"),
-        "ABCNews" to listOf("https://iptv-web.app/US/ABCNewsLive.us/"),
+        "CNBC" to listOf(
+            "https://iptv-web.app/US/CNBC.us/",
+            "https://www.newslive.com/business/cnbc-live-free.html"
+        ),
         "BloombergQuicktake" to listOf("https://iptv-web.app/US/BloombergQuicktake.us/"),
         "ABCNews" to listOf("https://iptv-web.app/US/ABCNewsLive.us/"),
-        "BloombergQuicktake" to listOf("https://iptv-web.app/US/BloombergQuicktake.us/"),
         "NBCNews" to listOf("https://iptv-web.app/US/NBCNewsNOW.us/"),
         "NewsNation" to listOf("https://iptv-web.app/US/NewsNation.us/"),
         "CBSNews247" to listOf("https://iptv-web.app/US/CBSNews247.us/"),
@@ -73,7 +74,10 @@ class IranWizPlusProvider : MainAPI() {
         "TheYoungTurks" to listOf("https://iptv-web.app/US/TheYoungTurks.us/"),
          // Local Networks
         "KABCDT1" to listOf("https://iptv-web.app/US/KABCDT1.us/"),
-        "KCBSDT1" to listOf("https://iptv-web.app/US/KCBSDT1.us/"),
+        "KCBSDT1" to listOf(
+            "https://iptv-web.app/US/KCBSDT1.us/",
+            "https://tvpass.org/channel/cbs-kcbs-los-angeles-ca"
+        ),
         "KDFWDT1" to listOf("https://iptv-web.app/US/KDFWDT1.us/"),
         "KIRODT1" to listOf("https://iptv-web.app/US/KIRODT1.us/"),
         "KMBCDT1" to listOf("https://iptv-web.app/US/KMBCDT1.us/"),
@@ -109,7 +113,10 @@ class IranWizPlusProvider : MainAPI() {
         // Entertainment
         "AE" to listOf("https://iptv-web.app/US/AE.us/"),
         "StoriesbyAMC" to listOf("https://iptv-web.app/US/StoriesbyAMC.us/"),
-        "BBCAmerica" to listOf("https://iptv-web.app/US/BBCAmerica.us/"),
+        "BBCAmerica" to listOf(
+            "https://iptv-web.app/US/BBCAmerica.us/",
+            "https://tvpass.org/channel/bbc-america-east"
+        ),
         "BETHer" to listOf("https://iptv-web.app/US/BETHer.us/"),
         "BETPlutoTV" to listOf("https://iptv-web.app/US/BETPlutoTV.us/"),
         "E" to listOf("https://iptv-web.app/US/E.us/"),
@@ -145,7 +152,10 @@ class IranWizPlusProvider : MainAPI() {
         "Vevo90s" to listOf("https://iptv-web.app/US/Vevo90s.us/"),
         
         // Movies (US)
-        "AMC" to listOf("https://iptv-web.app/US/AMC.us/"),
+        "AMC" to listOf(
+            "https://iptv-web.app/US/AMC.us/",
+            "https://tvpass.org/channel/amc-eastern-feed"
+        ),
         "ParamountNetwork" to listOf("https://iptv-web.app/US/ParamountNetwork.us/"),
         "MGMPlus" to listOf("https://iptv-web.app/US/MGMPlus.us/"),
         "FXM" to listOf("https://iptv-web.app/US/FXM.us/"),
@@ -175,7 +185,10 @@ class IranWizPlusProvider : MainAPI() {
         "NBATV" to listOf("https://iptv-web.app/US/NBATV.us/"),
         "MLBNetwork" to listOf("https://iptv-web.app/US/MLBNetwork.us/"),
         "NHLNetwork" to listOf("https://iptv-web.app/US/NHLNetwork.us/"),
-        "CBSSportsNetworkUSA" to listOf("https://iptv-web.app/US/CBSSportsNetworkUSA.us/"),
+        "CBSSportsNetworkUSA" to listOf(
+            "https://iptv-web.app/US/CBSSportsNetworkUSA.us/",
+            "https://tvpass.org/channel/cbs-sports-network-usa"
+        ),
         "GolfChannel" to listOf("https://iptv-web.app/US/GolfChannel.us/"),
         "TennisChannel" to listOf("https://iptv-web.app/US/TennisChannel.us/"),
         "ESPNU" to listOf("https://iptv-web.app/US/ESPNU.us/"),
@@ -191,7 +204,10 @@ class IranWizPlusProvider : MainAPI() {
         "SECNetwork" to listOf("https://iptv-web.app/US/SECNetwork.us/"),
         "YesNetwork" to listOf("https://iptv-web.app/US/YesNetwork.us/"),
         "WABCDT1" to listOf("https://iptv-web.app/US/WABCDT1.us/"),
-        "WCBSDT1" to listOf("https://iptv-web.app/US/WCBSDT1.us/"),
+        "WCBSDT1" to listOf(
+            "https://iptv-web.app/US/WCBSDT1.us/",
+            "https://tvpass.org/channel/cbs-wcbs-new-york-ny"
+        ),
         "WNBCDT1" to listOf("https://iptv-web.app/US/WNBCDT1.us/"),
         "WNYWDT1" to listOf("https://iptv-web.app/US/WNYWDT1.us/"),
         "WGNDT1" to listOf("https://iptv-web.app/US/WGNDT1.us/"),
@@ -222,7 +238,19 @@ class IranWizPlusProvider : MainAPI() {
         "RaiNews24" to listOf("https://mediapolis.rai.it/relinker/relinkerServlet.htm?cont=1&output=16"),
         "RaiSport" to listOf("https://mediapolis.rai.it/relinker/relinkerServlet.htm?cont=358025&output=16"),
         "SportItalia" to listOf("https://tinyurl.com/p7yv8stc"),
-        "SuperTennis" to listOf("https://live-embed.supertennix.hiway.media/restreamer/supertennix_client/gpu-a-c0-16/restreamer/outgest/aa3673f1-e178-44a9-a947-ef41db73211a/manifest.m3u8")
+        "SuperTennis" to listOf("https://live-embed.supertennix.hiway.media/restreamer/supertennix_client/gpu-a-c0-16/restreamer/outgest/aa3673f1-e178-44a9-a947-ef41db73211a/manifest.m3u8"),
+        
+        // Batch 11: TVPass Extras
+        "BBCNewsNA" to listOf("https://tvpass.org/channel/bbc-news-north-america-hd"),
+        "Boomerang" to listOf("https://tvpass.org/channel/boomerang"),
+        "CartoonNetwork" to listOf("https://tvpass.org/channel/cartoon-network-usa-eastern-feed"),
+        "DiscoveryChannel" to listOf("https://tvpass.org/channel/discovery-channel-us-eastern-feed"),
+        "DiscoveryFamily" to listOf("https://tvpass.org/channel/discovery-family-channel"),
+        "CWSanDiego" to listOf("https://tvpass.org/channel/cw-kfmbtv2-san-diego-ca"),
+        "CWDC" to listOf("https://tvpass.org/channel/cw-wdcw-district-of-columbia"),
+        "DiscoveryLife" to listOf("https://tvpass.org/channel/discovery-life-channel"),
+        "DisneyChannel" to listOf("https://tvpass.org/channel/disney-eastern-feed"),
+        "WAGA" to listOf("https://iptv-web.app/US/WAGA.us/")
     )
 
     private val playerBaseUrl = "$mainUrl/Pages/Player"
@@ -304,6 +332,7 @@ class IranWizPlusProvider : MainAPI() {
         Channel("NewsmaxTV", "Newsmax", 0, GENRE_OTHER_NEWS),
         Channel("TheYoungTurks", "The Young Turks", 0, GENRE_OTHER_NEWS),
         Channel("WAGA", "WAGA Fox 5", 0, GENRE_OTHER_NEWS),
+        Channel("BBCNewsNA", "BBC News (North America)", 0, GENRE_OTHER_NEWS),
         
         // ===== Local Networks (Genre 100) =====
         Channel("KABCDT1", "KABC Los Angeles (ABC)", 0, GENRE_OTHER_NEWS),
@@ -321,6 +350,8 @@ class IranWizPlusProvider : MainAPI() {
         Channel("KTVUDT1", "KTVU San Francisco (FOX)", 0, GENRE_OTHER_NEWS),
         Channel("WNYWDT1", "WNYW New York (FOX)", 0, GENRE_OTHER_NEWS),
         Channel("WGNDT1", "WGN Chicago (Ind)", 0, GENRE_OTHER_NEWS),
+        Channel("CWSanDiego", "CW San Diego (KFMB)", 0, GENRE_OTHER_NEWS),
+        Channel("CWDC", "CW DC (WDCW)", 0, GENRE_OTHER_NEWS),
         
         // ===== Cooking (Genre 101) =====
         Channel("GordonRamsaysHellsKitchen", "Hell's Kitchen", 0, GENRE_COOKING),
@@ -341,6 +372,8 @@ class IranWizPlusProvider : MainAPI() {
         Channel("PlutoTVHistory", "Pluto TV History", 0, GENRE_DOCUMENTARY),
         Channel("PlutoTVCrime", "Pluto TV Crime", 0, GENRE_DOCUMENTARY),
         Channel("PlutoTVInvestigation", "Pluto TV Investigation", 0, GENRE_DOCUMENTARY),
+        Channel("DiscoveryChannel", "Discovery Channel", 0, GENRE_DOCUMENTARY),
+        Channel("DiscoveryLife", "Discovery Life", 0, GENRE_DOCUMENTARY),
         
         // ===== Entertainment (Genre 103) =====
         Channel("AE", "A&E", 0, GENRE_ENTERTAINMENT),
@@ -574,6 +607,10 @@ class IranWizPlusProvider : MainAPI() {
         Channel("EkranKids", "Ekran Kids", 306831, GENRE_KIDS),
         Channel("PersianaJunior", "پرشیانا جونیور", 307183, GENRE_KIDS),
         Channel("IRIBPooya", "پویا", 304112, GENRE_KIDS),
+        Channel("Boomerang", "Boomerang", 0, GENRE_KIDS),
+        Channel("CartoonNetwork", "Cartoon Network", 0, GENRE_KIDS),
+        Channel("DiscoveryFamily", "Discovery Family", 0, GENRE_KIDS),
+        Channel("DisneyChannel", "Disney Channel", 0, GENRE_KIDS),
         
         // ===== Religious (Genre 85) =====
         Channel("NejatTV", "Nejat TV", 307425, GENRE_RELIGIOUS),
