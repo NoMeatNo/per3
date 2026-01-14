@@ -778,7 +778,7 @@ class IranWizPlusProvider : MainAPI() {
 
                         // 3. Find tvpass.org links (redirect to m3u8)
                         val tvpassRegex = Regex("""https?://tvpass\.org/live/[^"'\s]+""")
-                        val tvpassMatches = tvpassRegex.findAll(response).map { match ->
+                        val tvpassMatches = tvpassRegex.findAll(response).toList().map { match ->
                             try {
                                 // Resolve the redirect
                                 val redirectUrl = app.get(match.value).url
