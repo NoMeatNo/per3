@@ -276,7 +276,7 @@ class IranWizPlusProvider : MainAPI() {
         val id: Int,
         val genreId: Int
     ) {
-        val logoUrl: String get() = "https://hd200.glwiz.com/menu/epg/imagesNew/cim_${id}.png"
+        val logoUrl: String get() = if (id > 0) "https://hd200.glwiz.com/menu/epg/imagesNew/cim_${id}.png" else ""
     }
     
     // Channel list
