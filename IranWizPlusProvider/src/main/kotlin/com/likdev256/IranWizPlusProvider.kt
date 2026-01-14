@@ -727,11 +727,11 @@ class IranWizPlusProvider : MainAPI() {
     ): Boolean {
         return try {
             val streamName = data
+            var foundAny = false
             
-            // CHECK IF THIS IS AN "OTHER NEWS" CHANNEL
+            // 1. EXTRA SOURCES (Direct/YouTube/Scraped)
             if (otherNewsUrls.containsKey(streamName)) {
                 val urls = otherNewsUrls[streamName]!!
-                var foundAny = false
                 
                 urls.forEach { url ->
                     try {
@@ -780,8 +780,6 @@ class IranWizPlusProvider : MainAPI() {
                         val matches = (m3u8Matches + jsonMatches).distinct()
                         
                         matches.forEach { streamUrl ->
-
-                            // Basic deduplication is handled by CloudStream usually, but we send all valid ones
                             callback.invoke(
                                 newExtractorLink(
                                     source = name,
@@ -798,49 +796,55 @@ class IranWizPlusProvider : MainAPI() {
                         e.printStackTrace()
                     }
                 }
-                return foundAny
             }
 
-            // STANDARD GLWIZ LOGIC
-            cookieStore.clear()
-            httpGet("$playerBaseUrl/Player.aspx")
-            
-            val requestUrl = "$ajaxUrl?action=getStreamURL&ClusterName=zixi-glwiz-mobile&RecType=4&itemName=$streamName&ScreenMode=0"
-            val response = httpGet(requestUrl, mapOf(
-                "Referer" to "$playerBaseUrl/p2.html",
-                "X-Requested-With" to "XMLHttpRequest"
-            ))
-            
-            val respRegex = Regex(""""resp"\s*:\s*"([^"]+)"""")
-            val match = respRegex.find(response)
-            
-            if (match != null) {
-                val streamUrl = match.groupValues[1]
-                    .replace("\\u0026", "&")
-                    .replace("\\/", "/")
-                    // Fix unencoded spaces which break playback
-                    .replace(" ", "%20")
-                
-                if (!streamUrl.contains("GlwizPromo")) {
-                    callback.invoke(
-                        newExtractorLink(
-                            source = name,
-                            name = "$name - $streamName",
-                            url = streamUrl
-                        ).apply {
-                            this.quality = Qualities.Unknown.value
-                            this.referer = "$playerBaseUrl/p2.html"
-                            this.headers = mapOf(
-                                "Referer" to "$playerBaseUrl/p2.html",
-                                "Origin" to mainUrl
+            // 2. STANDARD GLWIZ LOGIC (If channel has an ID)
+            val channel = allChannels.find { it.streamName == streamName }
+            if (channel != null && channel.id > 0) {
+                try {
+                    cookieStore.clear()
+                    httpGet("$playerBaseUrl/Player.aspx")
+                    
+                    val requestUrl = "$ajaxUrl?action=getStreamURL&ClusterName=zixi-glwiz-mobile&RecType=4&itemName=$streamName&ScreenMode=0"
+                    val response = httpGet(requestUrl, mapOf(
+                        "Referer" to "$playerBaseUrl/p2.html",
+                        "X-Requested-With" to "XMLHttpRequest"
+                    ))
+                    
+                    val respRegex = Regex(""""resp"\s*:\s*"([^"]+)"""")
+                    val match = respRegex.find(response)
+                    
+                    if (match != null) {
+                        val streamUrl = match.groupValues[1]
+                            .replace("\\u0026", "&")
+                            .replace("\\/", "/")
+                            // Fix unencoded spaces which break playback
+                            .replace(" ", "%20")
+                        
+                        if (!streamUrl.contains("GlwizPromo")) {
+                            callback.invoke(
+                                newExtractorLink(
+                                    source = name,
+                                    name = "$name - $streamName (GLWiz)",
+                                    url = streamUrl
+                                ).apply {
+                                    this.quality = Qualities.Unknown.value
+                                    this.referer = "$playerBaseUrl/p2.html"
+                                    this.headers = mapOf(
+                                        "Referer" to "$playerBaseUrl/p2.html",
+                                        "Origin" to mainUrl
+                                    )
+                                }
                             )
+                            foundAny = true
                         }
-                    )
-                    return true
+                    }
+                } catch (e: Exception) {
+                    e.printStackTrace()
                 }
             }
             
-            false
+            return foundAny
         } catch (e: Exception) {
             e.printStackTrace()
             false
