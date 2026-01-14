@@ -119,7 +119,10 @@ class IranWizPlusProvider : MainAPI() {
         ),
         "BETHer" to listOf("https://iptv-web.app/US/BETHer.us/"),
         "BETPlutoTV" to listOf("https://iptv-web.app/US/BETPlutoTV.us/"),
-        "E" to listOf("https://iptv-web.app/US/E.us/"),
+        "E" to listOf(
+            "https://iptv-web.app/US/E.us/",
+            "https://tvpass.org/channel/e-entertainment-usa-eastern-feed"
+        ),
         "FX" to listOf("https://iptv-web.app/US/FX.us/"),
         "FXX" to listOf("https://iptv-web.app/US/FXX.us/"),
         "Lifetime" to listOf("https://iptv-web.app/US/Lifetime.us/"),
@@ -250,7 +253,71 @@ class IranWizPlusProvider : MainAPI() {
         "CWDC" to listOf("https://tvpass.org/channel/cw-wdcw-district-of-columbia"),
         "DiscoveryLife" to listOf("https://tvpass.org/channel/discovery-life-channel"),
         "DisneyChannel" to listOf("https://tvpass.org/channel/disney-eastern-feed"),
-        "WAGA" to listOf("https://iptv-web.app/US/WAGA.us/")
+        "WAGA" to listOf("https://iptv-web.app/US/WAGA.us/"),
+        
+        // Batch 12: Major TVPass Channels
+        // Movies
+        "HBO" to listOf("https://tvpass.org/channel/hbo-eastern-feed"),
+        "HBO2" to listOf("https://tvpass.org/channel/hbo-2-eastern-feed"),
+        "HBOComedy" to listOf("https://tvpass.org/channel/hbo-comedy-hd-east"),
+        "HBOFamily" to listOf("https://tvpass.org/channel/hbo-family-eastern-feed"),
+        "HBOSignature" to listOf("https://tvpass.org/channel/hbo-signature-hbo-3-eastern"),
+        "HBOZone" to listOf("https://tvpass.org/channel/hbo-zone-hd-east"),
+        "Cinemax" to listOf("https://tvpass.org/channel/cinemax-eastern-feed"),
+        "MoreMax" to listOf("https://tvpass.org/channel/moremax-eastern"),
+        "MovieMax" to listOf("https://tvpass.org/channel/moviemax-max-6-east"),
+        "TMC" to listOf("https://tvpass.org/channel/tmc-us-eastern-feed"),
+        
+        // Sports US
+        "ESPN" to listOf("https://tvpass.org/channel/espn"),
+        "ESPN2" to listOf("https://tvpass.org/channel/espn2"),
+        "ESPNNews" to listOf("https://tvpass.org/channel/espn-news"),
+        "ESPNDeportes" to listOf("https://tvpass.org/channel/espn-deportes"),
+        "FS1" to listOf("https://tvpass.org/channel/fox-sports-1"),
+        "FS2" to listOf("https://tvpass.org/channel/fox-sports-2"),
+        "NFLNetwork" to listOf(
+            "https://iptv-web.app/US/NFLRedZone.us/", // Found earlier, actually is this regular NFL Network? 140 is RedZone. 147 is Network?
+            // Existing NFLNetwork is line 187. I should just update that one or map this new one. 
+            // Wait, Channel "NFLNetwork" is already mapped to line 187: "https://iptv-web.app/US/NHLNetwork.us/"... WAIT.
+            // Line 187 says "NHLNetwork". Line 184 says "NFLRedZone".
+            // Line 452 is NFLRedZone. Line 455 is NHLNetwork.
+            // There is NO NFL Network (regular) in the existing list! I'm adding it now!
+            "https://tvpass.org/channel/nfl-network"
+        ),
+
+        // Sports CA
+        "TSN1" to listOf("https://tvpass.org/channel/tsn1"),
+        "TSN2" to listOf("https://tvpass.org/channel/tsn2"),
+        "TSN3" to listOf("https://tvpass.org/channel/tsn3"),
+        "TSN4" to listOf("https://tvpass.org/channel/tsn4"),
+        "TSN5" to listOf("https://tvpass.org/channel/tsn5"),
+        "SportsnetEast" to listOf("https://tvpass.org/channel/sportsnet-east"),
+        "SportsnetOntario" to listOf("https://tvpass.org/channel/sportsnet-ontario"),
+        "SportsnetWest" to listOf("https://tvpass.org/channel/sportsnet-west"),
+        "SportsnetPacific" to listOf("https://tvpass.org/channel/sportsnet-pacific"),
+        "SportsnetOne" to listOf("https://tvpass.org/channel/sportsnet-one"),
+        "Sportsnet360" to listOf("https://tvpass.org/channel/sportsnet-360"),
+        
+        // Entertainment/Kids/News
+        "TBS" to listOf("https://tvpass.org/channel/tbs-east"),
+        "TNT" to listOf("https://tvpass.org/channel/tnt-eastern-feed"),
+        "TruTV" to listOf("https://tvpass.org/channel/trutv-usa-eastern"),
+        "ComedyCentral" to listOf("https://tvpass.org/channel/comedy-central-us-eastern-feed"),
+        "HGTV" to listOf("https://tvpass.org/channel/hgtv-usa-eastern-feed"),
+        "TLC" to listOf("https://tvpass.org/channel/tlc-usa-eastern"),
+        "TravelChannel" to listOf("https://tvpass.org/channel/travel-us-east"),
+        "Freeform" to listOf("https://tvpass.org/channel/freeform-east-feed"),
+        "FoodNetwork" to listOf("https://tvpass.org/channel/food-network-usa-eastern-feed"),
+        "CookingChannel" to listOf("https://tvpass.org/channel/the-cooking-channel"),
+        "DisneyJunior" to listOf("https://tvpass.org/channel/disney-junior-usa-east"),
+        "DisneyXD" to listOf("https://tvpass.org/channel/disney-xd-usa-eastern-feed"),
+        "Nickelodeon" to listOf("https://tvpass.org/channel/nickelodeon-usa-east-feed"),
+        "NickJr" to listOf("https://tvpass.org/channel/nick-jr-east"),
+        "Nicktoons" to listOf("https://tvpass.org/channel/nicktoons-east"),
+        "TeenNick" to listOf("https://tvpass.org/channel/teennick-eastern"),
+        "UniversalKids" to listOf("https://tvpass.org/channel/universal-kids"),
+        "FoxBusiness" to listOf("https://tvpass.org/channel/fox-business"),
+        "HLN" to listOf("https://tvpass.org/channel/hln")
     )
 
     private val playerBaseUrl = "$mainUrl/Pages/Player"
@@ -298,6 +365,7 @@ class IranWizPlusProvider : MainAPI() {
         const val GENRE_SPORTS_US = 108
         const val GENRE_UK = 109
         const val GENRE_ITALY = 110
+        const val GENRE_SPORTS_CA = 111
     }
     
     data class Channel(
@@ -352,12 +420,16 @@ class IranWizPlusProvider : MainAPI() {
         Channel("WGNDT1", "WGN Chicago (Ind)", 0, GENRE_OTHER_NEWS),
         Channel("CWSanDiego", "CW San Diego (KFMB)", 0, GENRE_OTHER_NEWS),
         Channel("CWDC", "CW DC (WDCW)", 0, GENRE_OTHER_NEWS),
+        Channel("FoxBusiness", "Fox Business", 0, GENRE_OTHER_NEWS),
+        Channel("HLN", "HLN", 0, GENRE_OTHER_NEWS),
         
         // ===== Cooking (Genre 101) =====
         Channel("GordonRamsaysHellsKitchen", "Hell's Kitchen", 0, GENRE_COOKING),
         Channel("bonappetit", "Bon Appétit", 0, GENRE_COOKING),
         Channel("AmericasTestKitchen", "America's Test Kitchen", 0, GENRE_COOKING),
         Channel("Tastemade", "Tastemade", 0, GENRE_COOKING),
+        Channel("FoodNetwork", "Food Network", 0, GENRE_COOKING),
+        Channel("CookingChannel", "Cooking Channel", 0, GENRE_COOKING),
         
         // ===== Documentary (Genre 102) =====
         Channel("NationalGeographic", "National Geographic", 0, GENRE_DOCUMENTARY),
@@ -394,6 +466,15 @@ class IranWizPlusProvider : MainAPI() {
         Channel("USANetwork", "USA Network", 0, GENRE_ENTERTAINMENT),
         Channel("Syfy", "Syfy", 0, GENRE_ENTERTAINMENT),
         Channel("Bravo", "Bravo", 0, GENRE_ENTERTAINMENT),
+        // TVPass Entertainment
+        Channel("TBS", "TBS", 0, GENRE_ENTERTAINMENT),
+        Channel("TNT", "TNT", 0, GENRE_ENTERTAINMENT),
+        Channel("TruTV", "TruTV", 0, GENRE_ENTERTAINMENT),
+        Channel("ComedyCentral", "Comedy Central", 0, GENRE_ENTERTAINMENT),
+        Channel("HGTV", "HGTV", 0, GENRE_ENTERTAINMENT),
+        Channel("TLC", "TLC", 0, GENRE_ENTERTAINMENT),
+        Channel("TravelChannel", "Travel Channel", 0, GENRE_ENTERTAINMENT),
+        Channel("Freeform", "Freeform", 0, GENRE_ENTERTAINMENT),
         
         // ===== Classics (Genre 104) =====
         Channel("AntennaTV", "Antenna TV", 0, GENRE_CLASSICS),
@@ -429,6 +510,17 @@ class IranWizPlusProvider : MainAPI() {
         Channel("Charge", "Charge!", 0, GENRE_MOVIES_US),
         Channel("Showtime", "Showtime", 0, GENRE_MOVIES_US),
         Channel("Starz", "Starz", 0, GENRE_MOVIES_US),
+        // TVPass Premium
+        Channel("HBO", "HBO East", 0, GENRE_MOVIES_US),
+        Channel("HBO2", "HBO 2", 0, GENRE_MOVIES_US),
+        Channel("HBOComedy", "HBO Comedy", 0, GENRE_MOVIES_US),
+        Channel("HBOFamily", "HBO Family", 0, GENRE_MOVIES_US),
+        Channel("HBOSignature", "HBO Signature", 0, GENRE_MOVIES_US),
+        Channel("HBOZone", "HBO Zone", 0, GENRE_MOVIES_US),
+        Channel("Cinemax", "Cinemax East", 0, GENRE_MOVIES_US),
+        Channel("MoreMax", "MoreMax", 0, GENRE_MOVIES_US),
+        Channel("MovieMax", "MovieMax", 0, GENRE_MOVIES_US),
+        Channel("TMC", "The Movie Channel", 0, GENRE_MOVIES_US),
         
         // ===== Series US (Genre 107) =====
         Channel("StarTrek", "Star Trek", 0, GENRE_SERIES_US),
@@ -458,6 +550,27 @@ class IranWizPlusProvider : MainAPI() {
         Channel("BigTenNetwork", "Big Ten Network", 0, GENRE_SPORTS_US),
         Channel("SECNetwork", "SEC Network", 0, GENRE_SPORTS_US),
         Channel("YesNetwork", "YES Network", 0, GENRE_SPORTS_US),
+        // TVPass Sports
+        Channel("ESPN", "ESPN", 0, GENRE_SPORTS_US),
+        Channel("ESPN2", "ESPN 2", 0, GENRE_SPORTS_US),
+        Channel("ESPNNews", "ESPN News", 0, GENRE_SPORTS_US),
+        Channel("ESPNDeportes", "ESPN Deportes", 0, GENRE_SPORTS_US),
+        Channel("FS1", "Fox Sports 1", 0, GENRE_SPORTS_US),
+        Channel("FS2", "Fox Sports 2", 0, GENRE_SPORTS_US),
+        Channel("NFLNetwork", "NFL Network", 0, GENRE_SPORTS_US),
+        
+        // ===== Sports Canada (Genre 111) =====
+        Channel("TSN1", "TSN 1", 0, GENRE_SPORTS_CA),
+        Channel("TSN2", "TSN 2", 0, GENRE_SPORTS_CA),
+        Channel("TSN3", "TSN 3", 0, GENRE_SPORTS_CA),
+        Channel("TSN4", "TSN 4", 0, GENRE_SPORTS_CA),
+        Channel("TSN5", "TSN 5", 0, GENRE_SPORTS_CA),
+        Channel("SportsnetEast", "Sportsnet East", 0, GENRE_SPORTS_CA),
+        Channel("SportsnetOntario", "Sportsnet Ontario", 0, GENRE_SPORTS_CA),
+        Channel("SportsnetWest", "Sportsnet West", 0, GENRE_SPORTS_CA),
+        Channel("SportsnetPacific", "Sportsnet Pacific", 0, GENRE_SPORTS_CA),
+        Channel("SportsnetOne", "Sportsnet One", 0, GENRE_SPORTS_CA),
+        Channel("Sportsnet360", "Sportsnet 360", 0, GENRE_SPORTS_CA),
         
         // ===== UK TV (Genre 109) =====
         Channel("BBCOne", "BBC One", 0, GENRE_UK),
@@ -611,6 +724,14 @@ class IranWizPlusProvider : MainAPI() {
         Channel("CartoonNetwork", "Cartoon Network", 0, GENRE_KIDS),
         Channel("DiscoveryFamily", "Discovery Family", 0, GENRE_KIDS),
         Channel("DisneyChannel", "Disney Channel", 0, GENRE_KIDS),
+        // TVPass Kids
+        Channel("DisneyJunior", "Disney Junior", 0, GENRE_KIDS),
+        Channel("DisneyXD", "Disney XD", 0, GENRE_KIDS),
+        Channel("Nickelodeon", "Nickelodeon", 0, GENRE_KIDS),
+        Channel("NickJr", "Nick Jr", 0, GENRE_KIDS),
+        Channel("Nicktoons", "Nicktoons", 0, GENRE_KIDS),
+        Channel("TeenNick", "TeenNick", 0, GENRE_KIDS),
+        Channel("UniversalKids", "Universal Kids", 0, GENRE_KIDS),
         
         // ===== Religious (Genre 85) =====
         Channel("NejatTV", "Nejat TV", 307425, GENRE_RELIGIOUS),
@@ -649,7 +770,8 @@ class IranWizPlusProvider : MainAPI() {
         "${GENRE_SPORTS_US}" to "🏈 Sports (US)",
         "${GENRE_SPORTS_US}" to "🏈 Sports (US)",
         "${GENRE_UK}" to "🇬🇧 United Kingdom",
-        "${GENRE_ITALY}" to "🇮🇹 Italy"
+        "${GENRE_ITALY}" to "🇮🇹 Italy",
+        "${GENRE_SPORTS_CA}" to "🇨🇦 Sports (Canada)"
     )
     
     // Get genre name for display
@@ -673,6 +795,7 @@ class IranWizPlusProvider : MainAPI() {
         GENRE_SPORTS_US -> "🏈 Sports (US)"
         GENRE_UK -> "🇬🇧 United Kingdom"
         GENRE_ITALY -> "🇮🇹 Italy"
+        GENRE_SPORTS_CA -> "🇨🇦 Sports (Canada)"
         else -> "📺 Other"
     }
     
