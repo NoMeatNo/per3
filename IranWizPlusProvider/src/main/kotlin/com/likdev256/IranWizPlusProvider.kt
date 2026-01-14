@@ -11,7 +11,6 @@ import okhttp3.HttpUrl
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import java.util.concurrent.TimeUnit
-import org.jsoup.Jsoup
 
 /**
  * IranWiz Plus Provider - Persian Live TV from GLWiz + Other News Channels
@@ -762,7 +761,7 @@ class IranWizPlusProvider : MainAPI() {
                         // We use standard app.get() for these sites
                         val response = app.get(url).text
                         // Find .m3u8 link (it works for both static and dynamic with tokens)
-                        // 1. Find standard .m3u8 links (always safe to grab)
+                        // 1. Find standard .m3u8 links
                         val m3u8Regex = Regex("""https?://[^"']+\.m3u8[^"']*""")
                         val m3u8Matches = m3u8Regex.findAll(response).map { 
                             it.value.substringBefore("&quot;")
@@ -770,47 +769,28 @@ class IranWizPlusProvider : MainAPI() {
                                 .replace("&amp;", "&")
                         }
 
-                        // 2. Find links hidden in Astro/JSON props - Broadened to catch any URL
-                        // Pattern: [0,&quot;URL&quot;]
-                        val jsonRegex = Regex("""\[0,&quot;(https?://.*?)&quot;\]""")
+                        // 2. Find links hidden in Astro/JSON props (e.g. [0,&quot;https://...&quot;])
+                        val jsonRegex = Regex("""\[0,&quot;(https?://[^&]+)&quot;\]""")
                         val jsonMatches = jsonRegex.findAll(response).map {
                              it.groupValues[1]
                                 .replace("\\/", "/")
-                                .replace("&amp;", "&")
-                        }
-                        
-                        // 3. Generic Player Config Extraction (src: '...', source: '...', file: '...')
-                        val playerScriptRegex = Regex("""(?:src|source|file)\s*:\s*['"](https?://[^'"]+)['"]""")
-                        val scriptMatches = playerScriptRegex.findAll(response).map {
-                            it.groupValues[1].replace("\\/", "/")
                         }
 
-                        // 4. Jsoup Extraction for Iframes and Video Sources
-                        val doc = Jsoup.parse(response)
-                        val iframeSrcs = doc.select("iframe[src]").map { it.attr("src") }
-                            .filter { it.startsWith("http") && !it.contains("doubleclick") && !it.contains("google") } // Basic ad filter
-                        val videoSrcs = doc.select("video source[src]").map { it.attr("src") }
-
-                        // Combine all found potential stream URLs
-                        val allMatches = (m3u8Matches + jsonMatches + scriptMatches + iframeSrcs + videoSrcs)
-                            .map { it.trim() }
-                            .distinct()
+                        // Combine and deduplicate
+                        val matches = (m3u8Matches + jsonMatches).distinct()
                         
-                        allMatches.forEach { streamUrl ->
-                            // Basic filter to avoid junk (e.g. empty strings, non-urls)
-                            if (streamUrl.length > 10 && streamUrl.startsWith("http")) {
-                                callback.invoke(
-                                    newExtractorLink(
-                                        source = name,
-                                        name = "$name - $streamName (${if(streamUrl.contains(".m3u8")) "HLS" else "Stream"})",
-                                        url = streamUrl
-                                    ).apply {
-                                        this.referer = if (url.contains("iptv-web")) "https://iptv-web.app/" else "https://www.newslive.com/"
-                                        this.quality = Qualities.Unknown.value
-                                    }
-                                )
-                                foundAny = true
-                            }
+                        matches.forEach { streamUrl ->
+                            callback.invoke(
+                                newExtractorLink(
+                                    source = name,
+                                    name = "$name - $streamName (${if(url.contains("newslive")) "NewsLive" else "IPTVWeb"})",
+                                    url = streamUrl
+                                ).apply {
+                                    this.referer = if (url.contains("iptv-web")) "https://iptv-web.app/" else "https://www.newslive.com/"
+                                    this.quality = Qualities.Unknown.value
+                                }
+                            )
+                            foundAny = true
                         }
                     } catch (e: Exception) {
                         e.printStackTrace()
