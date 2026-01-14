@@ -36,7 +36,8 @@ class IranWizPlusProvider : MainAPI() {
         ),
         "FoxNews" to listOf(
             "https://www.newslive.com/american/fox-news.html",
-            "https://iptv-web.app/US/FoxNewsChannel.us/"
+            "https://iptv-web.app/US/FoxNewsChannel.us/",
+            "https://tvpass.org/channel/fox-news"
         ),
         "CNN" to listOf(
 
@@ -45,7 +46,8 @@ class IranWizPlusProvider : MainAPI() {
             "https://turnerlive.warnermediacdn.com/hls/live/586495/cnngo/cnn_slate/VIDEO_3_1464000.m3u8",
             "https://turnerlive.warnermediacdn.com/hls/live/586495/cnngo/cnn_slate/VIDEO_4_1064000.m3u8",
             "https://turnerlive.warnermediacdn.com/hls/live/586497/cnngo/cnni/VIDEO_0_3564000.m3u8",
-            "https://www.newslive.com/american/cnn-stream.html"
+            "https://www.newslive.com/american/cnn-stream.html",
+            "https://tvpass.org/channel/cnn-us"
         ),
         "CNNGB" to listOf("https://d2anxhed2mfixb.cloudfront.net/v1/master/3722c60a815c199d9c0ef36c5b73da68a62b09d1/cc-wqc602hxepp0q/CNNFAST_GB.m3u8"),
         "MSNBC" to listOf(
@@ -742,6 +744,36 @@ class IranWizPlusProvider : MainAPI() {
                             return@forEach
                         }
 
+                        // Handle TVPass Channel Pages (Source Extraction)
+                        if (url.contains("tvpass.org/channel/")) {
+                            val response = app.get(url).text
+                            val idRegex = Regex("""<div id="stream_name" name="([^"]+)">""")
+                            val match = idRegex.find(response)
+                            if (match != null) {
+                                val id = match.groupValues[1]
+                                val liveUrl = "https://tvpass.org/live/$id/hd"
+                                try {
+                                    val resolvedUrl = app.get(liveUrl).url
+                                    if (resolvedUrl.contains(".m3u8")) {
+                                        callback.invoke(
+                                            newExtractorLink(
+                                                source = name,
+                                                name = "$name - $streamName (TVPass)",
+                                                url = resolvedUrl
+                                            ).apply {
+                                                this.referer = "https://thetvapp.to/"
+                                                this.quality = Qualities.Unknown.value
+                                            }
+                                        )
+                                        foundAny = true
+                                    }
+                                } catch (e: Exception) {
+                                    // Ignore
+                                }
+                            }
+                            return@forEach
+                        }
+                        
                         // Handle direct m3u8 links (user provided)
                         if (url.endsWith(".m3u8")) {
                              callback.invoke(
