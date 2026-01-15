@@ -392,7 +392,7 @@ class IranWizPlusProvider : MainAPI() {
         val id: Int,
         val genreId: Int
     ) {
-        val logoUrl: String get() = if (id > 0) "https://hd200.glwiz.com/menu/epg/imagesNew/cim_${id}.png" else "https://raw.githubusercontent.com/NoMeatNo/per3/refs/heads/master/logos/tv.png"
+        val logoUrl: String get() = if (id > 0) "https://hd200.glwiz.com/menu/epg/imagesNew/cim_${id}.png" else "https://raw.githubusercontent.com/NoMeatNo/per3/refs/heads/master/logos/tv2.png"
     }
     
     // Channel list
@@ -628,15 +628,15 @@ class IranWizPlusProvider : MainAPI() {
         Channel("SuperTennis", "SuperTennis", 0, GENRE_ITALY),
         
         // ===== News (Genre 89) =====
-        Channel("IranInternational", "ایران اینترنشنال", 306823, GENRE_NEWS),
         Channel("BBCPersian", "بی بی سی فارسی", 301133, GENRE_NEWS),
+        Channel("IranInternational", "ایران اینترنشنال", 306823, GENRE_NEWS),
+        Channel("IRINN", "شبکه خبر IRINN", 300486, GENRE_NEWS),
         Channel("VoA", "صدای آمریکا", 300480, GENRE_NEWS),
         Channel("EuroNewsFarsi", "یورونیوز فارسی", 301404, GENRE_NEWS),
         Channel("IraneFarda", "ایران فردا", 302551, GENRE_NEWS),
-        Channel("AfghanistanInternational", "افغانستان اینترنشنال", 307415, GENRE_NEWS),
-        Channel("IRINN", "شبکه خبر IRINN", 300486, GENRE_NEWS),
         Channel("RadioFarda", "رادیوفردا", 306419, GENRE_NEWS),
         Channel("IranOneNews", "Iran One News", 307625, GENRE_NEWS),
+        Channel("AfghanistanInternational", "افغانستان اینترنشنال", 307415, GENRE_NEWS),
         
         // ===== Movies & Series (Genre 19) =====
         Channel("EkranMovies", "Ekran Movies", 306747, GENRE_MOVIES),
@@ -660,6 +660,7 @@ class IranWizPlusProvider : MainAPI() {
         Channel("ChannelOne", "کانال یک", 307514, GENRE_PERSIAN),
         Channel("ITN", "ITN آمریکا", 305049, GENRE_PERSIAN),
         Channel("ParsTV", "تلویزیون پارس", 300454, GENRE_PERSIAN),
+        Channel("SimayAzadi", "سیمای آزادی", 307555, GENRE_PERSIAN),
         Channel("TAPESH", "تپش", 300447, GENRE_PERSIAN),
         Channel("MBCPersia", "MBC Persia", 300513, GENRE_PERSIAN),
         Channel("RJTV", "RJ TV", 306141, GENRE_PERSIAN),
@@ -670,7 +671,6 @@ class IranWizPlusProvider : MainAPI() {
         Channel("T2International", "T2 International", 307381, GENRE_PERSIAN),
         Channel("T2America", "T2 America", 307261, GENRE_PERSIAN),
         Channel("IraneAryaee", "ایران آریایی", 302136, GENRE_PERSIAN),
-        Channel("SimayAzadi", "سیمای آزادی", 307555, GENRE_PERSIAN),
         Channel("YourTimeTV", "یورتایم", 307230, GENRE_PERSIAN),
         Channel("Today", "Today", 303003, GENRE_PERSIAN),
         Channel("AsreEmrooz", "عصر امروز", 301196, GENRE_PERSIAN),
@@ -781,36 +781,35 @@ class IranWizPlusProvider : MainAPI() {
     override val mainPage = mainPageOf(
         "${GENRE_OTHER_NEWS}" to "🌍 Other News",
         "${GENRE_NEWS}" to "📰 News",
-        "${GENRE_MOVIES}" to "🎬 Movies & Series",
-        "${GENRE_PERSIAN}" to "📺 Persian",
         "${GENRE_IRIB}" to "📡 IRIB",
-        "${GENRE_MUSIC}" to "🎵 Music",
-        "${GENRE_SPORTS}" to "⚽ Sports",
-        "${GENRE_KIDS}" to "👶 Kids",
-        "${GENRE_RELIGIOUS}" to "🕌 Religious",
+        "${GENRE_PERSIAN}" to "📺 Persian",
+        "${GENRE_MOVIES_US}" to "🎥 Movies (US)",
         "${GENRE_COOKING}" to "🍳 Cooking",
         "${GENRE_DOCUMENTARY}" to "🦁 Documentary",
-        "${GENRE_ENTERTAINMENT}" to "🎭 Entertainment",
-        "${GENRE_CLASSICS}" to "🏛 Classics",
-        "${GENRE_MOVIES_US}" to "🎥 Movies (US)",
-        "${GENRE_MUSIC_US}" to "🎸 Music (US)",
         "${GENRE_SERIES_US}" to "📺 Series (US)",
-        "${GENRE_SPORTS_US}" to "🏈 Sports (US)",
         "${GENRE_SPORTS_US}" to "🏈 Sports (US)",
         "${GENRE_UK}" to "🇬🇧 United Kingdom",
         "${GENRE_ITALY}" to "🇮🇹 Italy",
-        "${GENRE_SPORTS_CA}" to "🇨🇦 Sports (Canada)"
+        "${GENRE_MUSIC_US}" to "🎸 Music (US)",
+        "${GENRE_MOVIES}" to "🎬 Movies & Series (Persian)",
+        "${GENRE_MUSIC}" to "🎵 Music (Persian)",
+        "${GENRE_SPORTS}" to "⚽ Sports (Persian)",
+        "${GENRE_SPORTS_CA}" to "🇨🇦 Sports (Canada)",
+        "${GENRE_KIDS}" to "👶 Kids",
+        "${GENRE_RELIGIOUS}" to "🕌 Religious",
+        "${GENRE_ENTERTAINMENT}" to "🎭 Entertainment",
+        "${GENRE_CLASSICS}" to "🏛 Classics"
     )
     
     // Get genre name for display
     private fun getGenreName(genreId: Int): String = when(genreId) {
         GENRE_OTHER_NEWS -> "🌍 Other News"
         GENRE_NEWS -> "📰 News"
-        GENRE_MOVIES -> "🎬 Movies & Series"
+        GENRE_MOVIES -> "🎬 Movies & Series (Persian)"
         GENRE_PERSIAN -> "📺 Persian"
         GENRE_IRIB -> "📡 IRIB"
-        GENRE_MUSIC -> "🎵 Music"
-        GENRE_SPORTS -> "⚽ Sports"
+        GENRE_MUSIC -> "🎵 Music (Persian)"
+        GENRE_SPORTS -> "⚽ Sports (Persian)"
         GENRE_KIDS -> "👶 Kids"
         GENRE_RELIGIOUS -> "🕌 Religious"
         GENRE_COOKING -> "🍳 Cooking"
