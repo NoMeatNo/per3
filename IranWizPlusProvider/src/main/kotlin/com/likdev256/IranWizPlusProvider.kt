@@ -384,6 +384,7 @@ class IranWizPlusProvider : MainAPI() {
         const val GENRE_UK = 109
         const val GENRE_ITALY = 110
         const val GENRE_SPORTS_CA = 111
+        const val GENRE_LOCAL_NEWS = 119
     }
     
     data class Channel(
@@ -397,58 +398,72 @@ class IranWizPlusProvider : MainAPI() {
     
     // Channel list
     private val allChannels = listOf(
-         // ===== Other News (Genre 100) =====
+// ===== National & Global News (Genre 100) =====
+        // Major Cable & Business
         Channel("FoxNews", "Fox News", 0, GENRE_OTHER_NEWS),
         Channel("CNN", "CNN", 0, GENRE_OTHER_NEWS),
-        Channel("CNNGB", "CNN Fast", 0, GENRE_OTHER_NEWS),
         Channel("MSNBC", "MSNBC", 0, GENRE_OTHER_NEWS),
         Channel("CNBC", "CNBC", 0, GENRE_OTHER_NEWS),
         Channel("ABCNews", "ABC News Live", 0, GENRE_OTHER_NEWS),
-        Channel("BloombergQuicktake", "Bloomberg Quicktake", 0, GENRE_OTHER_NEWS),
         Channel("NBCNews", "NBC News NOW", 0, GENRE_OTHER_NEWS),
-        Channel("NewsNation", "NewsNation", 0, GENRE_OTHER_NEWS),
         Channel("CBSNews247", "CBS News 24/7", 0, GENRE_OTHER_NEWS),
-        Channel("ReutersTV", "Reuters TV", 0, GENRE_OTHER_NEWS),
-        Channel("CheddarNews", "Cheddar News", 0, GENRE_OTHER_NEWS),
-        Channel("ScrippsNews", "Scripps News", 0, GENRE_OTHER_NEWS),
-        Channel("WABCDT1247News", "ABC 7 NY 24/7", 0, GENRE_OTHER_NEWS),
-        Channel("KABCDT1247News", "ABC 7 LA 24/7", 0, GENRE_OTHER_NEWS),
-        Channel("CBSNewsNewYork", "CBS News New York", 0, GENRE_OTHER_NEWS),
-        Channel("CBSNewsLosAngeles", "CBS News Los Angeles", 0, GENRE_OTHER_NEWS),
-        Channel("NewsmaxTV", "Newsmax", 0, GENRE_OTHER_NEWS),
-        Channel("TheYoungTurks", "The Young Turks", 0, GENRE_OTHER_NEWS),
-        Channel("WAGA", "WAGA Fox 5", 0, GENRE_OTHER_NEWS),
         Channel("BBCNewsNA", "BBC News (North America)", 0, GENRE_OTHER_NEWS),
-        
-        // ===== Local Networks (Genre 100) =====
-        Channel("KABCDT1", "KABC Los Angeles (ABC)", 0, GENRE_OTHER_NEWS),
-        Channel("WABCDT1", "WABC New York (ABC)", 0, GENRE_OTHER_NEWS),
-        Channel("WCVBDT1", "WCVB Boston (ABC)", 0, GENRE_OTHER_NEWS),
-        Channel("KMBCDT1", "KMBC Kansas City (ABC)", 0, GENRE_OTHER_NEWS),
-        Channel("KCBSDT1", "KCBS Los Angeles (CBS)", 0, GENRE_OTHER_NEWS),
-        Channel("WCBSDT1", "WCBS New York (CBS)", 0, GENRE_OTHER_NEWS),
-        Channel("KYWDT1", "KYW Philadelphia (CBS)", 0, GENRE_OTHER_NEWS),
-        Channel("KIRODT1", "KIRO Seattle (CBS)", 0, GENRE_OTHER_NEWS),
-        Channel("KNBCDT1", "KNBC Los Angeles (NBC)", 0, GENRE_OTHER_NEWS),
-        Channel("WNBCDT1", "WNBC New York (NBC)", 0, GENRE_OTHER_NEWS),
-        Channel("KTTVDT1", "KTTV Los Angeles (FOX)", 0, GENRE_OTHER_NEWS),
-        Channel("KDFWDT1", "KDFW Dallas (FOX)", 0, GENRE_OTHER_NEWS),
-        Channel("KTVUDT1", "KTVU San Francisco (FOX)", 0, GENRE_OTHER_NEWS),
-        Channel("WNYWDT1", "WNYW New York (FOX)", 0, GENRE_OTHER_NEWS),
-        Channel("WGNDT1", "WGN Chicago (Ind)", 0, GENRE_OTHER_NEWS),
-        Channel("CWSanDiego", "CW San Diego (KFMB)", 0, GENRE_OTHER_NEWS),
-        Channel("CWDC", "CW DC (WDCW)", 0, GENRE_OTHER_NEWS),
-        Channel("FoxBusiness", "Fox Business", 0, GENRE_OTHER_NEWS),
-        Channel("HLN", "HLN", 0, GENRE_OTHER_NEWS),
-        Channel("LiveNOW", "LiveNOW from FOX", 0, GENRE_OTHER_NEWS),
-        Channel("AlJazeera", "Al Jazeera", 0, GENRE_OTHER_NEWS),
+        Channel("NewsNation", "NewsNation", 0, GENRE_OTHER_NEWS),
+        Channel("NewsmaxTV", "Newsmax", 0, GENRE_OTHER_NEWS),
         Channel("AlJazeeraEnglish", "Al Jazeera English", 0, GENRE_OTHER_NEWS),
         Channel("France24", "France 24 English", 0, GENRE_OTHER_NEWS),
         Channel("DWNews", "DW News", 0, GENRE_OTHER_NEWS),
-        Channel("NASA", "NASA Live", 0, GENRE_DOCUMENTARY),
+        Channel("LiveNOW", "LiveNOW from FOX", 0, GENRE_OTHER_NEWS),
+        Channel("FoxBusiness", "Fox Business", 0, GENRE_OTHER_NEWS),
+        Channel("HLN", "HLN", 0, GENRE_OTHER_NEWS),
+
+        // Major Streaming Networks
+        Channel("BloombergQuicktake", "Bloomberg Quicktake", 0, GENRE_OTHER_NEWS),
+        Channel("ReutersTV", "Reuters TV", 0, GENRE_OTHER_NEWS),
+        Channel("ScrippsNews", "Scripps News", 0, GENRE_OTHER_NEWS),
+        Channel("CheddarNews", "Cheddar News", 0, GENRE_OTHER_NEWS),
+        Channel("CNNGB", "CNN Fast", 0, GENRE_OTHER_NEWS),
+        Channel("AlJazeera", "Al Jazeera", 0, GENRE_OTHER_NEWS),
+
+        // Independent & Special Interest
+        Channel("TheYoungTurks", "The Young Turks", 0, GENRE_OTHER_NEWS),
         Channel("AssociatedPress", "Associated Press", 0, GENRE_OTHER_NEWS),
+        Channel("NASA", "NASA Live", 0, GENRE_OTHER_NEWS), // Moved from Doc to News/Live
         Channel("TousiTV", "Tousi TV", 0, GENRE_OTHER_NEWS),
         Channel("AgendaFreeTV", "Agenda-Free TV", 0, GENRE_OTHER_NEWS),
+
+
+        // ===== Local Networks (Genre 119 - New Category) =====
+        // ABC Local Streaming 24/7
+        Channel("WABCDT1247News", "ABC 7 NY 24/7", 0, GENRE_LOCAL_NEWS),
+        Channel("KABCDT1247News", "ABC 7 LA 24/7", 0, GENRE_LOCAL_NEWS),
+        // CBS Local Streaming
+        Channel("CBSNewsNewYork", "CBS News New York", 0, GENRE_LOCAL_NEWS),
+        Channel("CBSNewsLosAngeles", "CBS News Los Angeles", 0, GENRE_LOCAL_NEWS),
+        // ABC Locals
+        Channel("WABCDT1", "WABC New York (ABC)", 0, GENRE_LOCAL_NEWS),
+        Channel("KABCDT1", "KABC Los Angeles (ABC)", 0, GENRE_LOCAL_NEWS),
+        Channel("WCVBDT1", "WCVB Boston (ABC)", 0, GENRE_LOCAL_NEWS),
+        Channel("KMBCDT1", "KMBC Kansas City (ABC)", 0, GENRE_LOCAL_NEWS),
+        // CBS Locals
+        Channel("WCBSDT1", "WCBS New York (CBS)", 0, GENRE_LOCAL_NEWS),
+        Channel("KCBSDT1", "KCBS Los Angeles (CBS)", 0, GENRE_LOCAL_NEWS),
+        Channel("KYWDT1", "KYW Philadelphia (CBS)", 0, GENRE_LOCAL_NEWS),
+        Channel("KIRODT1", "KIRO Seattle (CBS)", 0, GENRE_LOCAL_NEWS),
+        // NBC Locals
+        Channel("WNBCDT1", "WNBC New York (NBC)", 0, GENRE_LOCAL_NEWS),
+        Channel("KNBCDT1", "KNBC Los Angeles (NBC)", 0, GENRE_LOCAL_NEWS),
+        // FOX Locals
+        Channel("WNYWDT1", "WNYW New York (FOX)", 0, GENRE_LOCAL_NEWS),
+        Channel("KTTVDT1", "KTTV Los Angeles (FOX)", 0, GENRE_LOCAL_NEWS),
+        Channel("KDFWDT1", "KDFW Dallas (FOX)", 0, GENRE_LOCAL_NEWS),
+        Channel("KTVUDT1", "KTVU San Francisco (FOX)", 0, GENRE_LOCAL_NEWS),
+        Channel("WAGA", "WAGA Fox 5", 0, GENRE_LOCAL_NEWS),
+
+        // Independent & CW Locals
+        Channel("WGNDT1", "WGN Chicago (Ind)", 0, GENRE_LOCAL_NEWS),
+        Channel("CWSanDiego", "CW San Diego (KFMB)", 0, GENRE_LOCAL_NEWS),
+        Channel("CWDC", "CW DC (WDCW)", 0, GENRE_LOCAL_NEWS),
         
         // ===== Cooking (Genre 101) =====
         Channel("GordonRamsaysHellsKitchen", "Hell's Kitchen", 0, GENRE_COOKING),
@@ -564,27 +579,33 @@ class IranWizPlusProvider : MainAPI() {
         Channel("TheBobRossChannel", "The Bob Ross Channel", 0, GENRE_SERIES_US),
         Channel("ThisOldHouse", "This Old House", 0, GENRE_SERIES_US),
         
-        // ===== Sports US (Genre 108) =====
+        // ===== Sports US (Genre 108) - REORDERED: Soccer & General Focus =====
+        // 1. Top Tier Soccer & General Sports
+        Channel("CBSSportsGolazoNetwork", "CBS Sports Golazo", 0, GENRE_SPORTS_US), // 100% Soccer 24/7
+        Channel("ESPN", "ESPN", 0, GENRE_SPORTS_US), // Premier General Channel (La Liga, Bundesliga)
+        Channel("FS1", "Fox Sports 1", 0, GENRE_SPORTS_US), // Major Soccer Rights (World Cup, MLS, etc)
+        Channel("ESPNDeportes", "ESPN Deportes", 0, GENRE_SPORTS_US), // Heavily Soccer focused (Spanish)
+        Channel("ESPN2", "ESPN 2", 0, GENRE_SPORTS_US), // General Sports
+        Channel("FS2", "Fox Sports 2", 0, GENRE_SPORTS_US), // Overflow for Soccer/General
+        Channel("CBSSportsNetworkUSA", "CBS Sports Network", 0, GENRE_SPORTS_US), // General + Champions League
+
+        // 2. Major League Specifics (High Value)
         Channel("NFLRedZone", "NFL RedZone", 0, GENRE_SPORTS_US),
+        Channel("NFLNetwork", "NFL Network", 0, GENRE_SPORTS_US),
         Channel("NBATV", "NBA TV", 0, GENRE_SPORTS_US),
         Channel("MLBNetwork", "MLB Network", 0, GENRE_SPORTS_US),
         Channel("NHLNetwork", "NHL Network", 0, GENRE_SPORTS_US),
-        Channel("CBSSportsNetworkUSA", "CBS Sports Network", 0, GENRE_SPORTS_US),
-        Channel("GolfChannel", "Golf Channel", 0, GENRE_SPORTS_US),
-        Channel("TennisChannel", "Tennis Channel", 0, GENRE_SPORTS_US),
-        Channel("ESPNU", "ESPN U", 0, GENRE_SPORTS_US),
-        Channel("CBSSportsGolazoNetwork", "CBS Sports Golazo", 0, GENRE_SPORTS_US),
-        Channel("BigTenNetwork", "Big Ten Network", 0, GENRE_SPORTS_US),
-        Channel("SECNetwork", "SEC Network", 0, GENRE_SPORTS_US),
-        Channel("YesNetwork", "YES Network", 0, GENRE_SPORTS_US),
-        // TVPass Sports
-        Channel("ESPN", "ESPN", 0, GENRE_SPORTS_US),
-        Channel("ESPN2", "ESPN 2", 0, GENRE_SPORTS_US),
+
+        // 3. Sports News & College Sports
         Channel("ESPNNews", "ESPN News", 0, GENRE_SPORTS_US),
-        Channel("ESPNDeportes", "ESPN Deportes", 0, GENRE_SPORTS_US),
-        Channel("FS1", "Fox Sports 1", 0, GENRE_SPORTS_US),
-        Channel("FS2", "Fox Sports 2", 0, GENRE_SPORTS_US),
-        Channel("NFLNetwork", "NFL Network", 0, GENRE_SPORTS_US),
+        Channel("SECNetwork", "SEC Network", 0, GENRE_SPORTS_US),
+        Channel("BigTenNetwork", "Big Ten Network", 0, GENRE_SPORTS_US),
+        Channel("ESPNU", "ESPN U", 0, GENRE_SPORTS_US),
+
+        // 4. Niche & Regional
+        Channel("TennisChannel", "Tennis Channel", 0, GENRE_SPORTS_US),
+        Channel("GolfChannel", "Golf Channel", 0, GENRE_SPORTS_US),
+        Channel("YesNetwork", "YES Network", 0, GENRE_SPORTS_US),
         
         // ===== Sports Canada (Genre 111) =====
         Channel("TSN1", "TSN 1", 0, GENRE_SPORTS_CA),
@@ -779,7 +800,8 @@ class IranWizPlusProvider : MainAPI() {
     
     // Categories for main page
     override val mainPage = mainPageOf(
-        "${GENRE_OTHER_NEWS}" to "🌍 Other News",
+        "${GENRE_OTHER_NEWS}" to "🌍 Global News",
+        GENRE_LOCAL_NEWS}" to "🌍 Local News",
         "${GENRE_NEWS}" to "📰 News",
         "${GENRE_IRIB}" to "📡 IRIB",
         "${GENRE_PERSIAN}" to "📺 Persian",
@@ -803,7 +825,7 @@ class IranWizPlusProvider : MainAPI() {
     
     // Get genre name for display
     private fun getGenreName(genreId: Int): String = when(genreId) {
-        GENRE_OTHER_NEWS -> "🌍 Other News"
+        GENRE_OTHER_NEWS -> "🌍 Global News"
         GENRE_NEWS -> "📰 News"
         GENRE_MOVIES -> "🎬 Movies & Series (Persian)"
         GENRE_PERSIAN -> "📺 Persian"
