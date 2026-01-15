@@ -921,7 +921,21 @@ class IranWizPlusProvider : MainAPI() {
                     try {
                         // Handle YouTube links
                         if (url.contains("youtube.com") || url.contains("youtu.be")) {
-                            loadExtractor(url, mainUrl, subtitleCallback, callback)
+                            var targetUrl = url
+                            // Resolve @channel/live aliases (e.g. https://www.youtube.com/@AlJazeera/live)
+                            if (url.contains("/live") && url.contains("/@")) {
+                                try {
+                                    val ytPage = app.get(url).text
+                                    val canonicalRegex = Regex("""<link rel="canonical" href="(https://www.youtube.com/watch\?v=[^"]+)""")
+                                    val match = canonicalRegex.find(ytPage)
+                                    if (match != null) {
+                                        targetUrl = match.groupValues[1]
+                                    }
+                                } catch (e: Exception) {
+                                    // Fallback to original URL if resolution fails
+                                }
+                            }
+                            loadExtractor(targetUrl, mainUrl, subtitleCallback, callback)
                             foundAny = true
                             return@forEach
                         }
