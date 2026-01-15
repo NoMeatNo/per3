@@ -26,13 +26,13 @@ class IranWizPlusProvider : MainAPI() {
     // Additional New Channels Source
     private val otherNewsUrls = mapOf(
         "IranInternational" to listOf(
-            "https://dev-live.livetvstream.co.uk/LS-63503-4/chunklist_b1196000.m3u8", // Direct
-            "https://www.youtube.com/watch?v=A92pqZQAsm8" // YouTube
+            "https://www.youtube.com/@IRANINTL/live", // Permanent Live
+            "https://dev-live.livetvstream.co.uk/LS-63503-4/chunklist_b1196000.m3u8" // Direct
         ),
         "BBCPersian" to listOf(
+            "https://www.youtube.com/@BBCNewsPersian/live", // Permanent Live
             "https://vs-cmaf-pushb-ww.live.cf.md.bbci.co.uk/x=4/i=urn:bbc:pips:service:bbc_persian_tv/pc_hd_abr_v2.fmp4.m3u8", // Direct 1
-            "https://vs-cmaf-pushb-ww-live.akamaized.net/x=4/i=urn:bbc:pips:service:bbc_persian_tv/pc_hd_abr_v2.fmp4.m3u8", // Direct 2
-            "https://www.youtube.com/watch?v=5qN1dRjatv8" // YouTube
+            "https://vs-cmaf-pushb-ww-live.akamaized.net/x=4/i=urn:bbc:pips:service:bbc_persian_tv/pc_hd_abr_v2.fmp4.m3u8" // Direct 2
         ),
         "FoxNews" to listOf(
             "https://www.newslive.com/american/fox-news.html",
@@ -59,8 +59,14 @@ class IranWizPlusProvider : MainAPI() {
             "https://www.newslive.com/business/cnbc-live-free.html"
         ),
         "BloombergQuicktake" to listOf("https://iptv-web.app/US/BloombergQuicktake.us/"),
-        "ABCNews" to listOf("https://iptv-web.app/US/ABCNewsLive.us/"),
-        "NBCNews" to listOf("https://iptv-web.app/US/NBCNewsNOW.us/"),
+        "ABCNews" to listOf(
+            "https://iptv-web.app/US/ABCNewsLive.us/",
+            "https://www.youtube.com/@ABCNews/live"
+        ),
+        "NBCNews" to listOf(
+            "https://iptv-web.app/US/NBCNewsNOW.us/",
+            "https://www.youtube.com/@NBCNews/live"
+        ),
         "NewsNation" to listOf("https://iptv-web.app/US/NewsNation.us/"),
         "CBSNews247" to listOf("https://iptv-web.app/US/CBSNews247.us/"),
         "ReutersTV" to listOf("https://iptv-web.app/US/ReutersTV.us/"),
@@ -317,7 +323,16 @@ class IranWizPlusProvider : MainAPI() {
         "TeenNick" to listOf("https://tvpass.org/channel/teennick-eastern"),
         "UniversalKids" to listOf("https://tvpass.org/channel/universal-kids"),
         "FoxBusiness" to listOf("https://tvpass.org/channel/fox-business"),
-        "HLN" to listOf("https://tvpass.org/channel/hln")
+        "HLN" to listOf("https://tvpass.org/channel/hln"),
+        
+        // Batch 13: YouTube News Extras
+        "AlJazeera" to listOf("https://www.youtube.com/@aljazeera/live"),
+        "AlJazeeraEnglish" to listOf("https://www.youtube.com/@aljazeeraenglish/live"),
+        "France24" to listOf("https://www.youtube.com/@France24_en/live"),
+        "SkyNews" to listOf("https://www.youtube.com/@SkyNews/live"),
+        "DWNews" to listOf("https://www.youtube.com/@dwnews/live"),
+        "LiveNOW" to listOf("https://www.youtube.com/@livenowfox/live"),
+        "NASA" to listOf("https://www.youtube.com/@NASA/live")
     )
 
     private val playerBaseUrl = "$mainUrl/Pages/Player"
@@ -422,6 +437,12 @@ class IranWizPlusProvider : MainAPI() {
         Channel("CWDC", "CW DC (WDCW)", 0, GENRE_OTHER_NEWS),
         Channel("FoxBusiness", "Fox Business", 0, GENRE_OTHER_NEWS),
         Channel("HLN", "HLN", 0, GENRE_OTHER_NEWS),
+        Channel("LiveNOW", "LiveNOW from FOX", 0, GENRE_OTHER_NEWS),
+        Channel("AlJazeera", "Al Jazeera", 0, GENRE_OTHER_NEWS),
+        Channel("AlJazeeraEnglish", "Al Jazeera English", 0, GENRE_OTHER_NEWS),
+        Channel("France24", "France 24 English", 0, GENRE_OTHER_NEWS),
+        Channel("DWNews", "DW News", 0, GENRE_OTHER_NEWS),
+        Channel("NASA", "NASA Live", 0, GENRE_DOCUMENTARY),
         
         // ===== Cooking (Genre 101) =====
         Channel("GordonRamsaysHellsKitchen", "Hell's Kitchen", 0, GENRE_COOKING),
@@ -585,6 +606,7 @@ class IranWizPlusProvider : MainAPI() {
         Channel("BBCEarth", "BBC Earth", 0, GENRE_UK),
         Channel("BBCFour", "BBC Four", 0, GENRE_UK),
         Channel("TalkTV", "TalkTV", 0, GENRE_UK),
+        Channel("SkyNews", "Sky News", 0, GENRE_UK),
         Channel("S4C", "S4C", 0, GENRE_UK),
         Channel("WildEarth", "WildEarth", 0, GENRE_UK),
         
