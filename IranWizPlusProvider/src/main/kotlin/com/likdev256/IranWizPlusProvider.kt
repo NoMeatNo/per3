@@ -332,7 +332,10 @@ class IranWizPlusProvider : MainAPI() {
         "SkyNews" to listOf("https://www.youtube.com/@SkyNews/live"),
         "DWNews" to listOf("https://www.youtube.com/@dwnews/live"),
         "LiveNOW" to listOf("https://www.youtube.com/@livenowfox/live"),
-        "NASA" to listOf("https://www.youtube.com/@NASA/live")
+        "NASA" to listOf("https://www.youtube.com/@NASA/live"),
+        "AssociatedPress" to listOf("https://www.youtube.com/@AssociatedPress/live"),
+        "TousiTV" to listOf("https://www.youtube.com/@TousiTV/live"),
+        "AgendaFreeTV" to listOf("https://www.youtube.com/@AgendaFreeTV/live")
     )
 
     private val playerBaseUrl = "$mainUrl/Pages/Player"
@@ -443,6 +446,9 @@ class IranWizPlusProvider : MainAPI() {
         Channel("France24", "France 24 English", 0, GENRE_OTHER_NEWS),
         Channel("DWNews", "DW News", 0, GENRE_OTHER_NEWS),
         Channel("NASA", "NASA Live", 0, GENRE_DOCUMENTARY),
+        Channel("AssociatedPress", "Associated Press", 0, GENRE_OTHER_NEWS),
+        Channel("TousiTV", "Tousi TV", 0, GENRE_OTHER_NEWS),
+        Channel("AgendaFreeTV", "Agenda-Free TV", 0, GENRE_OTHER_NEWS),
         
         // ===== Cooking (Genre 101) =====
         Channel("GordonRamsaysHellsKitchen", "Hell's Kitchen", 0, GENRE_COOKING),
