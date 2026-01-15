@@ -801,7 +801,7 @@ class IranWizPlusProvider : MainAPI() {
     // Categories for main page
     override val mainPage = mainPageOf(
         "${GENRE_OTHER_NEWS}" to "🌍 Global News",
-        GENRE_LOCAL_NEWS}" to "🌍 Local News",
+        "${GENRE_LOCAL_NEWS}" to "🌍 Local News",
         "${GENRE_NEWS}" to "📰 News",
         "${GENRE_IRIB}" to "📡 IRIB",
         "${GENRE_PERSIAN}" to "📺 Persian",
@@ -845,6 +845,7 @@ class IranWizPlusProvider : MainAPI() {
         GENRE_UK -> "🇬🇧 United Kingdom"
         GENRE_ITALY -> "🇮🇹 Italy"
         GENRE_SPORTS_CA -> "🇨🇦 Sports (Canada)"
+        GENRE_LOCAL_NEWS -> "🌍 Local News"
         else -> "📺 Other"
     }
     
