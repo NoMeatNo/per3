@@ -408,6 +408,8 @@ class IranWizPlusProvider : MainAPI() {
         Channel("NBCNews", "NBC News NOW", 0, GENRE_OTHER_NEWS),
         Channel("CBSNews247", "CBS News 24/7", 0, GENRE_OTHER_NEWS),
         Channel("BBCNewsNA", "BBC News (North America)", 0, GENRE_OTHER_NEWS),
+        Channel("BBCNews", "BBC News (UK)", 0, GENRE_OTHER_NEWS),
+        Channel("SkyNews", "Sky News", 0, GENRE_OTHER_NEWS),
         Channel("NewsNation", "NewsNation", 0, GENRE_OTHER_NEWS),
         Channel("NewsmaxTV", "Newsmax", 0, GENRE_OTHER_NEWS),
         Channel("AlJazeeraEnglish", "Al Jazeera English", 0, GENRE_OTHER_NEWS),
@@ -424,6 +426,9 @@ class IranWizPlusProvider : MainAPI() {
         Channel("CheddarNews", "Cheddar News", 0, GENRE_OTHER_NEWS),
         Channel("CNNGB", "CNN Fast", 0, GENRE_OTHER_NEWS),
         Channel("AlJazeera", "Al Jazeera", 0, GENRE_OTHER_NEWS),
+        Channel("GBNews", "GB News", 0, GENRE_OTHER_NEWS),
+        Channel("TalkTV", "TalkTV", 0, GENRE_OTHER_NEWS),
+        
 
         // Independent & Special Interest
         Channel("TheYoungTurks", "The Young Turks", 0, GENRE_OTHER_NEWS),
@@ -628,12 +633,8 @@ class IranWizPlusProvider : MainAPI() {
         Channel("ITV2", "ITV 2", 0, GENRE_UK),
         Channel("ITV3", "ITV 3", 0, GENRE_UK),
         Channel("ITV4", "ITV 4", 0, GENRE_UK),
-        Channel("BBCNews", "BBC News (UK)", 0, GENRE_UK),
-        Channel("GBNews", "GB News", 0, GENRE_UK),
         Channel("BBCEarth", "BBC Earth", 0, GENRE_UK),
         Channel("BBCFour", "BBC Four", 0, GENRE_UK),
-        Channel("TalkTV", "TalkTV", 0, GENRE_UK),
-        Channel("SkyNews", "Sky News", 0, GENRE_UK),
         Channel("S4C", "S4C", 0, GENRE_UK),
         Channel("WildEarth", "WildEarth", 0, GENRE_UK),
         
