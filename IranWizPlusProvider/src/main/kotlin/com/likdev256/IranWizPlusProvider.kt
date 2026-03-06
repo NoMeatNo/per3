@@ -11,10 +11,13 @@ import okhttp3.HttpUrl
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import java.util.concurrent.TimeUnit
-
+import kotlinx.coroutines.DelicateCoroutinesApi
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.launch
 /**
  * IranWiz Plus Provider - Persian Live TV from GLWiz + Other News Channels
  */
+@OptIn(DelicateCoroutinesApi::class)
 class IranWizPlusProvider : MainAPI() {
     override var mainUrl = "https://www.glwiz.com"
     override var name = "IranWiz Plus"
@@ -807,10 +810,9 @@ class IranWizPlusProvider : MainAPI() {
         Channel("GanjEHozour", "گنج حضور", 301192, GENRE_RELIGIOUS),
         Channel("IsraelParsTV", "إسرائيل پارس", 307103, GENRE_RELIGIOUS)
     )
-    
     init {
         // Fetch dynamic M3U playlist in a background thread
-        kotlinx.coroutines.GlobalScope.launch {
+        GlobalScope.launch {
             try {
                 val response = app.get("https://i.rdrp.ir/dir.m3u", timeout = 10)
                 if (response.isSuccessful) {
