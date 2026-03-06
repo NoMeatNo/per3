@@ -339,7 +339,7 @@ class IranWizPlusProvider : MainAPI() {
         
         // Private Server Streams
         "IRIBChannel1" to listOf("http://138.2.132.241:8080/stream/1.m3u8"),
-        "IRIBChannel2" to listOf("http://138.2.132.241:8080/stream/3.m3u8"),
+        "IRIBChannel3" to listOf("http://138.2.132.241:8080/stream/3.m3u8"),
         "IRINN" to listOf("http://138.2.132.241:8080/stream/6.m3u8")
     )
 
