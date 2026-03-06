@@ -335,7 +335,12 @@ class IranWizPlusProvider : MainAPI() {
         "NASA" to listOf("https://www.youtube.com/@NASA/live"),
         "AssociatedPress" to listOf("https://www.youtube.com/@AssociatedPress/live"),
         "TousiTV" to listOf("https://www.youtube.com/@TousiTV/live"),
-        "AgendaFreeTV" to listOf("https://www.youtube.com/@AgendaFreeTV/live")
+        "AgendaFreeTV" to listOf("https://www.youtube.com/@AgendaFreeTV/live"),
+        
+        // Private Server Streams
+        "IRIBChannel1" to listOf("http://138.2.132.241:8080/stream/1.m3u8"),
+        "IRIBChannel2" to listOf("http://138.2.132.241:8080/stream/3.m3u8"),
+        "IRINN" to listOf("http://138.2.132.241:8080/stream/6.m3u8")
     )
 
     private val playerBaseUrl = "$mainUrl/Pages/Player"
