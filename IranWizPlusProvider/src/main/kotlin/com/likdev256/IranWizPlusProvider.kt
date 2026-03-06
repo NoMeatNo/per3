@@ -346,6 +346,9 @@ class IranWizPlusProvider : MainAPI() {
     private val playerBaseUrl = "$mainUrl/Pages/Player"
     private val ajaxUrl = "$playerBaseUrl/Ajax.aspx"
     
+    // Store URLs from the dynamic M3U playlist
+    private val dynamicUrls = mutableMapOf<String, String>()
+    
     private val cookieStore = mutableMapOf<String, MutableList<Cookie>>()
     
     private val httpClient: OkHttpClient by lazy {
@@ -390,6 +393,7 @@ class IranWizPlusProvider : MainAPI() {
         const val GENRE_ITALY = 110
         const val GENRE_SPORTS_CA = 111
         const val GENRE_LOCAL_NEWS = 119
+        const val GENRE_DYNAMIC = 120
     }
     
     data class Channel(
@@ -402,7 +406,7 @@ class IranWizPlusProvider : MainAPI() {
     }
     
     // Channel list
-    private val allChannels = listOf(
+    private val allChannels = mutableListOf(
 // ===== National & Global News (Genre 100) =====
         // Major Cable & Business
         Channel("FoxNews", "Fox News", 0, GENRE_OTHER_NEWS),
@@ -804,8 +808,62 @@ class IranWizPlusProvider : MainAPI() {
         Channel("IsraelParsTV", "إسرائيل پارس", 307103, GENRE_RELIGIOUS)
     )
     
+    init {
+        // Fetch dynamic M3U playlist in a background thread
+        kotlinx.coroutines.GlobalScope.launch {
+            try {
+                val response = app.get("https://i.rdrp.ir/dir.m3u", timeout = 10)
+                if (response.isSuccessful) {
+                    val m3uContent = response.text
+                    val lines = m3uContent.lines()
+                    var currentName = ""
+                    var currentGroup = "Dynamic"
+                    
+                    lines.forEach { line ->
+                        val trimmed = line.trim()
+                        if (trimmed.startsWith("#EXTINF:")) {
+                            // Extract title
+                            currentName = trimmed.substringAfterLast(",").trim()
+                            
+                            // Extract group-title if available
+                            val groupMatch = Regex("""group-title="([^"]+)"""").find(trimmed)
+                            if (groupMatch != null) {
+                                currentGroup = groupMatch.groupValues[1]
+                            }
+                        } else if (trimmed.startsWith("http")) {
+                            if (currentName.isNotEmpty()) {
+                                // Add to otherNewsUrls so loadLinks can find the direct stream url
+                                val safeId = currentName.replace(Regex("[^A-Za-z0-9]"), "") + trimmed.hashCode().toString(16)
+                                
+                                val newChan = Channel(safeId, currentName, 0, GENRE_DYNAMIC)
+                                
+                                // In Kotlin we need to add to the existing map, but it's a val mapOf...
+                                // Wait, we can't easily add to a `val otherNewsUrls = mapOf(...)`.
+                                // Let's just create a companion object list and read from it, or modify loadLinks directly.
+                                // Actually, `app.get` is required, so the parsing here is good, but `allChannels` gets updated.
+                                
+                                // Thread safety list adittion
+                                synchronized(allChannels) {
+                                    allChannels.add(newChan)
+                                }
+                                
+                                // And we need to store the URL somehow so `loadLinks` knows what to play!
+                                // Let's store dynamic urls in a static map
+                                dynamicUrls[safeId] = trimmed
+                            }
+                            currentName = ""
+                        }
+                    }
+                }
+            } catch (e: Exception) {
+                // Ignore failures to not crash the app
+            }
+        }
+    }
+    
     // Categories for main page
     override val mainPage = mainPageOf(
+        "${GENRE_DYNAMIC}" to "📡 Dynamic (RDRP)",
         "${GENRE_OTHER_NEWS}" to "🌍 Global News",
         "${GENRE_LOCAL_NEWS}" to "🌍 Local News",
         "${GENRE_NEWS}" to "📰 News",
@@ -852,6 +910,7 @@ class IranWizPlusProvider : MainAPI() {
         GENRE_ITALY -> "🇮🇹 Italy"
         GENRE_SPORTS_CA -> "🇨🇦 Sports (Canada)"
         GENRE_LOCAL_NEWS -> "🌍 Local News"
+        GENRE_DYNAMIC -> "📡 Dynamic (RDRP)"
         else -> "📺 Other"
     }
     
@@ -946,6 +1005,21 @@ class IranWizPlusProvider : MainAPI() {
         return try {
             val streamName = data
             var foundAny = false
+            
+            // 0. DYNAMIC PLAYLIST SOURCES
+            if (dynamicUrls.containsKey(streamName)) {
+                val url = dynamicUrls[streamName]!!
+                callback.invoke(
+                    newExtractorLink(
+                        source = name,
+                        name = "$name - $streamName (Dynamic)",
+                        url = url
+                    ).apply {
+                        this.quality = Qualities.Unknown.value
+                    }
+                )
+                return true
+            }
             
             // 1. EXTRA SOURCES (Direct/YouTube/Scraped)
             if (otherNewsUrls.containsKey(streamName)) {
